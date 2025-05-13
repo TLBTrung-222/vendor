@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Typography,
@@ -16,15 +16,15 @@ import {
     FormControl,
     InputLabel,
     Grid,
-    ListItemText,
     Checkbox,
-    OutlinedInput,
     Card,
     CardContent,
     Chip,
     styled,
     LinearProgress,
+    Autocomplete,
     type SelectChangeEvent,
+    CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -35,33 +35,71 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
+// Add this import at the top of the file with other imports
+import DeleteIcon from "@mui/icons-material/Delete";
 
-// Data
-const legalFormsByCountry = {
-    Germany: [
-        "Einzelunternehmen",
-        "GbR (Gesellschaft bürgerlichen Rechts)",
-        "GmbH (Gesellschaft mit beschränkter Haftung)",
-        "UG (haftungsbeschränkt)",
-        "OHG (Offene Handelsgesellschaft)",
-        "KG (Kommanditgesellschaft)",
-    ],
-    Poland: [
-        "JDG (Jednoosobowa działalność gospodarcza)",
-        "Sp. z o.o. (Spółka z ograniczoną odpowiedzialnością)",
-        "Spółka cywilna (s.c.)",
-        "Spółka jawna (sp.j.)",
-        "Spółka komandytowa (sp.k.)",
-        "Spółka akcyjna (S.A.)",
-    ],
-    Slovakia: [
-        "živnosť",
-        "s.r.o. (Spoločnosť s ručením obmedzeným)",
-        "v.o.s. (verejná obchodná spoločnosť)",
-        "k.s. (komanditná spoločnosť)",
-        "a.s. (akciová spoločnosť)",
-    ],
-};
+// Types for API responses
+interface Country {
+    country_id: number;
+    name: string;
+}
+
+interface LegalForm {
+    legal_form_id: number;
+    title: string;
+    description: string;
+    country_id: number;
+}
+
+interface Trade {
+    gesys_gewerk_id: number;
+    gewerk_name: string;
+}
+
+// Add a new interface for federal states
+interface FederalState {
+    id: number;
+    german_name: string;
+    english_name: string;
+}
+
+// Add a new interface for vendor details with gewerk_ids
+interface VendorDetail {
+    vendor_id: number;
+    contact_user_id: number;
+    onboarding_status_id: number;
+    legal_form_id: number | null;
+    country_id: number | null;
+    gewerk_ids: {
+        scope_id: number | null;
+        gewerk_name: string;
+        gesys_gewerk_id: number;
+    }[];
+    name: string | null;
+    company_name: string | null;
+    email: string;
+    phone: string | null;
+    description: string | null;
+    address: string | null;
+    company_size: string | null;
+    website: string | null;
+    contact_user: string | null;
+    contact_user_role: string | null;
+    country_name: string | null;
+}
+
+// Update the Vendor interface
+interface Vendor {
+    vendor_id: number;
+    company_name: string | null;
+}
+
+// Add a new interface for representative positions
+interface RepresentativePosition {
+    position_id: number;
+    description: string | null;
+    title: string;
+}
 
 const germanRegions = [
     "Baden-Württemberg",
@@ -80,15 +118,6 @@ const germanRegions = [
     "Sachsen-Anhalt",
     "Schleswig-Holstein",
     "Thüringen",
-];
-
-const tradesOptions = [
-    "Electrical",
-    "Roofing",
-    "Heating",
-    "Plumbing",
-    "Carpentry",
-    "PV Installation",
 ];
 
 // Document data
@@ -317,17 +346,341 @@ const translations = {
         signed: "Signed",
         completed: "Completed",
         awaitingSignature: "Awaiting Signature",
+        loadingCountries: "Loading countries...",
+        loadingLegalForms: "Loading legal forms...",
+        loadingTrades: "Loading trades...",
+        errorLoading: "Error loading data. Please try again.",
     },
 };
 
+// API endpoints
+const API_BASE_URL = "https://fastapi.gesys.automate-solutions.net/gesys";
+
+// Modify the component state
 export default function VendorOnboardingFlow() {
+    // Hardcode vendor_id to 15
+    const VENDOR_ID = 20;
+
+    // Form state variables
     const [step, setStep] = useState(1);
-    const [country, setCountry] = useState("Germany");
-    const [legalForm, setLegalForm] = useState("");
-    const [trades, setTrades] = useState([{ trade: "", count: "" }]);
     const [language, setLanguage] = useState("EN");
-    const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+
+    // Form field states
+    const [companyName, setCompanyName] = useState("");
+    const [taxId, setTaxId] = useState("");
+    const [street, setStreet] = useState("");
+    const [houseNumber, setHouseNumber] = useState("");
+    const [apartmentNumber, setApartmentNumber] = useState("");
+    const [zipCode, setZipCode] = useState("");
+    const [city, setCity] = useState("");
+    const [website, setWebsite] = useState("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [phone, setPhone] = useState("");
+    const [vendorEmail, setVendorEmail] = useState("huynhlamduylcd@gmail.com");
+
+    // API data states
+    const [country, setCountry] = useState("");
+    const [countryId, setCountryId] = useState<number | null>(null);
+    const [legalForm, setLegalForm] = useState("");
+    const [legalFormId, setLegalFormId] = useState<number | null>(null);
+    const [trades, setTrades] = useState<
+        { trade: string; count: string; gesys_gewerk_id?: number }[]
+    >([]);
+    const [selectedRegion, setSelectedRegion] = useState<string>("");
+    const [selectedRegionId, setSelectedRegionId] = useState<number | null>(
+        null
+    );
+    const [selectedPosition, setSelectedPosition] = useState("");
+    const [selectedPositionId, setSelectedPositionId] = useState<number | null>(
+        null
+    );
     const [uploads, setUploads] = useState<Record<string, string>>({});
+
+    // API data
+    const [countries, setCountries] = useState<Country[]>([]);
+    const [legalForms, setLegalForms] = useState<LegalForm[]>([]);
+    const [tradeOptions, setTradeOptions] = useState<Trade[]>([]);
+    const [federalStates, setFederalStates] = useState<FederalState[]>([]);
+    const [vendorDetails, setVendorDetails] = useState<VendorDetail | null>(
+        null
+    );
+    const [vendors, setVendors] = useState<Vendor[]>([]);
+    const [positions, setPositions] = useState<RepresentativePosition[]>([]);
+
+    // Loading states
+    const [loadingCountries, setLoadingCountries] = useState(false);
+    const [loadingLegalForms, setLoadingLegalForms] = useState(false);
+    const [loadingTrades, setLoadingTrades] = useState(false);
+    const [loadingFederalStates, setLoadingFederalStates] = useState(false);
+    const [loadingVendorDetails, setLoadingVendorDetails] = useState(false);
+    const [isLoadingVendors, setIsLoadingVendors] = useState(false);
+    const [loadingPositions, setLoadingPositions] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Error states
+    const [countriesError, setCountriesError] = useState<string | null>(null);
+    const [legalFormsError, setLegalFormsError] = useState<string | null>(null);
+    const [tradesError, setTradesError] = useState<string | null>(null);
+    const [federalStatesError, setFederalStatesError] = useState<string | null>(
+        null
+    );
+    const [vendorDetailsError, setVendorDetailsError] = useState<string | null>(
+        null
+    );
+    const [positionsError, setPositionsError] = useState<string | null>(null);
+    const [showVendorDropdown, setShowVendorDropdown] = useState(false);
+
+    // Fetch countries from API
+    useEffect(() => {
+        const fetchCountries = async () => {
+            setLoadingCountries(true);
+            setCountriesError(null);
+            try {
+                const response = await fetch(`${API_BASE_URL}/countries`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.data) {
+                    setCountries(result.data);
+                }
+            } catch (error) {
+                console.error("Error fetching countries:", error);
+                setCountriesError("Failed to load countries");
+            } finally {
+                setLoadingCountries(false);
+            }
+        };
+
+        fetchCountries();
+    }, []);
+
+    // Fetch legal forms when country changes
+    useEffect(() => {
+        if (!countryId) return;
+
+        const fetchLegalForms = async () => {
+            setLoadingLegalForms(true);
+            setLegalFormsError(null);
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/legal-forms/country?country_id=${countryId}`
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.data) {
+                    setLegalForms(result.data);
+                }
+            } catch (error) {
+                console.error("Error fetching legal forms:", error);
+                setLegalFormsError("Failed to load legal forms");
+            } finally {
+                setLoadingLegalForms(false);
+            }
+        };
+
+        fetchLegalForms();
+    }, [countryId]);
+
+    // Fetch trades on component mount
+    useEffect(() => {
+        const fetchTrades = async () => {
+            setLoadingTrades(true);
+            setTradesError(null);
+            try {
+                const response = await fetch(`${API_BASE_URL}/gewerks`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.data) {
+                    setTradeOptions(result.data);
+                }
+            } catch (error) {
+                console.error("Error fetching trades:", error);
+                setTradesError("Failed to load trades");
+            } finally {
+                setLoadingTrades(false);
+            }
+        };
+
+        fetchTrades();
+    }, []);
+
+    // Fetch vendors
+    useEffect(() => {
+        const fetchVendors = async () => {
+            setIsLoadingVendors(true);
+            try {
+                const response = await fetch(`${API_BASE_URL}/vendors`);
+                const result = await response.json();
+                if (result.data) {
+                    setVendors(
+                        result.data.map((vendor: any) => ({
+                            vendor_id: vendor.vendor_id,
+                            company_name: vendor.company_name,
+                        }))
+                    );
+                }
+            } catch (error) {
+                console.error("Error fetching vendors:", error);
+            } finally {
+                setIsLoadingVendors(false);
+            }
+        };
+
+        fetchVendors();
+    }, []);
+
+    // Handle dropdown closing
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (showVendorDropdown && !target.closest('input[type="text"]')) {
+                setShowVendorDropdown(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showVendorDropdown]);
+
+    // Fetch representative positions
+    useEffect(() => {
+        const fetchPositions = async () => {
+            setLoadingPositions(true);
+            setPositionsError(null);
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/representative_positions/representative-positions`
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.data) {
+                    setPositions(result.data);
+                }
+            } catch (error) {
+                console.error(
+                    "Error fetching representative positions:",
+                    error
+                );
+                setPositionsError("Failed to load representative positions");
+            } finally {
+                setLoadingPositions(false);
+            }
+        };
+
+        fetchPositions();
+    }, []);
+
+    // Fetch federal states
+    useEffect(() => {
+        const fetchFederalStates = async () => {
+            setLoadingFederalStates(true);
+            setFederalStatesError(null);
+            try {
+                const response = await fetch(`${API_BASE_URL}/vendors/state`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.data) {
+                    setFederalStates(result.data);
+                }
+            } catch (error) {
+                console.error("Error fetching federal states:", error);
+                setFederalStatesError("Failed to load federal states");
+            } finally {
+                setLoadingFederalStates(false);
+            }
+        };
+
+        fetchFederalStates();
+    }, []);
+
+    // Fetch vendor details for vendor_id 15
+    useEffect(() => {
+        const fetchVendorDetails = async () => {
+            setLoadingVendorDetails(true);
+            setVendorDetailsError(null);
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/vendors?vendor_id=${VENDOR_ID}`
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.data && result.data.length > 0) {
+                    const vendorData = result.data[0];
+                    setVendorDetails(vendorData);
+
+                    // Set vendor email
+                    if (vendorData.email) {
+                        setVendorEmail(vendorData.email);
+                    }
+
+                    // Set company name if available
+                    if (vendorData.company_name) {
+                        setCompanyName(vendorData.company_name);
+                    }
+
+                    // Initialize trades from vendor gewerk_ids
+                    if (
+                        vendorData.gewerk_ids &&
+                        vendorData.gewerk_ids.length > 0
+                    ) {
+                        const initialTrades = vendorData.gewerk_ids.map(
+                            (gewerk: any) => ({
+                                trade: gewerk.gewerk_name,
+                                count: "",
+                                gesys_gewerk_id: gewerk.gesys_gewerk_id,
+                            })
+                        );
+                        setTrades(initialTrades);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching vendor details:", error);
+                setVendorDetailsError("Failed to load vendor details");
+            } finally {
+                setLoadingVendorDetails(false);
+            }
+        };
+
+        fetchVendorDetails();
+    }, [VENDOR_ID]);
+
+    // Update legal form ID when legal form changes
+    useEffect(() => {
+        const selectedForm = legalForms.find(
+            (form) => form.title === legalForm
+        );
+        if (selectedForm) {
+            setLegalFormId(selectedForm.legal_form_id);
+        } else {
+            setLegalFormId(null);
+        }
+    }, [legalForm, legalForms]);
+
+    // Update position ID when position changes
+    useEffect(() => {
+        const selectedPos = positions.find(
+            (pos) => pos.title === selectedPosition
+        );
+        if (selectedPos) {
+            setSelectedPositionId(selectedPos.position_id);
+        } else {
+            setSelectedPositionId(null);
+        }
+    }, [selectedPosition, positions]);
 
     const t =
         translations[language as keyof typeof translations] || translations.EN;
@@ -335,31 +688,93 @@ export default function VendorOnboardingFlow() {
     const next = () => setStep(step + 1);
     const back = () => setStep(step - 1);
 
-    const addTrade = () => setTrades([...trades, { trade: "", count: "" }]);
+    // Handle region change
+    const handleRegionChange = (event: SelectChangeEvent) => {
+        const selectedRegionName = event.target.value;
+        setSelectedRegion(selectedRegionName);
 
+        // Find the region ID from the selected region name
+        const selectedRegion = federalStates.find(
+            (state) =>
+                state.german_name === selectedRegionName ||
+                state.english_name === selectedRegionName
+        );
+
+        if (selectedRegion) {
+            setSelectedRegionId(selectedRegion.id);
+        } else {
+            setSelectedRegionId(null);
+        }
+    };
+
+    // Handle trade deletion
+    const handleDeleteTrade = (index: number) => {
+        const updatedTrades = [...trades];
+        updatedTrades.splice(index, 1);
+        setTrades(updatedTrades);
+    };
+
+    // Update trade
     const updateTrade = (index: number, field: string, value: string) => {
         const updated = [...trades];
-        updated[index][field as keyof (typeof updated)[0]] = value;
+
+        if (field === "trade") {
+            // Find the trade option to get its ID
+            const tradeOption = tradeOptions.find(
+                (option) => option.gewerk_name === value
+            );
+            if (tradeOption) {
+                updated[index] = {
+                    ...updated[index],
+                    trade: value,
+                    gesys_gewerk_id: tradeOption.gesys_gewerk_id,
+                };
+            } else {
+                updated[index] = {
+                    ...updated[index],
+                    trade: value,
+                };
+            }
+        } else {
+            updated[index] = {
+                ...updated[index],
+                [field]: value,
+            };
+        }
+
         setTrades(updated);
     };
 
-    const handleRegionChange = (
-        event: SelectChangeEvent<typeof selectedRegions>
-    ) => {
-        const {
-            target: { value },
-        } = event;
-        setSelectedRegions(
-            typeof value === "string" ? value.split(",") : value
-        );
+    // Add a new trade
+    const addTrade = () => {
+        setTrades([...trades, { trade: "", count: "" }]);
     };
 
+    // Handle country change
+    const handleCountryChange = (event: SelectChangeEvent) => {
+        const selectedCountryName = event.target.value;
+        setCountry(selectedCountryName);
+        setLegalForm("");
+
+        // Find the country ID from the selected country name
+        const selectedCountry = countries.find(
+            (c) => c.name === selectedCountryName
+        );
+        if (selectedCountry) {
+            setCountryId(selectedCountry.country_id);
+        } else {
+            setCountryId(null);
+        }
+    };
+
+    // Handle file upload
     const handleFileUpload = (label: string, file: File | null) => {
         if (file) {
             setUploads((prev) => ({ ...prev, [label]: file.name }));
         }
     };
 
+    // Handle document submission
     const handleSubmit = (label: string) => {
         alert(`Simulated submit of: ${label}`);
     };
@@ -380,8 +795,66 @@ export default function VendorOnboardingFlow() {
         });
 
         // For simplicity, allow continue if at least one document is approved
-        // In a real app, you might have different requirements
         return approvedCount > 0;
+    };
+
+    // Handle form submission
+    const handleFormSubmit = async () => {
+        try {
+            setIsSubmitting(true);
+
+            // Prepare the request body using state variables
+            const requestBody = {
+                company_name: companyName,
+                street: street,
+                zip_code: zipCode,
+                federal_state_id: selectedRegionId,
+                gewerk_ids: trades
+                    .filter((t) => t.gesys_gewerk_id)
+                    .map((t) => t.gesys_gewerk_id),
+                legal_form_id: legalFormId || 0,
+                house_number: houseNumber,
+                city: city,
+                country_id: countryId,
+                website: website,
+                // first_name: firstName,
+                // last_name: lastName,
+                phone: phone,
+                role_id: selectedPositionId || 0,
+                department: "",
+                description: "",
+                company_size: 0,
+            };
+
+            console.log("Request body:", requestBody);
+
+            // Make the API call
+            const response = await fetch(
+                `${API_BASE_URL}/vendors/update?vendor_id=${VENDOR_ID}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(requestBody),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log("Update successful:", result);
+
+            // Proceed to next step
+            next();
+        } catch (error) {
+            console.error("Error updating vendor information:", error);
+            alert("Failed to update vendor information. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const renderDocumentCard = (document: (typeof germanDocuments)[0]) => {
@@ -795,39 +1268,128 @@ export default function VendorOnboardingFlow() {
                                         labelId="country-label"
                                         value={country}
                                         label={t.country}
-                                        onChange={(e) => {
-                                            setCountry(e.target.value);
-                                            setLegalForm("");
-                                        }}
+                                        onChange={handleCountryChange}
                                         sx={{ borderRadius: 4 }}
+                                        disabled={loadingCountries}
                                     >
                                         <MenuItem value="">
                                             <em>{t.country}</em>
                                         </MenuItem>
-                                        <MenuItem value="Germany">
-                                            Germany
-                                        </MenuItem>
-                                        <MenuItem value="Poland">
-                                            Poland
-                                        </MenuItem>
-                                        <MenuItem value="Slovakia">
-                                            Slovakia
-                                        </MenuItem>
+                                        {countries.map((country) => (
+                                            <MenuItem
+                                                key={country.country_id}
+                                                value={country.name}
+                                            >
+                                                {country.name}
+                                            </MenuItem>
+                                        ))}
                                     </Select>
+                                    {loadingCountries && (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                mt: 1,
+                                            }}
+                                        >
+                                            <CircularProgress
+                                                size={16}
+                                                sx={{ mr: 1 }}
+                                            />
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {t.loadingCountries}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {countriesError && (
+                                        <Alert
+                                            severity="error"
+                                            sx={{ mt: 1, py: 0 }}
+                                        >
+                                            <Typography variant="caption">
+                                                {countriesError}
+                                            </Typography>
+                                        </Alert>
+                                    )}
                                 </FormControl>
                             </Grid>
 
                             <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label={t.company}
-                                    required
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: 4,
-                                        },
-                                    }}
-                                />
+                                <FormControl fullWidth>
+                                    <Autocomplete
+                                        id="company-name-autocomplete"
+                                        options={vendors}
+                                        getOptionLabel={(option: any) =>
+                                            option.company_name || ""
+                                        }
+                                        loading={isLoadingVendors}
+                                        value={
+                                            vendors.find(
+                                                (v) =>
+                                                    v.company_name ===
+                                                    companyName
+                                            ) || null
+                                        }
+                                        onChange={(event, newValue: any) => {
+                                            setCompanyName(
+                                                newValue
+                                                    ? newValue.company_name
+                                                    : ""
+                                            );
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label={t.company}
+                                                required
+                                                value={companyName}
+                                                onChange={(e) =>
+                                                    setCompanyName(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                sx={{
+                                                    "& .MuiOutlinedInput-root":
+                                                        {
+                                                            borderRadius: 4,
+                                                        },
+                                                }}
+                                                InputProps={{
+                                                    ...params.InputProps,
+                                                    endAdornment: (
+                                                        <>
+                                                            {isLoadingVendors ? (
+                                                                <CircularProgress
+                                                                    color="inherit"
+                                                                    size={20}
+                                                                />
+                                                            ) : null}
+                                                            {
+                                                                params
+                                                                    .InputProps
+                                                                    .endAdornment
+                                                            }
+                                                        </>
+                                                    ),
+                                                }}
+                                            />
+                                        )}
+                                        renderOption={(props, option) => (
+                                            <li
+                                                {...props}
+                                                key={option.vendor_id}
+                                            >
+                                                {option.company_name}
+                                            </li>
+                                        )}
+                                        freeSolo
+                                        autoHighlight
+                                        autoComplete
+                                    />
+                                </FormControl>
                             </Grid>
 
                             <Grid item xs={12}>
@@ -843,19 +1405,51 @@ export default function VendorOnboardingFlow() {
                                             setLegalForm(e.target.value)
                                         }
                                         sx={{ borderRadius: 4 }}
+                                        disabled={loadingLegalForms || !country}
                                     >
                                         <MenuItem value="">
                                             <em>{t.legalForm}</em>
                                         </MenuItem>
-                                        {country &&
-                                            legalFormsByCountry[
-                                                country as keyof typeof legalFormsByCountry
-                                            ].map((form, i) => (
-                                                <MenuItem key={i} value={form}>
-                                                    {form}
-                                                </MenuItem>
-                                            ))}
+                                        {legalForms.map((form) => (
+                                            <MenuItem
+                                                key={form.legal_form_id}
+                                                value={form.title}
+                                            >
+                                                {form.title} ({form.description}
+                                                )
+                                            </MenuItem>
+                                        ))}
                                     </Select>
+                                    {loadingLegalForms && (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                mt: 1,
+                                            }}
+                                        >
+                                            <CircularProgress
+                                                size={16}
+                                                sx={{ mr: 1 }}
+                                            />
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {t.loadingLegalForms}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {legalFormsError && (
+                                        <Alert
+                                            severity="error"
+                                            sx={{ mt: 1, py: 0 }}
+                                        >
+                                            <Typography variant="caption">
+                                                {legalFormsError}
+                                            </Typography>
+                                        </Alert>
+                                    )}
                                 </FormControl>
                             </Grid>
 
@@ -864,6 +1458,8 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.taxId}
                                     required
+                                    value={taxId}
+                                    onChange={(e) => setTaxId(e.target.value)}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -877,6 +1473,8 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.street}
                                     required
+                                    value={street}
+                                    onChange={(e) => setStreet(e.target.value)}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -890,6 +1488,10 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.houseNr}
                                     required
+                                    value={houseNumber}
+                                    onChange={(e) =>
+                                        setHouseNumber(e.target.value)
+                                    }
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -902,6 +1504,10 @@ export default function VendorOnboardingFlow() {
                                 <TextField
                                     fullWidth
                                     label={t.apartmentNr}
+                                    value={apartmentNumber}
+                                    onChange={(e) =>
+                                        setApartmentNumber(e.target.value)
+                                    }
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -915,6 +1521,8 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.zip}
                                     required
+                                    value={zipCode}
+                                    onChange={(e) => setZipCode(e.target.value)}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -928,6 +1536,8 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.city}
                                     required
+                                    value={city}
+                                    onChange={(e) => setCity(e.target.value)}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -940,6 +1550,8 @@ export default function VendorOnboardingFlow() {
                                 <TextField
                                     fullWidth
                                     label={t.website}
+                                    value={website}
+                                    onChange={(e) => setWebsite(e.target.value)}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -948,6 +1560,7 @@ export default function VendorOnboardingFlow() {
                                 />
                             </Grid>
 
+                            {/* Employees per Trade section */}
                             <Grid item xs={12}>
                                 <Typography
                                     variant="subtitle1"
@@ -955,69 +1568,142 @@ export default function VendorOnboardingFlow() {
                                 >
                                     {t.tradeTitle}
                                 </Typography>
-                                {trades.map((item, i) => (
-                                    <Grid
-                                        container
-                                        spacing={2}
-                                        key={i}
-                                        sx={{ mb: 2 }}
+                                {loadingVendorDetails ? (
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            mt: 2,
+                                        }}
                                     >
-                                        <Grid item xs={6}>
-                                            <FormControl fullWidth>
-                                                <InputLabel
-                                                    id={`trade-label-${i}`}
-                                                >
-                                                    {t.selectTrade}
-                                                </InputLabel>
-                                                <Select
-                                                    labelId={`trade-label-${i}`}
-                                                    value={item.trade}
-                                                    label={t.selectTrade}
+                                        <CircularProgress
+                                            size={20}
+                                            sx={{ mr: 1 }}
+                                        />
+                                        <Typography variant="body2">
+                                            Loading vendor trades...
+                                        </Typography>
+                                    </Box>
+                                ) : vendorDetailsError ? (
+                                    <Alert severity="error" sx={{ mt: 2 }}>
+                                        {vendorDetailsError}
+                                    </Alert>
+                                ) : (
+                                    trades.map((item, i) => (
+                                        <Grid
+                                            container
+                                            spacing={2}
+                                            key={i}
+                                            sx={{ mb: 2 }}
+                                            alignItems="center"
+                                        >
+                                            <Grid item xs={5}>
+                                                <FormControl fullWidth>
+                                                    <InputLabel
+                                                        id={`trade-label-${i}`}
+                                                    >
+                                                        {t.selectTrade}
+                                                    </InputLabel>
+                                                    <Select
+                                                        labelId={`trade-label-${i}`}
+                                                        value={item.trade}
+                                                        label={t.selectTrade}
+                                                        onChange={(e) =>
+                                                            updateTrade(
+                                                                i,
+                                                                "trade",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        sx={{ borderRadius: 4 }}
+                                                        disabled={
+                                                            !!item.gesys_gewerk_id ||
+                                                            loadingTrades
+                                                        }
+                                                    >
+                                                        <MenuItem value="">
+                                                            <em>
+                                                                {t.selectTrade}
+                                                            </em>
+                                                        </MenuItem>
+                                                        {/* Filter trade options to keep current selection and remove ones used elsewhere */}
+                                                        {tradeOptions
+                                                            .filter(
+                                                                (option) => {
+                                                                    // "used elsewhere"?
+                                                                    const usedByAnotherRow =
+                                                                        trades.some(
+                                                                            (
+                                                                                t,
+                                                                                idx
+                                                                            ) =>
+                                                                                idx !==
+                                                                                    i &&
+                                                                                t.gesys_gewerk_id ===
+                                                                                    option.gesys_gewerk_id
+                                                                        );
+                                                                    // keep this row's current pick, or anything not used by another
+                                                                    return (
+                                                                        option.gewerk_name ===
+                                                                            item.trade ||
+                                                                        !usedByAnotherRow
+                                                                    );
+                                                                }
+                                                            )
+                                                            .map((trade) => (
+                                                                <MenuItem
+                                                                    key={
+                                                                        trade.gesys_gewerk_id
+                                                                    }
+                                                                    value={
+                                                                        trade.gewerk_name
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        trade.gewerk_name
+                                                                    }
+                                                                </MenuItem>
+                                                            ))}
+                                                    </Select>
+                                                </FormControl>
+                                            </Grid>
+                                            <Grid item xs={5}>
+                                                <TextField
+                                                    fullWidth
+                                                    label={t.tradeCount}
+                                                    value={item.count}
                                                     onChange={(e) =>
                                                         updateTrade(
                                                             i,
-                                                            "trade",
+                                                            "count",
                                                             e.target.value
                                                         )
                                                     }
-                                                    sx={{ borderRadius: 4 }}
+                                                    sx={{
+                                                        "& .MuiOutlinedInput-root":
+                                                            { borderRadius: 4 },
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={2}>
+                                                <Button
+                                                    variant="outlined"
+                                                    color="error"
+                                                    onClick={() =>
+                                                        handleDeleteTrade(i)
+                                                    }
+                                                    sx={{
+                                                        borderRadius: 4,
+                                                        minWidth: "auto",
+                                                        p: 1,
+                                                    }}
                                                 >
-                                                    <MenuItem value="">
-                                                        <em>{t.selectTrade}</em>
-                                                    </MenuItem>
-                                                    {tradesOptions.map(
-                                                        (option, idx) => (
-                                                            <MenuItem
-                                                                key={idx}
-                                                                value={option}
-                                                            >
-                                                                {option}
-                                                            </MenuItem>
-                                                        )
-                                                    )}
-                                                </Select>
-                                            </FormControl>
+                                                    <DeleteIcon />
+                                                </Button>
+                                            </Grid>
                                         </Grid>
-                                        <Grid item xs={6}>
-                                            <TextField
-                                                fullWidth
-                                                label={t.tradeCount}
-                                                value={item.count}
-                                                onChange={(e) =>
-                                                    updateTrade(
-                                                        i,
-                                                        "count",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                sx={{
-                                                    "& .MuiOutlinedInput-root":
-                                                        { borderRadius: 4 },
-                                                }}
-                                            />
-                                        </Grid>
-                                    </Grid>
-                                ))}
+                                    ))
+                                )}
                                 <Button
                                     startIcon={<AddIcon />}
                                     onClick={addTrade}
@@ -1036,46 +1722,6 @@ export default function VendorOnboardingFlow() {
                             </Grid>
 
                             <Grid item xs={12}>
-                                <FormControl fullWidth>
-                                    <InputLabel id="regions-label">
-                                        {t.regions}
-                                    </InputLabel>
-                                    <Select
-                                        labelId="regions-label"
-                                        multiple
-                                        value={selectedRegions}
-                                        onChange={handleRegionChange}
-                                        input={
-                                            <OutlinedInput label={t.regions} />
-                                        }
-                                        renderValue={(selected) =>
-                                            selected.join(", ")
-                                        }
-                                        MenuProps={MenuProps}
-                                        sx={{ borderRadius: 4 }}
-                                    >
-                                        {germanRegions.map((region) => (
-                                            <MenuItem
-                                                key={region}
-                                                value={region}
-                                            >
-                                                <Checkbox
-                                                    checked={
-                                                        selectedRegions.indexOf(
-                                                            region
-                                                        ) > -1
-                                                    }
-                                                />
-                                                <ListItemText
-                                                    primary={region}
-                                                />
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-
-                            <Grid item xs={12}>
                                 <Typography
                                     variant="subtitle1"
                                     sx={{ fontWeight: 500, mb: 1 }}
@@ -1089,6 +1735,10 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.firstName}
                                     required
+                                    value={firstName}
+                                    onChange={(e) =>
+                                        setFirstName(e.target.value)
+                                    }
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -1102,6 +1752,10 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.lastName}
                                     required
+                                    value={lastName}
+                                    onChange={(e) =>
+                                        setLastName(e.target.value)
+                                    }
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -1115,10 +1769,15 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.email}
                                     type="email"
+                                    value={vendorEmail}
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
                                     required
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
+                                            backgroundColor: "#f5f5f5",
                                         },
                                     }}
                                 />
@@ -1129,32 +1788,8 @@ export default function VendorOnboardingFlow() {
                                     fullWidth
                                     label={t.phone}
                                     required
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: 4,
-                                        },
-                                    }}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label={t.role}
-                                    required
-                                    sx={{
-                                        "& .MuiOutlinedInput-root": {
-                                            borderRadius: 4,
-                                        },
-                                    }}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    fullWidth
-                                    label={t.department}
-                                    required
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 4,
@@ -1164,10 +1799,138 @@ export default function VendorOnboardingFlow() {
                             </Grid>
 
                             <Grid item xs={12}>
+                                <FormControl fullWidth>
+                                    <InputLabel id="role-label">
+                                        {t.role}
+                                    </InputLabel>
+                                    <Select
+                                        labelId="role-label"
+                                        value={selectedPosition}
+                                        label={t.role}
+                                        onChange={(e) =>
+                                            setSelectedPosition(e.target.value)
+                                        }
+                                        sx={{ borderRadius: 4 }}
+                                        disabled={loadingPositions}
+                                    >
+                                        <MenuItem value="">
+                                            <em>
+                                                {t.selectRole || "Select Role"}
+                                            </em>
+                                        </MenuItem>
+                                        {positions.map((position) => (
+                                            <MenuItem
+                                                key={position.position_id}
+                                                value={position.title}
+                                            >
+                                                {position.title}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    {loadingPositions && (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                mt: 1,
+                                            }}
+                                        >
+                                            <CircularProgress
+                                                size={16}
+                                                sx={{ mr: 1 }}
+                                            />
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {t.loadingPositions ||
+                                                    "Loading positions..."}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {positionsError && (
+                                        <Alert
+                                            severity="error"
+                                            sx={{ mt: 1, py: 0 }}
+                                        >
+                                            <Typography variant="caption">
+                                                {positionsError}
+                                            </Typography>
+                                        </Alert>
+                                    )}
+                                </FormControl>
+                            </Grid>
+
+                            {/* Regions Covered field */}
+                            <Grid item xs={12}>
+                                <FormControl fullWidth>
+                                    <InputLabel id="region-label">
+                                        {t.regions}
+                                    </InputLabel>
+                                    <Select
+                                        labelId="region-label"
+                                        value={selectedRegion}
+                                        label={t.regions}
+                                        onChange={handleRegionChange}
+                                        sx={{ borderRadius: 4 }}
+                                        disabled={loadingFederalStates}
+                                    >
+                                        <MenuItem value="">
+                                            <em>
+                                                {t.selectRegion ||
+                                                    "Select Region"}
+                                            </em>
+                                        </MenuItem>
+                                        {federalStates.map((state) => (
+                                            <MenuItem
+                                                key={state.id}
+                                                value={state.german_name}
+                                            >
+                                                {state.german_name} (
+                                                {state.english_name})
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    {loadingFederalStates && (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                mt: 1,
+                                            }}
+                                        >
+                                            <CircularProgress
+                                                size={16}
+                                                sx={{ mr: 1 }}
+                                            />
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {t.loadingRegions ||
+                                                    "Loading regions..."}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {federalStatesError && (
+                                        <Alert
+                                            severity="error"
+                                            sx={{ mt: 1, py: 0 }}
+                                        >
+                                            <Typography variant="caption">
+                                                {federalStatesError}
+                                            </Typography>
+                                        </Alert>
+                                    )}
+                                </FormControl>
+                            </Grid>
+
+                            <Grid item xs={12}>
                                 <Button
                                     variant="contained"
                                     fullWidth
-                                    onClick={next}
+                                    onClick={handleFormSubmit}
+                                    disabled={isSubmitting}
                                     sx={{
                                         mt: 2,
                                         py: 1.5,
@@ -1178,7 +1941,14 @@ export default function VendorOnboardingFlow() {
                                         },
                                     }}
                                 >
-                                    {t.continue}
+                                    {isSubmitting ? (
+                                        <CircularProgress
+                                            size={24}
+                                            color="inherit"
+                                        />
+                                    ) : (
+                                        t.continue
+                                    )}
                                 </Button>
                             </Grid>
                         </Grid>
@@ -1353,7 +2123,7 @@ export default function VendorOnboardingFlow() {
                         }}
                     >
                         <Typography variant="body2">
-                            {t.contractsSentTo}{" "}
+                            {t.contractsSentTo}
                             <Typography
                                 component="span"
                                 sx={{ fontWeight: 600, color: "#F57C00" }}
@@ -1361,7 +2131,7 @@ export default function VendorOnboardingFlow() {
                                 jonas.mueller@example.com
                             </Typography>
                             .<br />
-                            {t.pleaseSignAll}{" "}
+                            {t.pleaseSignAll}
                             <Typography
                                 component="span"
                                 sx={{ fontWeight: 600 }}
