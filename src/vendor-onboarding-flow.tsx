@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
     Box,
     Typography,
-    Paper,
     Alert,
     Stepper,
     Step,
@@ -100,25 +99,6 @@ interface RepresentativePosition {
     description: string | null;
     title: string;
 }
-
-const germanRegions = [
-    "Baden-Württemberg",
-    "Bayern",
-    "Berlin",
-    "Brandenburg",
-    "Bremen",
-    "Hamburg",
-    "Hessen",
-    "Mecklenburg-Vorpommern",
-    "Niedersachsen",
-    "Nordrhein-Westfalen",
-    "Rheinland-Pfalz",
-    "Saarland",
-    "Sachsen",
-    "Sachsen-Anhalt",
-    "Schleswig-Holstein",
-    "Thüringen",
-];
 
 // Document data
 const germanDocuments = [
@@ -231,11 +211,6 @@ const ActiveStep = styled(Box)(({ theme }) => ({
     fontWeight: 600,
 }));
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(3),
-    marginBottom: theme.spacing(3),
-}));
-
 const FormContainer = styled("form")(({ theme }) => ({
     marginTop: theme.spacing(3),
     marginBottom: theme.spacing(3),
@@ -273,17 +248,6 @@ const StatusIcon = styled(Box)(({ theme }) => ({
     fontSize: "0.75rem",
     color: theme.palette.text.secondary,
 }));
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-    PaperProps: {
-        style: {
-            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-            width: 250,
-        },
-    },
-};
 
 // Translation data
 const translations = {
@@ -406,9 +370,7 @@ export default function VendorOnboardingFlow() {
     const [legalForms, setLegalForms] = useState<LegalForm[]>([]);
     const [tradeOptions, setTradeOptions] = useState<Trade[]>([]);
     const [federalStates, setFederalStates] = useState<FederalState[]>([]);
-    const [vendorDetails, setVendorDetails] = useState<VendorDetail | null>(
-        null
-    );
+    const [_, setVendorDetails] = useState<VendorDetail | null>(null);
     const [vendors, setVendors] = useState<Vendor[]>([]);
     const [positions, setPositions] = useState<RepresentativePosition[]>([]);
 
@@ -425,7 +387,7 @@ export default function VendorOnboardingFlow() {
     // Error states
     const [countriesError, setCountriesError] = useState<string | null>(null);
     const [legalFormsError, setLegalFormsError] = useState<string | null>(null);
-    const [tradesError, setTradesError] = useState<string | null>(null);
+    const [, setTradesError] = useState<string | null>(null);
     const [federalStatesError, setFederalStatesError] = useState<string | null>(
         null
     );
@@ -790,7 +752,6 @@ export default function VendorOnboardingFlow() {
     // Check if any document is in "approved" status to enable Continue button
     const getDocumentStatus = () => {
         let approvedCount = 0;
-        const totalRequired = documentList.length;
 
         documentList.forEach((doc) => {
             if (doc.status === "approved") {
@@ -1337,7 +1298,7 @@ export default function VendorOnboardingFlow() {
                                                     companyName
                                             ) || null
                                         }
-                                        onChange={(event, newValue: any) => {
+                                        onChange={(_, newValue: any) => {
                                             setCompanyName(
                                                 newValue
                                                     ? newValue.company_name
