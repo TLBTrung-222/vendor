@@ -252,7 +252,7 @@ const StatusIcon = styled(Box)(({ theme }) => ({
 // Translation data
 const translations = {
     EN: {
-        welcome: "Welcome, Mr. Mustermann",
+        welcome: "Welcome",
         companyName: "SolarService GmbH",
         infoBox:
             "Please fill out the form below to provide your company's information and upload all required documents.",
@@ -326,8 +326,78 @@ const API_BASE_URL = "https://fastapi.gesys.automate-solutions.net/gesys";
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
-    // Hardcode vendor_id to 15
-    const VENDOR_ID = 20;
+    const [vendorId, setVendorId] = useState<number | null>(null);
+    const [isLoadingVendorId, setIsLoadingVendorId] = useState(false);
+    const [vendorIdError, setVendorIdError] = useState<string | null>(null);
+
+    // Add a new useEffect to get the vendor ID when the component loads
+    useEffect(() => {
+        const fetchVendorIdByEmail = async () => {
+            setIsLoadingVendorId(true);
+            setVendorIdError(null);
+
+            try {
+                // Get the email of the logged-in user
+                // For now, we'll check localStorage for an email or use a hardcoded value
+                const userEmail = localStorage.getItem("userEmail");
+
+                if (!userEmail) {
+                    throw new Error("User email not found");
+                }
+
+                // Now, get the vendor ID using the user's email
+                const response = await fetch(
+                    `https://fastapi.gesys.automate-solutions.net/gesys/vendors/contact-email?email=${encodeURIComponent(
+                        userEmail
+                    )}`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.data && result.data.vendor_id) {
+                    setVendorId(result.data.vendor_id);
+
+                    // Also set the vendor email
+                    if (result.data.email) {
+                        setVendorEmail(result.data.email);
+                    }
+
+                    // Set company name if available
+                    if (result.data.company_name) {
+                        setCompanyName(result.data.company_name);
+                    }
+
+                    // Initialize trades from vendor gewerk_ids
+                    if (
+                        result.data.gewerk_ids &&
+                        result.data.gewerk_ids.length > 0
+                    ) {
+                        const initialTrades = result.data.gewerk_ids.map(
+                            (gewerk: any) => ({
+                                trade: gewerk.gewerk_name,
+                                count: "",
+                                gesys_gewerk_id: gewerk.gesys_gewerk_id,
+                            })
+                        );
+                        setTrades(initialTrades);
+                    }
+                } else {
+                    throw new Error("Vendor ID not found in response");
+                }
+            } catch (error) {
+                console.error("Error fetching vendor ID by email:", error);
+                setVendorIdError("Failed to load vendor information");
+            } finally {
+                setIsLoadingVendorId(false);
+            }
+        };
+
+        fetchVendorIdByEmail();
+    }, []);
 
     // Form state variables
     const [step, setStep] = useState(1);
@@ -573,12 +643,14 @@ export default function VendorOnboardingFlow() {
 
     // Fetch vendor details for vendor_id 15
     useEffect(() => {
+        if (!vendorId) return;
+
         const fetchVendorDetails = async () => {
             setLoadingVendorDetails(true);
             setVendorDetailsError(null);
             try {
                 const response = await fetch(
-                    `${API_BASE_URL}/vendors?vendor_id=${VENDOR_ID}`
+                    `${API_BASE_URL}/vendors?vendor_id=${vendorId}`
                 );
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
@@ -622,7 +694,7 @@ export default function VendorOnboardingFlow() {
         };
 
         fetchVendorDetails();
-    }, [VENDOR_ID]);
+    }, [vendorId]);
 
     // Update legal form ID when legal form changes
     useEffect(() => {
@@ -765,6 +837,11 @@ export default function VendorOnboardingFlow() {
 
     // Handle form submission
     const handleFormSubmit = async () => {
+        // Check if vendorId is available
+        if (!vendorId) {
+            alert("Vendor ID not available. Please try again later.");
+            return;
+        }
         try {
             setIsSubmitting(true);
 
@@ -795,7 +872,7 @@ export default function VendorOnboardingFlow() {
 
             // Make the API call
             const response = await fetch(
-                `${API_BASE_URL}/vendors/update?vendor_id=${VENDOR_ID}`,
+                `${API_BASE_URL}/vendors/update?vendor_id=${vendorId}`,
                 {
                     method: "PUT",
                     headers: {
@@ -1159,6 +1236,49 @@ export default function VendorOnboardingFlow() {
             </Card>
         );
     };
+
+    // Add this at the beginning of your render function
+    if (isLoadingVendorId) {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100vh",
+                }}
+            >
+                <CircularProgress />
+                <Typography variant="h6" sx={{ ml: 2 }}>
+                    Loading vendor information...
+                </Typography>
+            </Box>
+        );
+    }
+
+    if (vendorIdError) {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100vh",
+                    flexDirection: "column",
+                }}
+            >
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {vendorIdError}
+                </Alert>
+                <Button
+                    variant="contained"
+                    onClick={() => (window.location.href = "/signin")}
+                >
+                    Return to Sign In
+                </Button>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ maxWidth: 800, margin: "0 auto", p: 2 }}>
