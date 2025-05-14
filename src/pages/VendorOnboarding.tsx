@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
     Box,
     Typography,
+    Paper,
     Alert,
     Stepper,
     Step,
@@ -78,6 +79,7 @@ interface VendorDetail {
     company_name: string | null;
     email: string;
     phone: string | null;
+    department: string | null;
     description: string | null;
     address: string | null;
     company_size: string | null;
@@ -252,7 +254,7 @@ const StatusIcon = styled(Box)(({ theme }) => ({
 // Translation data
 const translations = {
     EN: {
-        welcome: "Welcome",
+        welcome: "Welcome, Mr. Mustermann",
         companyName: "SolarService GmbH",
         infoBox:
             "Please fill out the form below to provide your company's information and upload all required documents.",
@@ -265,10 +267,6 @@ const translations = {
         taxId: "Tax ID",
         street: "Street",
         houseNr: "House Number",
-        selectRole: "Select Role",
-        loadingPositions: "Loading positions...",
-        selectRegion: "Select Region",
-        loadingRegions: "Loading regions...",
         apartmentNr: "Apartment Number",
         zip: "ZIP Code",
         city: "City",
@@ -318,6 +316,9 @@ const translations = {
         loadingLegalForms: "Loading legal forms...",
         loadingTrades: "Loading trades...",
         errorLoading: "Error loading data. Please try again.",
+        loadingRegions: "Loading regions...",
+        selectRole: "Select roles",
+        loadingPositions: "Loading positions...",
     },
 };
 
@@ -326,79 +327,6 @@ const API_BASE_URL = "https://fastapi.gesys.automate-solutions.net/gesys";
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
-    const [vendorId, setVendorId] = useState<number | null>(null);
-    const [isLoadingVendorId, setIsLoadingVendorId] = useState(false);
-    const [vendorIdError, setVendorIdError] = useState<string | null>(null);
-
-    // Add a new useEffect to get the vendor ID when the component loads
-    useEffect(() => {
-        const fetchVendorIdByEmail = async () => {
-            setIsLoadingVendorId(true);
-            setVendorIdError(null);
-
-            try {
-                // Get the email of the logged-in user
-                // For now, we'll check localStorage for an email or use a hardcoded value
-                const userEmail = localStorage.getItem("userEmail");
-
-                if (!userEmail) {
-                    throw new Error("User email not found");
-                }
-
-                // Now, get the vendor ID using the user's email
-                const response = await fetch(
-                    `https://fastapi.gesys.automate-solutions.net/gesys/vendors/contact-email?email=${encodeURIComponent(
-                        userEmail
-                    )}`
-                );
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                const result = await response.json();
-
-                if (result.data && result.data.vendor_id) {
-                    setVendorId(result.data.vendor_id);
-
-                    // Also set the vendor email
-                    if (result.data.email) {
-                        setVendorEmail(result.data.email);
-                    }
-
-                    // Set company name if available
-                    if (result.data.company_name) {
-                        setCompanyName(result.data.company_name);
-                    }
-
-                    // Initialize trades from vendor gewerk_ids
-                    if (
-                        result.data.gewerk_ids &&
-                        result.data.gewerk_ids.length > 0
-                    ) {
-                        const initialTrades = result.data.gewerk_ids.map(
-                            (gewerk: any) => ({
-                                trade: gewerk.gewerk_name,
-                                count: "",
-                                gesys_gewerk_id: gewerk.gesys_gewerk_id,
-                            })
-                        );
-                        setTrades(initialTrades);
-                    }
-                } else {
-                    throw new Error("Vendor ID not found in response");
-                }
-            } catch (error) {
-                console.error("Error fetching vendor ID by email:", error);
-                setVendorIdError("Failed to load vendor information");
-            } finally {
-                setIsLoadingVendorId(false);
-            }
-        };
-
-        fetchVendorIdByEmail();
-    }, []);
-
     // Form state variables
     const [step, setStep] = useState(1);
     const [language, setLanguage] = useState("EN");
@@ -425,10 +353,6 @@ export default function VendorOnboardingFlow() {
     const [trades, setTrades] = useState<
         { trade: string; count: string; gesys_gewerk_id?: number }[]
     >([]);
-    const [selectedRegion, setSelectedRegion] = useState<string>("");
-    const [selectedRegionId, setSelectedRegionId] = useState<number | null>(
-        null
-    );
     const [selectedPosition, setSelectedPosition] = useState("");
     const [selectedPositionId, setSelectedPositionId] = useState<number | null>(
         null
@@ -440,7 +364,9 @@ export default function VendorOnboardingFlow() {
     const [legalForms, setLegalForms] = useState<LegalForm[]>([]);
     const [tradeOptions, setTradeOptions] = useState<Trade[]>([]);
     const [federalStates, setFederalStates] = useState<FederalState[]>([]);
-    const [_, setVendorDetails] = useState<VendorDetail | null>(null);
+    const [vendorDetails, setVendorDetails] = useState<VendorDetail | null>(
+        null
+    );
     const [vendors, setVendors] = useState<Vendor[]>([]);
     const [positions, setPositions] = useState<RepresentativePosition[]>([]);
 
@@ -457,7 +383,7 @@ export default function VendorOnboardingFlow() {
     // Error states
     const [countriesError, setCountriesError] = useState<string | null>(null);
     const [legalFormsError, setLegalFormsError] = useState<string | null>(null);
-    const [, setTradesError] = useState<string | null>(null);
+    const [tradesError, setTradesError] = useState<string | null>(null);
     const [federalStatesError, setFederalStatesError] = useState<string | null>(
         null
     );
@@ -466,6 +392,12 @@ export default function VendorOnboardingFlow() {
     );
     const [positionsError, setPositionsError] = useState<string | null>(null);
     const [showVendorDropdown, setShowVendorDropdown] = useState(false);
+    // Add this near your other state declarations
+    const [selectedRegions, setSelectedRegions] = useState<number[]>([]);
+    // Add this near your other state declarations
+    const [vendorId, setVendorId] = useState<number | null>(null);
+    const [isLoadingVendorId, setIsLoadingVendorId] = useState(false);
+    const [vendorIdError, setVendorIdError] = useState<string | null>(null);
 
     // Fetch countries from API
     useEffect(() => {
@@ -546,31 +478,6 @@ export default function VendorOnboardingFlow() {
         fetchTrades();
     }, []);
 
-    // Fetch vendors
-    useEffect(() => {
-        const fetchVendors = async () => {
-            setIsLoadingVendors(true);
-            try {
-                const response = await fetch(`${API_BASE_URL}/vendors`);
-                const result = await response.json();
-                if (result.data) {
-                    setVendors(
-                        result.data.map((vendor: any) => ({
-                            vendor_id: vendor.vendor_id,
-                            company_name: vendor.company_name,
-                        }))
-                    );
-                }
-            } catch (error) {
-                console.error("Error fetching vendors:", error);
-            } finally {
-                setIsLoadingVendors(false);
-            }
-        };
-
-        fetchVendors();
-    }, []);
-
     // Handle dropdown closing
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -641,60 +548,153 @@ export default function VendorOnboardingFlow() {
         fetchFederalStates();
     }, []);
 
-    // Fetch vendor details for vendor_id 15
+    // Fetch vendors to get all companies name
     useEffect(() => {
-        if (!vendorId) return;
-
-        const fetchVendorDetails = async () => {
-            setLoadingVendorDetails(true);
-            setVendorDetailsError(null);
+        const fetchVendors = async () => {
+            setIsLoadingVendors(true);
             try {
+                const response = await fetch(`${API_BASE_URL}/vendors`);
+                const result = await response.json();
+                if (result.data) {
+                    setVendors(
+                        result.data.map((vendor: any) => ({
+                            vendor_id: vendor.vendor_id,
+                            company_name: vendor.company_name,
+                        }))
+                    );
+                }
+            } catch (error) {
+                console.error("Error fetching vendors:", error);
+            } finally {
+                setIsLoadingVendors(false);
+            }
+        };
+
+        fetchVendors();
+    }, []);
+
+    // Replace the existing useEffect for fetching vendor details with this:
+    useEffect(() => {
+        const fetchVendorIdByEmail = async () => {
+            setIsLoadingVendorId(true);
+            setVendorIdError(null);
+
+            try {
+                // Get the email of the logged-in user
+                const userEmail = localStorage.getItem("userEmail");
+
+                if (!userEmail) {
+                    throw new Error("User email not found");
+                }
+
+                // Now, get the vendor ID using the user's email
                 const response = await fetch(
-                    `${API_BASE_URL}/vendors?vendor_id=${vendorId}`
+                    `${API_BASE_URL}/vendors/contact-email?email=${encodeURIComponent(
+                        userEmail
+                    )}`
                 );
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
+
                 const result = await response.json();
-                if (result.data && result.data.length > 0) {
-                    const vendorData = result.data[0];
-                    setVendorDetails(vendorData);
+                console.log("Vendor data:", result);
 
-                    // Set vendor email
-                    if (vendorData.email) {
-                        setVendorEmail(vendorData.email);
+                if (result.data) {
+                    // Set vendor ID
+                    if (result.data.vendor_id) {
+                        setVendorId(result.data.vendor_id);
                     }
 
-                    // Set company name if available
-                    if (vendorData.company_name) {
-                        setCompanyName(vendorData.company_name);
+                    // Prefill form fields with vendor data
+                    if (result.data.company_name)
+                        setCompanyName(result.data.company_name);
+                    if (result.data.tax_id) setTaxId(result.data.tax_id);
+                    if (result.data.street) setStreet(result.data.street);
+                    if (result.data.house_number)
+                        setHouseNumber(result.data.house_number);
+                    if (result.data.apartment_number)
+                        setApartmentNumber(result.data.apartment_number);
+                    if (result.data.zip_code) setZipCode(result.data.zip_code);
+                    if (result.data.city) setCity(result.data.city);
+                    if (result.data.website_url)
+                        setWebsite(result.data.website_url);
+
+                    // Set country and country ID
+                    if (result.data.country_id) {
+                        setCountryId(result.data.country_id);
+                        // Find country name from countries array
+                        const countryObj = countries.find(
+                            (c) => c.country_id === result.data.country_id
+                        );
+                        if (countryObj) {
+                            setCountry(countryObj.name);
+                        } else if (result.data.country_name) {
+                            setCountry(result.data.country_name);
+                        }
                     }
 
-                    // Initialize trades from vendor gewerk_ids
+                    // Set legal form ID
+                    if (result.data.legal_form_id) {
+                        setLegalFormId(result.data.legal_form_id);
+                        // Find legal form from ID (will be populated after country is set)
+                    }
+
+                    // Set federal states (regions)
                     if (
-                        vendorData.gewerk_ids &&
-                        vendorData.gewerk_ids.length > 0
+                        result.data.federal_state_ids &&
+                        result.data.federal_state_ids.length > 0
                     ) {
-                        const initialTrades = vendorData.gewerk_ids.map(
+                        setSelectedRegions(result.data.federal_state_ids);
+                    }
+
+                    // Set contact user information
+                    if (result.data.contact_user) {
+                        if (result.data.contact_user.first_name)
+                            setFirstName(result.data.contact_user.first_name);
+                        if (result.data.contact_user.last_name)
+                            setLastName(result.data.contact_user.last_name);
+                        if (result.data.contact_user.email)
+                            setVendorEmail(result.data.contact_user.email);
+                        if (result.data.contact_user.phone_number)
+                            setPhone(result.data.contact_user.phone_number);
+
+                        // Set role
+                        if (
+                            result.data.contact_user.role &&
+                            result.data.contact_user.role.title
+                        ) {
+                            setSelectedPosition(
+                                result.data.contact_user.role.title
+                            );
+                        }
+                    }
+
+                    // Initialize trades from vendor gewerks
+                    if (result.data.gewerks && result.data.gewerks.length > 0) {
+                        const initialTrades = result.data.gewerks.map(
                             (gewerk: any) => ({
-                                trade: gewerk.gewerk_name,
-                                count: "",
-                                gesys_gewerk_id: gewerk.gesys_gewerk_id,
+                                trade: gewerk.name,
+                                count: gewerk.employee_number.toString(),
+                                gesys_gewerk_id: gewerk.gewerk_id,
                             })
                         );
                         setTrades(initialTrades);
                     }
+                } else {
+                    throw new Error("Vendor data not found in response");
                 }
             } catch (error) {
-                console.error("Error fetching vendor details:", error);
-                setVendorDetailsError("Failed to load vendor details");
+                console.error("Error fetching vendor data by email:", error);
+                setVendorIdError("Failed to load vendor information");
             } finally {
-                setLoadingVendorDetails(false);
+                setIsLoadingVendorId(false);
             }
         };
 
-        fetchVendorDetails();
-    }, [vendorId]);
+        fetchVendorIdByEmail();
+    }, [countries]);
 
     // Update legal form ID when legal form changes
     useEffect(() => {
@@ -725,25 +725,6 @@ export default function VendorOnboardingFlow() {
 
     const next = () => setStep(step + 1);
     const back = () => setStep(step - 1);
-
-    // Handle region change
-    const handleRegionChange = (event: SelectChangeEvent) => {
-        const selectedRegionName = event.target.value;
-        setSelectedRegion(selectedRegionName);
-
-        // Find the region ID from the selected region name
-        const selectedRegion = federalStates.find(
-            (state) =>
-                state.german_name === selectedRegionName ||
-                state.english_name === selectedRegionName
-        );
-
-        if (selectedRegion) {
-            setSelectedRegionId(selectedRegion.id);
-        } else {
-            setSelectedRegionId(null);
-        }
-    };
 
     // Handle trade deletion
     const handleDeleteTrade = (index: number) => {
@@ -824,6 +805,7 @@ export default function VendorOnboardingFlow() {
     // Check if any document is in "approved" status to enable Continue button
     const getDocumentStatus = () => {
         let approvedCount = 0;
+        const totalRequired = documentList.length;
 
         documentList.forEach((doc) => {
             if (doc.status === "approved") {
@@ -845,27 +827,28 @@ export default function VendorOnboardingFlow() {
         try {
             setIsSubmitting(true);
 
-            // Prepare the request body using state variables
+            // Transform trades to the new format
+            const formattedTrades = trades
+                .filter((t) => t.gesys_gewerk_id && t.count)
+                .map((t) => ({
+                    gewerk_id: t.gesys_gewerk_id,
+                    employee_number: Number.parseInt(t.count) || 0,
+                }));
+
+            // Prepare the request body using state variables with the new format
             const requestBody = {
                 company_name: companyName,
                 street: street,
                 zip_code: zipCode,
-                federal_state_id: selectedRegionId,
-                gewerk_ids: trades
-                    .filter((t) => t.gesys_gewerk_id)
-                    .map((t) => t.gesys_gewerk_id),
-                legal_form_id: legalFormId || 0,
+                federal_state_ids: selectedRegions, // Use the array of selected region IDs
+                tax_id: taxId || "",
+                trades: formattedTrades,
+                legal_form_id: legalFormId || 1,
                 house_number: houseNumber,
+                apartment_number: apartmentNumber || "",
                 city: city,
                 country_id: countryId,
-                website: website,
-                // first_name: firstName,
-                // last_name: lastName,
-                phone: phone,
-                role_id: selectedPositionId || 0,
-                department: "",
-                description: "",
-                company_size: 0,
+                website_url: website || "", // Note the name change from website to website_url
             };
 
             console.log("Request body:", requestBody);
@@ -1237,49 +1220,6 @@ export default function VendorOnboardingFlow() {
         );
     };
 
-    // Add this at the beginning of your render function
-    if (isLoadingVendorId) {
-        return (
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100vh",
-                }}
-            >
-                <CircularProgress />
-                <Typography variant="h6" sx={{ ml: 2 }}>
-                    Loading vendor information...
-                </Typography>
-            </Box>
-        );
-    }
-
-    if (vendorIdError) {
-        return (
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100vh",
-                    flexDirection: "column",
-                }}
-            >
-                <Alert severity="error" sx={{ mb: 2 }}>
-                    {vendorIdError}
-                </Alert>
-                <Button
-                    variant="contained"
-                    onClick={() => (window.location.href = "/signin")}
-                >
-                    Return to Sign In
-                </Button>
-            </Box>
-        );
-    }
-
     return (
         <Box sx={{ maxWidth: 800, margin: "0 auto", p: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
@@ -1418,7 +1358,7 @@ export default function VendorOnboardingFlow() {
                                                     companyName
                                             ) || null
                                         }
-                                        onChange={(_, newValue: any) => {
+                                        onChange={(event, newValue: any) => {
                                             setCompanyName(
                                                 newValue
                                                     ? newValue.company_name
@@ -1806,6 +1746,106 @@ export default function VendorOnboardingFlow() {
                                 </Button>
                             </Grid>
 
+                            {/* Regions Covered field - Multiple Select */}
+                            <Grid item xs={12}>
+                                <Typography
+                                    variant="subtitle1"
+                                    sx={{ fontWeight: 500, mb: 1 }}
+                                >
+                                    {t.regions}
+                                </Typography>
+                                <FormControl fullWidth>
+                                    <InputLabel id="regions-label">
+                                        {t.regions}
+                                    </InputLabel>
+                                    <Select
+                                        labelId="regions-label"
+                                        multiple
+                                        value={selectedRegions.map((id) =>
+                                            id.toString()
+                                        )}
+                                        label={t.regions}
+                                        onChange={(e) => {
+                                            const selectedValues = e.target
+                                                .value as string[];
+                                            setSelectedRegions(
+                                                selectedValues.map((val) =>
+                                                    Number.parseInt(val)
+                                                )
+                                            );
+                                        }}
+                                        renderValue={(selected) => {
+                                            const selectedNames = selected
+                                                .map((id) => {
+                                                    const state =
+                                                        federalStates.find(
+                                                            (s) =>
+                                                                s.id ===
+                                                                Number.parseInt(
+                                                                    id as string
+                                                                )
+                                                        );
+                                                    return state
+                                                        ? state.german_name
+                                                        : "";
+                                                })
+                                                .filter(Boolean);
+                                            return selectedNames.join(", ");
+                                        }}
+                                        sx={{ borderRadius: 4 }}
+                                        disabled={loadingFederalStates}
+                                    >
+                                        {federalStates.map((state) => (
+                                            <MenuItem
+                                                key={state.id}
+                                                value={state.id.toString()}
+                                            >
+                                                <Checkbox
+                                                    checked={selectedRegions.includes(
+                                                        state.id
+                                                    )}
+                                                />
+                                                <Typography>
+                                                    {state.german_name} (
+                                                    {state.english_name})
+                                                </Typography>
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    {loadingFederalStates && (
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                mt: 1,
+                                            }}
+                                        >
+                                            <CircularProgress
+                                                size={16}
+                                                sx={{ mr: 1 }}
+                                            />
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {t.loadingRegions ||
+                                                    "Loading regions..."}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {federalStatesError && (
+                                        <Alert
+                                            severity="error"
+                                            sx={{ mt: 1, py: 0 }}
+                                        >
+                                            <Typography variant="caption">
+                                                {federalStatesError}
+                                            </Typography>
+                                        </Alert>
+                                    )}
+                                </FormControl>
+                            </Grid>
+
                             <Grid item xs={12}>
                                 <Typography
                                     variant="subtitle1"
@@ -1940,70 +1980,6 @@ export default function VendorOnboardingFlow() {
                                         >
                                             <Typography variant="caption">
                                                 {positionsError}
-                                            </Typography>
-                                        </Alert>
-                                    )}
-                                </FormControl>
-                            </Grid>
-
-                            {/* Regions Covered field */}
-                            <Grid item xs={12}>
-                                <FormControl fullWidth>
-                                    <InputLabel id="region-label">
-                                        {t.regions}
-                                    </InputLabel>
-                                    <Select
-                                        labelId="region-label"
-                                        value={selectedRegion}
-                                        label={t.regions}
-                                        onChange={handleRegionChange}
-                                        sx={{ borderRadius: 4 }}
-                                        disabled={loadingFederalStates}
-                                    >
-                                        <MenuItem value="">
-                                            <em>
-                                                {t.selectRegion ||
-                                                    "Select Region"}
-                                            </em>
-                                        </MenuItem>
-                                        {federalStates.map((state) => (
-                                            <MenuItem
-                                                key={state.id}
-                                                value={state.german_name}
-                                            >
-                                                {state.german_name} (
-                                                {state.english_name})
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                    {loadingFederalStates && (
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                mt: 1,
-                                            }}
-                                        >
-                                            <CircularProgress
-                                                size={16}
-                                                sx={{ mr: 1 }}
-                                            />
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                            >
-                                                {t.loadingRegions ||
-                                                    "Loading regions..."}
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                    {federalStatesError && (
-                                        <Alert
-                                            severity="error"
-                                            sx={{ mt: 1, py: 0 }}
-                                        >
-                                            <Typography variant="caption">
-                                                {federalStatesError}
                                             </Typography>
                                         </Alert>
                                     )}

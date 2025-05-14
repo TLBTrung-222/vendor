@@ -42,6 +42,7 @@ export default function App() {
         // Remove tokens from localStorage
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userEmail");
         setIsAuthenticated(false);
     };
 
