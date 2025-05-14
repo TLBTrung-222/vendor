@@ -343,7 +343,7 @@ export default function VendorOnboardingFlow() {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [phone, setPhone] = useState("");
-    const [vendorEmail, setVendorEmail] = useState("huynhlamduylcd@gmail.com");
+    const [vendorEmail, setVendorEmail] = useState("");
 
     // API data states
     const [country, setCountry] = useState("");
@@ -850,8 +850,6 @@ export default function VendorOnboardingFlow() {
                 country_id: countryId,
                 website_url: website || "", // Note the name change from website to website_url
             };
-
-            console.log("Request body:", requestBody);
 
             // Make the API call
             const response = await fetch(
@@ -1990,7 +1988,7 @@ export default function VendorOnboardingFlow() {
                                 <Button
                                     variant="contained"
                                     fullWidth
-                                    onClick={handleFormSubmit}
+                                    onClick={handleFormSubmit} // TODO: change to handleSubmit function
                                     disabled={isSubmitting}
                                     sx={{
                                         mt: 2,
