@@ -827,9 +827,6 @@ export default function VendorOnboardingFlow() {
                     "expired_at",
                     new Date(expiryDate).toISOString()
                 );
-            } else {
-                // Explicitly set to null when no date is provided
-                formData.append("expired_at", "null");
             }
 
             const response = await fetch(
