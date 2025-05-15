@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
     Box,
     Typography,
-    Paper,
     Alert,
     Stepper,
     Step,
@@ -25,17 +24,16 @@ import {
     Autocomplete,
     type SelectChangeEvent,
     CircularProgress,
+    Divider,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
-import InfoIcon from "@mui/icons-material/Info";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
-// Add this import at the top of the file with other imports
 import DeleteIcon from "@mui/icons-material/Delete";
 
 // Types for API responses
@@ -102,76 +100,31 @@ interface RepresentativePosition {
     title: string;
 }
 
-// Document data
-const germanDocuments = [
-    {
-        label: "Gewerbeanmeldung",
-        description: "Business registration issued in Germany.",
-        status: "uploaded",
-        filename: "gewerbeanmeldung.pdf",
-        note: null,
-    },
-    {
-        label: "Versicherungsnachweis (Betriebshaftpflicht)",
-        description: "Commercial liability insurance certificate.",
-        status: "not_uploaded",
-        filename: null,
-        note: null,
-    },
-    {
-        label: "§13b Freistellungsbescheinigung",
-        description: "German tax exemption certificate §13b.",
-        status: "approved",
-        filename: "freistellung-13b.pdf",
-        note: "Verified on 01.05.2025",
-    },
-    {
-        label: "§48b Freistellungsbescheinigung",
-        description: "German tax exemption certificate §48b.",
-        status: "denied",
-        filename: "freistellung-48b.pdf",
-        note: "Document outdated (expired March 2024).",
-    },
-    {
-        label: "Handwerkskarte (bei Meistergewerken)",
-        description: "Craft license required for regulated trades.",
-        status: "pending",
-        filename: "handwerkskarte.pdf",
-        note: null,
-    },
-];
+interface DocumentType {
+    type_id: number;
+    title: string;
+    mandatory: boolean;
+    category_id: number;
+}
 
-const foreignDocuments = [
-    {
-        label: "EU VAT Certificate",
-        description: "EU-wide value added tax registration certificate.",
-        status: "pending",
-        filename: "sample-vat.pdf",
-        note: null,
-    },
-    {
-        label: "Declaration of Posted Workers (A1 Certificate)",
-        description: "A1 form issued by local authority for cross-border work.",
-        status: "denied",
-        filename: "posted-workers.pdf",
-        note: "Document missing official stamp.",
-    },
-    {
-        label: "Proof of Social Security Registration",
-        description:
-            "Proof workers are registered under EU/local social insurance.",
-        status: "not_uploaded",
-        filename: null,
-        note: null,
-    },
-    {
-        label: "Business Registration Extract/Certificate",
-        description: "Proof of official registration in country of origin.",
-        status: "approved",
-        filename: "registration-extract.pdf",
-        note: "Verified on 01.05.2025",
-    },
-];
+interface DocumentStatus {
+    title: string;
+    status_id: number;
+    description: string;
+}
+
+interface Document {
+    document_id: number;
+    type_id: number;
+    description: string | null;
+    expired_at: string | null;
+    vendor_id: number;
+    status_id: number;
+    name: string;
+    url: string;
+    document_status: DocumentStatus;
+    document_types: DocumentType;
+}
 
 // Contract data
 const contracts = [
@@ -327,11 +280,46 @@ const API_BASE_URL = "https://fastapi.gesys.automate-solutions.net/gesys";
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
-    // Form state variables
-    const [step, setStep] = useState(1);
+    /* -------------------------------------------------------------------------- */
+    /*                        States for uploading document                       */
+    /* -------------------------------------------------------------------------- */
+    const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+    const [vendorDocuments, setVendorDocuments] = useState<Document[]>([]);
+    const [loadingDocTypes, setLoadingDocTypes] = useState(false);
+    const [loadingDocuments, setLoadingDocuments] = useState(false);
+    const [uploadingDoc, setUploadingDoc] = useState<Record<number, boolean>>(
+        {}
+    );
+    const [documentError, setDocumentError] = useState<string | null>(null);
+    const [uploadSuccess, setUploadSuccess] = useState<Record<number, boolean>>(
+        {}
+    );
+    const [selectedFiles, setSelectedFiles] = useState<
+        Record<number, File | null>
+    >({});
+    const [documentNames, setDocumentNames] = useState<Record<number, string>>(
+        {}
+    );
+    const [expiryDates, setExpiryDates] = useState<Record<number, string>>({});
+
+    /* -------------------------------------------------------------------------- */
+    /*                           // Form state variables                          */
+    /* -------------------------------------------------------------------------- */
+    const [step, setStep] = useState(() => {
+        const savedStep = localStorage.getItem("vendorOnboardingStep");
+        return savedStep ? parseInt(savedStep, 10) : 1;
+    });
     const [language, setLanguage] = useState("EN");
 
-    // Form field states
+    // Create a custom function to update step that also saves to localStorage
+    const updateStep = (newStep: number) => {
+        setStep(newStep);
+        localStorage.setItem("vendorOnboardingStep", newStep.toString());
+    };
+
+    /* -------------------------------------------------------------------------- */
+    /*                            // Form field states                            */
+    /* -------------------------------------------------------------------------- */
     const [companyName, setCompanyName] = useState("");
     const [taxId, setTaxId] = useState("");
     const [street, setStreet] = useState("");
@@ -345,7 +333,9 @@ export default function VendorOnboardingFlow() {
     const [phone, setPhone] = useState("");
     const [vendorEmail, setVendorEmail] = useState("");
 
-    // API data states
+    /* -------------------------------------------------------------------------- */
+    /*                             // API data states                             */
+    /* -------------------------------------------------------------------------- */
     const [country, setCountry] = useState("");
     const [countryId, setCountryId] = useState<number | null>(null);
     const [legalForm, setLegalForm] = useState("");
@@ -398,6 +388,493 @@ export default function VendorOnboardingFlow() {
     const [vendorId, setVendorId] = useState<number | null>(null);
     const [isLoadingVendorId, setIsLoadingVendorId] = useState(false);
     const [vendorIdError, setVendorIdError] = useState<string | null>(null);
+
+    /* -------------------------------------------------------------------------- */
+    /*                                For screen 2                                */
+    /* -------------------------------------------------------------------------- */
+    // Fetch document types based on country ID
+    useEffect(() => {
+        if (!countryId || step !== 2) return;
+
+        const fetchDocumentTypes = async () => {
+            setLoadingDocTypes(true);
+            setDocumentError(null);
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/documents/document-types/${countryId}`
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.data) {
+                    setDocumentTypes(result.data);
+                }
+            } catch (error) {
+                console.error("Error fetching document types:", error);
+                setDocumentError("Failed to load required documents");
+            } finally {
+                setLoadingDocTypes(false);
+            }
+        };
+
+        fetchDocumentTypes();
+    }, [countryId, step]);
+
+    // Render document card with API data
+    const renderDocumentCard = (docType: DocumentType) => {
+        const { type_id, title, mandatory } = docType;
+        const document = getDocumentForType(type_id);
+        const status = document?.document_status?.title || "Not Uploaded";
+        const fileName = document?.name || "";
+        const url = document?.url || "";
+        const isUploading = uploadingDoc[type_id] || false;
+        const showSuccess = uploadSuccess[type_id] || false;
+        const selectedFile = selectedFiles[type_id];
+        const docName = documentNames[type_id] || "";
+        const expiryDate = expiryDates[type_id] || "";
+
+        // Get styling based on status
+        const getStatusStyles = () => {
+            switch (status.toLowerCase()) {
+                case "approved":
+                    return {
+                        bgcolor: "#f1f8e9",
+                        border: "1px solid #c5e1a5",
+                        icon: <CheckCircleIcon sx={{ color: "#2e7d32" }} />,
+                        statusLabel: "Approved",
+                        statusColor: "#2e7d32",
+                        buttonDisabled: true,
+                    };
+                case "denied":
+                case "rejected":
+                    return {
+                        bgcolor: "#ffebee",
+                        border: "1px solid #ffcdd2",
+                        icon: <ErrorIcon sx={{ color: "#c62828" }} />,
+                        statusLabel: "Denied",
+                        statusColor: "#c62828",
+                        buttonDisabled: false,
+                    };
+                case "pending":
+                    return {
+                        bgcolor: "#e3f2fd",
+                        border: "1px solid #bbdefb",
+                        icon: <HourglassEmptyIcon sx={{ color: "#1565c0" }} />,
+                        statusLabel: "In Review",
+                        statusColor: "#1565c0",
+                        buttonDisabled: false,
+                    };
+                default:
+                    return {
+                        bgcolor: "#f5f5f5",
+                        border: "1px solid #e0e0e0",
+                        icon: null,
+                        statusLabel: "Not Uploaded",
+                        statusColor: "#757575",
+                        buttonDisabled: false,
+                    };
+            }
+        };
+
+        const styles = getStatusStyles();
+
+        return (
+            <Card
+                key={type_id}
+                variant="outlined"
+                sx={{
+                    bgcolor: styles.bgcolor,
+                    border: styles.border,
+                    borderRadius: 4,
+                }}
+            >
+                <CardContent sx={{ p: 3 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            mb: 1,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                            }}
+                        >
+                            <Checkbox
+                                checked={status.toLowerCase() === "approved"}
+                                disabled={status.toLowerCase() !== "approved"}
+                                sx={{
+                                    color:
+                                        status.toLowerCase() === "approved"
+                                            ? "#2e7d32"
+                                            : "#9e9e9e",
+                                    "&.Mui-checked": { color: "#2e7d32" },
+                                }}
+                            />
+                            <Box>
+                                <Typography
+                                    variant="subtitle1"
+                                    sx={{ fontWeight: 500, color: "#424242" }}
+                                >
+                                    {title} {mandatory && " *"}
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                >
+                                    {mandatory
+                                        ? "Required document"
+                                        : "Optional document"}
+                                </Typography>
+                            </Box>
+                        </Box>
+                        <Chip
+                            label={styles.statusLabel}
+                            sx={{
+                                color: styles.statusColor,
+                                bgcolor: "transparent",
+                                border: `1px solid ${styles.statusColor}`,
+                                fontWeight: 500,
+                            }}
+                        />
+                    </Box>
+
+                    {document && (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                mt: 1,
+                                mb: 1,
+                                gap: 0.5,
+                            }}
+                        >
+                            <InsertDriveFileIcon
+                                fontSize="small"
+                                color="action"
+                            />
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                    textDecoration: url ? "underline" : "none",
+                                    cursor: url ? "pointer" : "default",
+                                    "&:hover": {
+                                        color: url
+                                            ? "primary.main"
+                                            : "text.secondary",
+                                    },
+                                }}
+                                onClick={() =>
+                                    url && window.open(url, "_blank")
+                                }
+                            >
+                                {fileName} {url && "(Click to view)"}
+                            </Typography>
+                        </Box>
+                    )}
+
+                    {document?.document_status?.description && (
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color:
+                                    status.toLowerCase() === "denied" ||
+                                    status.toLowerCase() === "rejected"
+                                        ? "#c62828"
+                                        : "text.secondary",
+                                display: "block",
+                                mt: 0.5,
+                                mb: 1,
+                            }}
+                        >
+                            {document.document_status.description}
+                        </Typography>
+                    )}
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                        {document ? "Update document" : "Upload new document"}
+                    </Typography>
+
+                    <Box sx={{ mb: 1.5 }}>
+                        <TextField
+                            fullWidth
+                            label="Document name"
+                            margin="dense"
+                            value={docName}
+                            onChange={(e) =>
+                                handleDocumentNameChange(
+                                    type_id,
+                                    e.target.value
+                                )
+                            }
+                            sx={{ mb: 1 }}
+                        />
+
+                        <TextField
+                            fullWidth
+                            label="Expiry date (if applicable)"
+                            type="date"
+                            margin="dense"
+                            value={expiryDate}
+                            onChange={(e) =>
+                                handleExpiryDateChange(type_id, e.target.value)
+                            }
+                            InputLabelProps={{ shrink: true }}
+                            sx={{ mb: 1 }}
+                        />
+
+                        <label htmlFor={`file-upload-${type_id}`}>
+                            <UploadInput
+                                id={`file-upload-${type_id}`}
+                                type="file"
+                                accept="application/pdf"
+                                onChange={(e) => {
+                                    const files = (e.target as HTMLInputElement)
+                                        .files;
+                                    if (files && files.length > 0) {
+                                        handleFileSelection(type_id, files[0]);
+                                    }
+                                }}
+                            />
+                            <CustomFileInput>
+                                <Box
+                                    sx={{
+                                        flexGrow: 1,
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
+                                    {selectedFile
+                                        ? selectedFile.name
+                                        : "No file chosen"}
+                                </Box>
+                                <Button
+                                    component="span"
+                                    variant="contained"
+                                    size="small"
+                                    sx={{
+                                        ml: 1,
+                                        bgcolor: "#f5f5f5",
+                                        color: "#424242",
+                                        boxShadow: "none",
+                                        "&:hover": {
+                                            bgcolor: "#e0e0e0",
+                                            boxShadow: "none",
+                                        },
+                                    }}
+                                >
+                                    Choose file (PDF)
+                                </Button>
+                            </CustomFileInput>
+                        </label>
+                    </Box>
+
+                    <Box sx={{ position: "relative" }}>
+                        <Button
+                            variant="contained"
+                            size="small"
+                            disabled={
+                                isUploading ||
+                                !selectedFile ||
+                                styles.buttonDisabled
+                            }
+                            onClick={() => handleDocumentUpload(type_id)}
+                            sx={{
+                                bgcolor: styles.buttonDisabled
+                                    ? "#bdbdbd"
+                                    : "#F57C00",
+                                color: "#fff",
+                                "&:hover": {
+                                    bgcolor: styles.buttonDisabled
+                                        ? "#bdbdbd"
+                                        : "#EF6C00",
+                                },
+                                borderRadius: 4,
+                                textTransform: "none",
+                                px: 2,
+                            }}
+                        >
+                            {isUploading ? (
+                                <CircularProgress
+                                    size={24}
+                                    sx={{ color: "#fff" }}
+                                />
+                            ) : showSuccess ? (
+                                "Uploaded!"
+                            ) : (
+                                "Upload Document"
+                            )}
+                        </Button>
+                    </Box>
+
+                    {mandatory && (
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                display: "block",
+                                mt: 2,
+                                color: "text.secondary",
+                            }}
+                        >
+                            * This document is mandatory for vendor verification
+                        </Typography>
+                    )}
+                </CardContent>
+            </Card>
+        );
+    };
+
+    // Fetch vendor's uploaded documents
+    useEffect(() => {
+        if (!vendorId || step !== 2) return;
+
+        const fetchVendorDocuments = async () => {
+            setLoadingDocuments(true);
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const result = await response.json();
+                if (result.data) {
+                    setVendorDocuments(result.data);
+                }
+            } catch (error) {
+                console.error("Error fetching vendor documents:", error);
+            } finally {
+                setLoadingDocuments(false);
+            }
+        };
+
+        fetchVendorDocuments();
+    }, [vendorId, step]);
+
+    // Handle file selection
+    const handleFileSelection = (typeId: number, file: File | null) => {
+        setSelectedFiles((prev) => ({
+            ...prev,
+            [typeId]: file,
+        }));
+    };
+
+    // Handle document name change
+    const handleDocumentNameChange = (typeId: number, name: string) => {
+        setDocumentNames((prev) => ({
+            ...prev,
+            [typeId]: name,
+        }));
+    };
+
+    // Handle expiry date change
+    const handleExpiryDateChange = (typeId: number, date: string) => {
+        setExpiryDates((prev) => ({
+            ...prev,
+            [typeId]: date,
+        }));
+    };
+
+    // Handle file upload
+    const handleDocumentUpload = async (typeId: number) => {
+        if (!vendorId) {
+            alert("Vendor ID not available. Please try again later.");
+            return;
+        }
+
+        const file = selectedFiles[typeId];
+        const name = documentNames[typeId] || file?.name || "Unnamed document";
+        const expiryDate = expiryDates[typeId] || null;
+
+        if (!file) {
+            alert("Please select a file to upload");
+            return;
+        }
+
+        setUploadingDoc((prev) => ({ ...prev, [typeId]: true }));
+        setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("vendor_id", vendorId.toString());
+            formData.append("type_id", typeId.toString());
+            formData.append("name", name);
+
+            // Only append expired_at if a date was provided
+            if (expiryDate) {
+                formData.append(
+                    "expired_at",
+                    new Date(expiryDate).toISOString()
+                );
+            } else {
+                // Explicitly set to null when no date is provided
+                formData.append("expired_at", "null");
+            }
+
+            const response = await fetch(
+                `${API_BASE_URL}/documents/vendors/documents`,
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log("Upload successful:", result);
+
+            // Refresh the documents list
+            const docResponse = await fetch(
+                `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
+            );
+            const docResult = await docResponse.json();
+            if (docResponse.ok && docResult.data) {
+                setVendorDocuments(docResult.data);
+            }
+
+            setUploadSuccess((prev) => ({ ...prev, [typeId]: true }));
+
+            // Clear the file input
+            setTimeout(() => {
+                setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
+            }, 3000);
+        } catch (error) {
+            console.error("Error uploading document:", error);
+            alert("Failed to upload document. Please try again.");
+        } finally {
+            setUploadingDoc((prev) => ({ ...prev, [typeId]: false }));
+        }
+    };
+
+    // Get document status for a given type
+    const getDocumentForType = (typeId: number) => {
+        return vendorDocuments.find((doc) => doc.type_id === typeId);
+    };
+
+    // Check if any mandatory document is not yet approved to enable Continue button
+    const getDocumentStatus = () => {
+        const mandatoryTypes = documentTypes.filter((type) => type.mandatory);
+
+        // User can proceed if all mandatory documents are uploaded
+        // Ideally we'd check for approved status, but for now we'll allow if they're at least uploaded
+        return mandatoryTypes.every((type) => {
+            const doc = getDocumentForType(type.type_id);
+            return doc !== undefined;
+        });
+    };
 
     // Fetch countries from API
     useEffect(() => {
@@ -723,8 +1200,8 @@ export default function VendorOnboardingFlow() {
     const t =
         translations[language as keyof typeof translations] || translations.EN;
 
-    const next = () => setStep(step + 1);
-    const back = () => setStep(step - 1);
+    const next = () => updateStep(step + 1);
+    const back = () => updateStep(step - 1);
 
     // Handle trade deletion
     const handleDeleteTrade = (index: number) => {
@@ -798,25 +1275,6 @@ export default function VendorOnboardingFlow() {
         alert(`Simulated submit of: ${label}`);
     };
 
-    // Get the correct document list based on country
-    const documentList =
-        country === "Germany" ? germanDocuments : foreignDocuments;
-
-    // Check if any document is in "approved" status to enable Continue button
-    const getDocumentStatus = () => {
-        let approvedCount = 0;
-        const totalRequired = documentList.length;
-
-        documentList.forEach((doc) => {
-            if (doc.status === "approved") {
-                approvedCount++;
-            }
-        });
-
-        // For simplicity, allow continue if at least one document is approved
-        return approvedCount > 0;
-    };
-
     // Handle form submission
     const handleFormSubmit = async () => {
         // Check if vendorId is available
@@ -878,261 +1336,6 @@ export default function VendorOnboardingFlow() {
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const renderDocumentCard = (document: (typeof germanDocuments)[0]) => {
-        const { label, description, status, filename, note } = document;
-        const userUploadedFilename = uploads[label];
-
-        // Set styling based on status
-        const getStatusStyles = () => {
-            switch (status) {
-                case "approved":
-                    return {
-                        bgcolor: "#f1f8e9",
-                        border: "1px solid #c5e1a5",
-                        icon: <CheckCircleIcon sx={{ color: "#2e7d32" }} />,
-                        statusLabel: t.approved,
-                        statusColor: "#2e7d32",
-                        buttonDisabled: false,
-                    };
-                case "denied":
-                    return {
-                        bgcolor: "#ffebee",
-                        border: "1px solid #ffcdd2",
-                        icon: <ErrorIcon sx={{ color: "#c62828" }} />,
-                        statusLabel: t.denied,
-                        statusColor: "#c62828",
-                        buttonDisabled: false,
-                    };
-                case "pending":
-                    return {
-                        bgcolor: "#e3f2fd",
-                        border: "1px solid #bbdefb",
-                        icon: <HourglassEmptyIcon sx={{ color: "#1565c0" }} />,
-                        statusLabel: t.inReview,
-                        statusColor: "#1565c0",
-                        buttonDisabled: true,
-                    };
-                case "uploaded":
-                    return {
-                        bgcolor: "#fff8e1",
-                        border: "1px solid #ffe082",
-                        icon: <InfoIcon sx={{ color: "#f57c00" }} />,
-                        statusLabel: t.uploaded,
-                        statusColor: "#f57c00",
-                        buttonDisabled: false,
-                    };
-                default:
-                    return {
-                        bgcolor: "#f5f5f5",
-                        border: "1px solid #e0e0e0",
-                        icon: null,
-                        statusLabel: t.notUploaded,
-                        statusColor: "#757575",
-                        buttonDisabled: false,
-                    };
-            }
-        };
-
-        const styles = getStatusStyles();
-
-        return (
-            <Card
-                key={label}
-                variant="outlined"
-                sx={{
-                    bgcolor: styles.bgcolor,
-                    border: styles.border,
-                    borderRadius: 4,
-                }}
-            >
-                <CardContent sx={{ p: 3 }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            mb: 1,
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                            }}
-                        >
-                            <Checkbox
-                                checked={status === "approved"}
-                                disabled={status !== "approved"}
-                                sx={{
-                                    color:
-                                        status === "approved"
-                                            ? "#2e7d32"
-                                            : "#9e9e9e",
-                                    "&.Mui-checked": { color: "#2e7d32" },
-                                }}
-                            />
-                            <Box>
-                                <Typography
-                                    variant="subtitle1"
-                                    sx={{ fontWeight: 500, color: "#424242" }}
-                                >
-                                    {label}
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                >
-                                    {description}
-                                </Typography>
-                            </Box>
-                        </Box>
-                        <Chip
-                            label={styles.statusLabel}
-                            sx={{
-                                color: styles.statusColor,
-                                bgcolor: "transparent",
-                                border: `1px solid ${styles.statusColor}`,
-                                fontWeight: 500,
-                            }}
-                        />
-                    </Box>
-
-                    {filename && (
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                mt: 1,
-                                mb: 1,
-                                gap: 0.5,
-                            }}
-                        >
-                            <InsertDriveFileIcon
-                                fontSize="small"
-                                color="action"
-                            />
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                            >
-                                {filename}
-                            </Typography>
-                        </Box>
-                    )}
-
-                    {note && (
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color:
-                                    status === "denied"
-                                        ? "#c62828"
-                                        : "text.secondary",
-                                display: "block",
-                                mt: 0.5,
-                                mb: 1,
-                            }}
-                        >
-                            {status === "approved"
-                                ? `✓ ${t.verified} 01.05.2025`
-                                : note}
-                        </Typography>
-                    )}
-
-                    <Typography
-                        variant="body2"
-                        sx={{ fontWeight: 500, mt: 2, mb: 1 }}
-                    >
-                        {t.uploadNewFile}
-                    </Typography>
-
-                    <Box sx={{ mb: 1.5 }}>
-                        <label htmlFor={`file-upload-${label}`}>
-                            <UploadInput
-                                id={`file-upload-${label}`}
-                                type="file"
-                                onChange={(e) => {
-                                    const files = (e.target as HTMLInputElement)
-                                        .files;
-                                    if (files && files.length > 0) {
-                                        handleFileUpload(label, files[0]);
-                                    }
-                                }}
-                            />
-                            <CustomFileInput>
-                                <Box
-                                    sx={{
-                                        flexGrow: 1,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
-                                    {userUploadedFilename || t.noFileChosen}
-                                </Box>
-                                <Button
-                                    component="span"
-                                    variant="contained"
-                                    size="small"
-                                    sx={{
-                                        ml: 1,
-                                        bgcolor: "#f5f5f5",
-                                        color: "#424242",
-                                        boxShadow: "none",
-                                        "&:hover": {
-                                            bgcolor: "#e0e0e0",
-                                            boxShadow: "none",
-                                        },
-                                    }}
-                                >
-                                    {t.chooseFile}
-                                </Button>
-                            </CustomFileInput>
-                        </label>
-
-                        {userUploadedFilename && (
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ mt: 0.5, display: "block" }}
-                            >
-                                <InsertDriveFileIcon
-                                    fontSize="inherit"
-                                    sx={{ verticalAlign: "middle", mr: 0.5 }}
-                                />
-                                {userUploadedFilename}
-                            </Typography>
-                        )}
-                    </Box>
-
-                    <Button
-                        variant="contained"
-                        size="small"
-                        disabled={styles.buttonDisabled}
-                        onClick={() => handleSubmit(label)}
-                        sx={{
-                            bgcolor: styles.buttonDisabled
-                                ? "#bdbdbd"
-                                : "#F57C00",
-                            color: "#fff",
-                            "&:hover": {
-                                bgcolor: styles.buttonDisabled
-                                    ? "#bdbdbd"
-                                    : "#EF6C00",
-                            },
-                            borderRadius: 4,
-                            textTransform: "none",
-                            px: 2,
-                        }}
-                    >
-                        {t.submit}
-                    </Button>
-                </CardContent>
-            </Card>
-        );
     };
 
     const renderContractCard = (contract: (typeof contracts)[0]) => {
@@ -2047,13 +2250,38 @@ export default function VendorOnboardingFlow() {
                         </Stepper>
                     </StepperContainer>
 
-                    <Grid container spacing={3}>
-                        {documentList.map((doc) => (
-                            <Grid item xs={12} sm={6} key={doc.label}>
-                                {renderDocumentCard(doc)}
-                            </Grid>
-                        ))}
-                    </Grid>
+                    {loadingDocTypes || loadingDocuments ? (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                my: 4,
+                            }}
+                        >
+                            <CircularProgress />
+                            <Typography sx={{ mt: 2 }}>
+                                Loading documents...
+                            </Typography>
+                        </Box>
+                    ) : documentError ? (
+                        <Alert severity="error" sx={{ my: 2 }}>
+                            {documentError}
+                        </Alert>
+                    ) : documentTypes.length === 0 ? (
+                        <Alert severity="info" sx={{ my: 2 }}>
+                            No document requirements specified for the selected
+                            country.
+                        </Alert>
+                    ) : (
+                        <Grid container spacing={3}>
+                            {documentTypes.map((docType) => (
+                                <Grid item xs={12} sm={6} key={docType.type_id}>
+                                    {renderDocumentCard(docType)}
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
 
                     <Box
                         sx={{
