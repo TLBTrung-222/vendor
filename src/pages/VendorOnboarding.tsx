@@ -35,6 +35,10 @@ import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useNavigate } from "react-router-dom";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { useContext } from "react";
+import { AuthContext } from "../App";
 
 // Types for API responses
 interface Country {
@@ -280,6 +284,13 @@ const API_BASE_URL = "https://fastapi.gesys.automate-solutions.net/gesys";
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
+    const { logout } = useContext(AuthContext);
+
+    // Add logout handler function
+    const handleLogout = () => {
+        logout();
+    };
+
     /* -------------------------------------------------------------------------- */
     /*                        States for uploading document                       */
     /* -------------------------------------------------------------------------- */
@@ -1423,19 +1434,52 @@ export default function VendorOnboardingFlow() {
 
     return (
         <Box sx={{ maxWidth: 800, margin: "0 auto", p: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-                <FormControl size="small" sx={{ width: 120 }}>
-                    <Select
-                        value={language}
-                        onChange={(e) => setLanguage(e.target.value as string)}
-                        sx={{ borderRadius: 4 }}
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                }}
+            >
+                {/* Left side - could be empty or add a logo here */}
+                <Box>{/* Empty or add logo */}</Box>
+
+                {/* Right side - language selector and logout button */}
+                <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <FormControl size="small" sx={{ width: 120 }}>
+                        <Select
+                            value={language}
+                            onChange={(e) =>
+                                setLanguage(e.target.value as string)
+                            }
+                            sx={{ borderRadius: 4 }}
+                        >
+                            <MenuItem value="EN">English</MenuItem>
+                            <MenuItem value="DE">Deutsch</MenuItem>
+                            <MenuItem value="PL">Polski</MenuItem>
+                            <MenuItem value="SK">Slovenský</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<LogoutIcon />}
+                        onClick={handleLogout}
+                        sx={{
+                            borderRadius: 4,
+                            borderColor: "#ffcdd2",
+                            color: "#d32f2f",
+                            "&:hover": {
+                                backgroundColor: "#ffebee",
+                                borderColor: "#ef9a9a",
+                            },
+                        }}
                     >
-                        <MenuItem value="EN">English</MenuItem>
-                        <MenuItem value="DE">Deutsch</MenuItem>
-                        <MenuItem value="PL">Polski</MenuItem>
-                        <MenuItem value="SK">Slovenský</MenuItem>
-                    </Select>
-                </FormControl>
+                        Logout
+                    </Button>
+                </Box>
             </Box>
 
             {/* Step 1: Company Details */}

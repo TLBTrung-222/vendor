@@ -43,6 +43,8 @@ export default function App() {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("userEmail");
+        localStorage.removeItem("vendorOnboardingStep");
+
         setIsAuthenticated(false);
     };
 
