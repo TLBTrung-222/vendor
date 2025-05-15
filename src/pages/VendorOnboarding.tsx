@@ -35,7 +35,6 @@ import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useNavigate } from "react-router-dom";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useContext } from "react";
 import { AuthContext } from "../App";
@@ -211,7 +210,7 @@ const StatusIcon = styled(Box)(({ theme }) => ({
 // Translation data
 const translations = {
     EN: {
-        welcome: "Welcome, Mr. Mustermann",
+        welcome: "Welcome at Galvanek Atlas",
         companyName: "SolarService GmbH",
         infoBox:
             "Please fill out the form below to provide your company's information and upload all required documents.",
@@ -393,9 +392,7 @@ export default function VendorOnboardingFlow() {
     );
     const [positionsError, setPositionsError] = useState<string | null>(null);
     const [showVendorDropdown, setShowVendorDropdown] = useState(false);
-    // Add this near your other state declarations
     const [selectedRegions, setSelectedRegions] = useState<number[]>([]);
-    // Add this near your other state declarations
     const [vendorId, setVendorId] = useState<number | null>(null);
     const [isLoadingVendorId, setIsLoadingVendorId] = useState(false);
     const [vendorIdError, setVendorIdError] = useState<string | null>(null);
@@ -1271,18 +1268,6 @@ export default function VendorOnboardingFlow() {
         }
     };
 
-    // Handle file upload
-    const handleFileUpload = (label: string, file: File | null) => {
-        if (file) {
-            setUploads((prev) => ({ ...prev, [label]: file.name }));
-        }
-    };
-
-    // Handle document submission
-    const handleSubmit = (label: string) => {
-        alert(`Simulated submit of: ${label}`);
-    };
-
     // Handle form submission
     const handleFormSubmit = async () => {
         // Check if vendorId is available
@@ -1490,11 +1475,12 @@ export default function VendorOnboardingFlow() {
                         >
                             {t.welcome}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {t.companyName}
-                        </Typography>
+                        {companyName && (
+                            <Typography variant="body2" color="text.secondary">
+                                {companyName}
+                            </Typography>
+                        )}
                     </Box>
-
                     <Alert
                         severity="info"
                         sx={{
