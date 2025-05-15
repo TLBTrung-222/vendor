@@ -38,6 +38,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useContext } from "react";
 import { AuthContext } from "../App";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 // Types for API responses
 interface Country {
@@ -127,6 +128,13 @@ interface Document {
     url: string;
     document_status: DocumentStatus;
     document_types: DocumentType;
+}
+
+interface DocumentWithType {
+    type_id: number;
+    title: string;
+    country_id: number;
+    document: Document | null;
 }
 
 // Contract data
@@ -237,7 +245,7 @@ const translations = {
         lastName: "Last Name",
         email: "Email",
         phone: "Phone Number",
-        role: "Role",
+        position: "Position",
         department: "Department",
         continue: "Continue",
         back: "Back",
@@ -400,36 +408,374 @@ export default function VendorOnboardingFlow() {
     /* -------------------------------------------------------------------------- */
     /*                                For screen 2                                */
     /* -------------------------------------------------------------------------- */
-    // Fetch document types based on country ID
-    useEffect(() => {
-        if (!countryId || step !== 2) return;
 
-        const fetchDocumentTypes = async () => {
+    useEffect(() => {
+        if (!vendorId || step !== 2) return;
+
+        const fetchVendorDocuments = async () => {
             setLoadingDocTypes(true);
             setDocumentError(null);
             try {
                 const response = await fetch(
-                    `${API_BASE_URL}/documents/document-types/${countryId}`
+                    `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
                 );
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
+
                 const result = await response.json();
                 if (result.data) {
-                    setDocumentTypes(result.data);
+                    // Extract document types from the response
+                    const types: DocumentType[] = result.data.map(
+                        (item: DocumentWithType) => {
+                            return {
+                                type_id: item.type_id,
+                                title: item.title,
+                                mandatory:
+                                    item.document?.document_types?.mandatory ??
+                                    false,
+                                category_id:
+                                    item.document?.document_types
+                                        ?.category_id ?? 0,
+                            };
+                        }
+                    );
+                    setDocumentTypes(types);
+
+                    // Extract submitted documents
+                    const documents: Document[] = result.data
+                        .filter(
+                            (item: DocumentWithType) => item.document !== null
+                        )
+                        .map(
+                            (item: DocumentWithType) =>
+                                item.document as Document
+                        );
+                    setVendorDocuments(documents);
                 }
             } catch (error) {
-                console.error("Error fetching document types:", error);
-                setDocumentError("Failed to load required documents");
+                console.error("Error fetching vendor documents:", error);
+                setDocumentError("Failed to load document requirements");
             } finally {
                 setLoadingDocTypes(false);
             }
         };
 
-        fetchDocumentTypes();
-    }, [countryId, step]);
+        fetchVendorDocuments();
+    }, [vendorId, step]);
 
     // Render document card with API data
+    // const renderDocumentCard = (docType: DocumentType) => {
+    //     const { type_id, title, mandatory } = docType;
+    //     const document = getDocumentForType(type_id);
+    //     const status = document?.document_status?.title || "Not Uploaded";
+    //     const fileName = document?.name || "";
+    //     const url = document?.url || "";
+    //     const isUploading = uploadingDoc[type_id] || false;
+    //     const showSuccess = uploadSuccess[type_id] || false;
+    //     const selectedFile = selectedFiles[type_id];
+    //     const docName = documentNames[type_id] || "";
+    //     const expiryDate = expiryDates[type_id] || "";
+
+    //     // Get styling based on status
+    //     const getStatusStyles = () => {
+    //         switch (status.toLowerCase()) {
+    //             case "approved":
+    //                 return {
+    //                     bgcolor: "#f1f8e9",
+    //                     border: "1px solid #c5e1a5",
+    //                     icon: <CheckCircleIcon sx={{ color: "#2e7d32" }} />,
+    //                     statusLabel: "Approved",
+    //                     statusColor: "#2e7d32",
+    //                     buttonDisabled: true,
+    //                 };
+    //             case "denied":
+    //             case "rejected":
+    //                 return {
+    //                     bgcolor: "#ffebee",
+    //                     border: "1px solid #ffcdd2",
+    //                     icon: <ErrorIcon sx={{ color: "#c62828" }} />,
+    //                     statusLabel: "Denied",
+    //                     statusColor: "#c62828",
+    //                     buttonDisabled: false,
+    //                 };
+    //             case "pending":
+    //                 return {
+    //                     bgcolor: "#e3f2fd",
+    //                     border: "1px solid #bbdefb",
+    //                     icon: <HourglassEmptyIcon sx={{ color: "#1565c0" }} />,
+    //                     statusLabel: "In Review",
+    //                     statusColor: "#1565c0",
+    //                     buttonDisabled: false,
+    //                 };
+    //             default:
+    //                 return {
+    //                     bgcolor: "#f5f5f5",
+    //                     border: "1px solid #e0e0e0",
+    //                     icon: null,
+    //                     statusLabel: "Not Uploaded",
+    //                     statusColor: "#757575",
+    //                     buttonDisabled: false,
+    //                 };
+    //         }
+    //     };
+
+    //     const styles = getStatusStyles();
+
+    //     return (
+    //         <Card
+    //             key={type_id}
+    //             variant="outlined"
+    //             sx={{
+    //                 bgcolor: styles.bgcolor,
+    //                 border: styles.border,
+    //                 borderRadius: 4,
+    //             }}
+    //         >
+    //             <CardContent sx={{ p: 3 }}>
+    //                 <Box
+    //                     sx={{
+    //                         display: "flex",
+    //                         justifyContent: "space-between",
+    //                         alignItems: "center",
+    //                         mb: 1,
+    //                     }}
+    //                 >
+    //                     <Box
+    //                         sx={{
+    //                             display: "flex",
+    //                             alignItems: "center",
+    //                             gap: 1,
+    //                         }}
+    //                     >
+    //                         <Checkbox
+    //                             checked={status.toLowerCase() === "approved"}
+    //                             disabled={status.toLowerCase() !== "approved"}
+    //                             sx={{
+    //                                 color:
+    //                                     status.toLowerCase() === "approved"
+    //                                         ? "#2e7d32"
+    //                                         : "#9e9e9e",
+    //                                 "&.Mui-checked": { color: "#2e7d32" },
+    //                             }}
+    //                         />
+    //                         <Box>
+    //                             <Typography
+    //                                 variant="subtitle1"
+    //                                 sx={{ fontWeight: 500, color: "#424242" }}
+    //                             >
+    //                                 {title} {mandatory && " *"}
+    //                             </Typography>
+    //                             <Typography
+    //                                 variant="body2"
+    //                                 color="text.secondary"
+    //                             >
+    //                                 {mandatory
+    //                                     ? "Required document"
+    //                                     : "Optional document"}
+    //                             </Typography>
+    //                         </Box>
+    //                     </Box>
+    //                     <Chip
+    //                         label={styles.statusLabel}
+    //                         sx={{
+    //                             color: styles.statusColor,
+    //                             bgcolor: "transparent",
+    //                             border: `1px solid ${styles.statusColor}`,
+    //                             fontWeight: 500,
+    //                         }}
+    //                     />
+    //                 </Box>
+
+    //                 {document && (
+    //                     <Box
+    //                         sx={{
+    //                             display: "flex",
+    //                             alignItems: "center",
+    //                             mt: 1,
+    //                             mb: 1,
+    //                             gap: 0.5,
+    //                         }}
+    //                     >
+    //                         <InsertDriveFileIcon
+    //                             fontSize="small"
+    //                             color="action"
+    //                         />
+    //                         <Typography
+    //                             variant="caption"
+    //                             color="text.secondary"
+    //                             sx={{
+    //                                 textDecoration: url ? "underline" : "none",
+    //                                 cursor: url ? "pointer" : "default",
+    //                                 "&:hover": {
+    //                                     color: url
+    //                                         ? "primary.main"
+    //                                         : "text.secondary",
+    //                                 },
+    //                             }}
+    //                             onClick={() =>
+    //                                 url && window.open(url, "_blank")
+    //                             }
+    //                         >
+    //                             {fileName} {url && "(Click to view)"}
+    //                         </Typography>
+    //                     </Box>
+    //                 )}
+
+    //                 {document?.document_status?.description && (
+    //                     <Typography
+    //                         variant="caption"
+    //                         sx={{
+    //                             color:
+    //                                 status.toLowerCase() === "denied" ||
+    //                                 status.toLowerCase() === "rejected"
+    //                                     ? "#c62828"
+    //                                     : "text.secondary",
+    //                             display: "block",
+    //                             mt: 0.5,
+    //                             mb: 1,
+    //                         }}
+    //                     >
+    //                         {document.document_status.description}
+    //                     </Typography>
+    //                 )}
+
+    //                 <Divider sx={{ my: 2 }} />
+
+    //                 <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+    //                     {document ? "Update document" : "Upload new document"}
+    //                 </Typography>
+
+    //                 <Box sx={{ mb: 1.5 }}>
+    //                     <TextField
+    //                         fullWidth
+    //                         label="Document name"
+    //                         margin="dense"
+    //                         value={docName}
+    //                         onChange={(e) =>
+    //                             handleDocumentNameChange(
+    //                                 type_id,
+    //                                 e.target.value
+    //                             )
+    //                         }
+    //                         sx={{ mb: 1 }}
+    //                     />
+
+    //                     <TextField
+    //                         fullWidth
+    //                         label="Expiry date (if applicable)"
+    //                         type="date"
+    //                         margin="dense"
+    //                         value={expiryDate}
+    //                         onChange={(e) =>
+    //                             handleExpiryDateChange(type_id, e.target.value)
+    //                         }
+    //                         InputLabelProps={{ shrink: true }}
+    //                         sx={{ mb: 1 }}
+    //                     />
+
+    //                     <label htmlFor={`file-upload-${type_id}`}>
+    //                         <UploadInput
+    //                             id={`file-upload-${type_id}`}
+    //                             type="file"
+    //                             accept="application/pdf"
+    //                             onChange={(e) => {
+    //                                 const files = (e.target as HTMLInputElement)
+    //                                     .files;
+    //                                 if (files && files.length > 0) {
+    //                                     handleFileSelection(type_id, files[0]);
+    //                                 }
+    //                             }}
+    //                         />
+    //                         <CustomFileInput>
+    //                             <Box
+    //                                 sx={{
+    //                                     flexGrow: 1,
+    //                                     overflow: "hidden",
+    //                                     textOverflow: "ellipsis",
+    //                                     whiteSpace: "nowrap",
+    //                                 }}
+    //                             >
+    //                                 {selectedFile
+    //                                     ? selectedFile.name
+    //                                     : "No file chosen"}
+    //                             </Box>
+    //                             <Button
+    //                                 component="span"
+    //                                 variant="contained"
+    //                                 size="small"
+    //                                 sx={{
+    //                                     ml: 1,
+    //                                     bgcolor: "#f5f5f5",
+    //                                     color: "#424242",
+    //                                     boxShadow: "none",
+    //                                     "&:hover": {
+    //                                         bgcolor: "#e0e0e0",
+    //                                         boxShadow: "none",
+    //                                     },
+    //                                 }}
+    //                             >
+    //                                 Choose file (PDF)
+    //                             </Button>
+    //                         </CustomFileInput>
+    //                     </label>
+    //                 </Box>
+
+    //                 <Box sx={{ position: "relative" }}>
+    //                     <Button
+    //                         variant="contained"
+    //                         size="small"
+    //                         disabled={
+    //                             isUploading ||
+    //                             !selectedFile ||
+    //                             styles.buttonDisabled
+    //                         }
+    //                         onClick={() => handleDocumentUpload(type_id)}
+    //                         sx={{
+    //                             bgcolor: styles.buttonDisabled
+    //                                 ? "#bdbdbd"
+    //                                 : "#F57C00",
+    //                             color: "#fff",
+    //                             "&:hover": {
+    //                                 bgcolor: styles.buttonDisabled
+    //                                     ? "#bdbdbd"
+    //                                     : "#EF6C00",
+    //                             },
+    //                             borderRadius: 4,
+    //                             textTransform: "none",
+    //                             px: 2,
+    //                         }}
+    //                     >
+    //                         {isUploading ? (
+    //                             <CircularProgress
+    //                                 size={24}
+    //                                 sx={{ color: "#fff" }}
+    //                             />
+    //                         ) : showSuccess ? (
+    //                             "Uploaded!"
+    //                         ) : (
+    //                             "Upload Document"
+    //                         )}
+    //                     </Button>
+    //                 </Box>
+
+    //                 {/* {mandatory && (
+    //                     <Typography
+    //                         variant="caption"
+    //                         sx={{
+    //                             display: "block",
+    //                             mt: 2,
+    //                             color: "text.secondary",
+    //                         }}
+    //                     >
+    //                         * This document is mandatory for vendor verification
+    //                     </Typography>
+    //                 )} */}
+    //             </CardContent>
+    //         </Card>
+    //     );
+    // };
+
     const renderDocumentCard = (docType: DocumentType) => {
         const { type_id, title, mandatory } = docType;
         const document = getDocumentForType(type_id);
@@ -439,8 +785,6 @@ export default function VendorOnboardingFlow() {
         const isUploading = uploadingDoc[type_id] || false;
         const showSuccess = uploadSuccess[type_id] || false;
         const selectedFile = selectedFiles[type_id];
-        const docName = documentNames[type_id] || "";
-        const expiryDate = expiryDates[type_id] || "";
 
         // Get styling based on status
         const getStatusStyles = () => {
@@ -607,39 +951,12 @@ export default function VendorOnboardingFlow() {
 
                     <Divider sx={{ my: 2 }} />
 
-                    <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                        {document ? "Update document" : "Upload new document"}
-                    </Typography>
-
-                    <Box sx={{ mb: 1.5 }}>
-                        <TextField
-                            fullWidth
-                            label="Document name"
-                            margin="dense"
-                            value={docName}
-                            onChange={(e) =>
-                                handleDocumentNameChange(
-                                    type_id,
-                                    e.target.value
-                                )
-                            }
-                            sx={{ mb: 1 }}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="Expiry date (if applicable)"
-                            type="date"
-                            margin="dense"
-                            value={expiryDate}
-                            onChange={(e) =>
-                                handleExpiryDateChange(type_id, e.target.value)
-                            }
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ mb: 1 }}
-                        />
-
-                        <label htmlFor={`file-upload-${type_id}`}>
+                    {/* Simplified upload section */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <label
+                            htmlFor={`file-upload-${type_id}`}
+                            style={{ flexGrow: 1 }}
+                        >
                             <UploadInput
                                 id={`file-upload-${type_id}`}
                                 type="file"
@@ -652,44 +969,28 @@ export default function VendorOnboardingFlow() {
                                     }
                                 }}
                             />
-                            <CustomFileInput>
-                                <Box
-                                    sx={{
-                                        flexGrow: 1,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
-                                    {selectedFile
-                                        ? selectedFile.name
-                                        : "No file chosen"}
-                                </Box>
-                                <Button
-                                    component="span"
-                                    variant="contained"
-                                    size="small"
-                                    sx={{
-                                        ml: 1,
-                                        bgcolor: "#f5f5f5",
-                                        color: "#424242",
-                                        boxShadow: "none",
-                                        "&:hover": {
-                                            bgcolor: "#e0e0e0",
-                                            boxShadow: "none",
-                                        },
-                                    }}
-                                >
-                                    Choose file (PDF)
-                                </Button>
-                            </CustomFileInput>
+                            <Button
+                                component="span"
+                                variant="outlined"
+                                fullWidth
+                                startIcon={<CloudUploadIcon />}
+                                sx={{
+                                    borderRadius: 2,
+                                    p: 1,
+                                    justifyContent: "flex-start",
+                                    textAlign: "left",
+                                    color: "#424242",
+                                    borderColor: "#e0e0e0",
+                                }}
+                            >
+                                {selectedFile
+                                    ? selectedFile.name
+                                    : "Select PDF File"}
+                            </Button>
                         </label>
-                    </Box>
 
-                    <Box sx={{ position: "relative" }}>
                         <Button
                             variant="contained"
-                            size="small"
                             disabled={
                                 isUploading ||
                                 !selectedFile ||
@@ -707,8 +1008,7 @@ export default function VendorOnboardingFlow() {
                                         : "#EF6C00",
                                 },
                                 borderRadius: 4,
-                                textTransform: "none",
-                                px: 2,
+                                whiteSpace: "nowrap",
                             }}
                         >
                             {isUploading ? (
@@ -716,57 +1016,21 @@ export default function VendorOnboardingFlow() {
                                     size={24}
                                     sx={{ color: "#fff" }}
                                 />
-                            ) : showSuccess ? (
-                                "Uploaded!"
                             ) : (
-                                "Upload Document"
+                                "Upload"
                             )}
                         </Button>
                     </Box>
 
-                    {mandatory && (
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                display: "block",
-                                mt: 2,
-                                color: "text.secondary",
-                            }}
-                        >
-                            * This document is mandatory for vendor verification
-                        </Typography>
+                    {showSuccess && (
+                        <Alert severity="success" sx={{ mt: 2 }}>
+                            Document uploaded successfully
+                        </Alert>
                     )}
                 </CardContent>
             </Card>
         );
     };
-
-    // Fetch vendor's uploaded documents
-    useEffect(() => {
-        if (!vendorId || step !== 2) return;
-
-        const fetchVendorDocuments = async () => {
-            setLoadingDocuments(true);
-            try {
-                const response = await fetch(
-                    `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
-                );
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const result = await response.json();
-                if (result.data) {
-                    setVendorDocuments(result.data);
-                }
-            } catch (error) {
-                console.error("Error fetching vendor documents:", error);
-            } finally {
-                setLoadingDocuments(false);
-            }
-        };
-
-        fetchVendorDocuments();
-    }, [vendorId, step]);
 
     // Handle file selection
     const handleFileSelection = (typeId: number, file: File | null) => {
@@ -776,23 +1040,98 @@ export default function VendorOnboardingFlow() {
         }));
     };
 
-    // Handle document name change
-    const handleDocumentNameChange = (typeId: number, name: string) => {
-        setDocumentNames((prev) => ({
-            ...prev,
-            [typeId]: name,
-        }));
-    };
-
-    // Handle expiry date change
-    const handleExpiryDateChange = (typeId: number, date: string) => {
-        setExpiryDates((prev) => ({
-            ...prev,
-            [typeId]: date,
-        }));
-    };
-
     // Handle file upload
+    // const handleDocumentUpload = async (typeId: number) => {
+    //     if (!vendorId) {
+    //         alert("Vendor ID not available. Please try again later.");
+    //         return;
+    //     }
+
+    //     const file = selectedFiles[typeId];
+    //     const name = documentNames[typeId] || file?.name || "Unnamed document";
+    //     const expiryDate = expiryDates[typeId] || null;
+
+    //     if (!file) {
+    //         alert("Please select a file to upload");
+    //         return;
+    //     }
+
+    //     setUploadingDoc((prev) => ({ ...prev, [typeId]: true }));
+    //     setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
+
+    //     try {
+    //         const formData = new FormData();
+    //         formData.append("file", file);
+    //         formData.append("vendor_id", vendorId.toString());
+    //         formData.append("type_id", typeId.toString());
+    //         formData.append("name", name);
+
+    //         // Only append expired_at if a date was provided
+    //         if (expiryDate) {
+    //             formData.append(
+    //                 "expired_at",
+    //                 new Date(expiryDate).toISOString()
+    //             );
+    //         }
+    //         const response = await fetch(
+    //             `${API_BASE_URL}/documents/vendors/documents`,
+    //             {
+    //                 method: "POST",
+    //                 body: formData,
+    //             }
+    //         );
+
+    //         if (!response.ok) {
+    //             throw new Error(`HTTP error! Status: ${response.status}`);
+    //         }
+
+    //         const result = await response.json();
+    //         console.log("Upload successful:", result);
+
+    //         // Refresh the documents list with the new combined API
+    //         const docResponse = await fetch(
+    //             `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
+    //         );
+    //         const docResult = await docResponse.json();
+
+    //         if (docResponse.ok && docResult.data) {
+    //             // Extract document types from the response
+    //             const types: DocumentType[] = docResult.data.map(
+    //                 (item: DocumentWithType) => {
+    //                     return {
+    //                         type_id: item.type_id,
+    //                         title: item.title,
+    //                         mandatory:
+    //                             item.document?.document_types?.mandatory ??
+    //                             false,
+    //                         category_id:
+    //                             item.document?.document_types?.category_id ?? 0,
+    //                     };
+    //                 }
+    //             );
+    //             setDocumentTypes(types);
+
+    //             // Extract submitted documents
+    //             const documents: Document[] = docResult.data
+    //                 .filter((item: DocumentWithType) => item.document !== null)
+    //                 .map((item: DocumentWithType) => item.document as Document);
+    //             setVendorDocuments(documents);
+    //         }
+
+    //         setUploadSuccess((prev) => ({ ...prev, [typeId]: true }));
+
+    //         // Clear the file input
+    //         setTimeout(() => {
+    //             setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
+    //         }, 3000);
+    //     } catch (error) {
+    //         console.error("Error uploading document:", error);
+    //         alert("Failed to upload document. Please try again.");
+    //     } finally {
+    //         setUploadingDoc((prev) => ({ ...prev, [typeId]: false }));
+    //     }
+    // };
+
     const handleDocumentUpload = async (typeId: number) => {
         if (!vendorId) {
             alert("Vendor ID not available. Please try again later.");
@@ -800,13 +1139,14 @@ export default function VendorOnboardingFlow() {
         }
 
         const file = selectedFiles[typeId];
-        const name = documentNames[typeId] || file?.name || "Unnamed document";
-        const expiryDate = expiryDates[typeId] || null;
 
         if (!file) {
             alert("Please select a file to upload");
             return;
         }
+
+        // Use the file's name directly
+        const name = file.name;
 
         setUploadingDoc((prev) => ({ ...prev, [typeId]: true }));
         setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
@@ -817,14 +1157,6 @@ export default function VendorOnboardingFlow() {
             formData.append("vendor_id", vendorId.toString());
             formData.append("type_id", typeId.toString());
             formData.append("name", name);
-
-            // Only append expired_at if a date was provided
-            if (expiryDate) {
-                formData.append(
-                    "expired_at",
-                    new Date(expiryDate).toISOString()
-                );
-            }
 
             const response = await fetch(
                 `${API_BASE_URL}/documents/vendors/documents`,
@@ -841,21 +1173,45 @@ export default function VendorOnboardingFlow() {
             const result = await response.json();
             console.log("Upload successful:", result);
 
-            // Refresh the documents list
+            // Refresh the documents list with the new combined API
             const docResponse = await fetch(
                 `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
             );
             const docResult = await docResponse.json();
+
             if (docResponse.ok && docResult.data) {
-                setVendorDocuments(docResult.data);
+                // Extract document types from the response
+                const types: DocumentType[] = docResult.data.map(
+                    (item: DocumentWithType) => {
+                        return {
+                            type_id: item.type_id,
+                            title: item.title,
+                            mandatory:
+                                item.document?.document_types?.mandatory ??
+                                false,
+                            category_id:
+                                item.document?.document_types?.category_id ?? 0,
+                        };
+                    }
+                );
+                setDocumentTypes(types);
+
+                // Extract submitted documents
+                const documents: Document[] = docResult.data
+                    .filter((item: DocumentWithType) => item.document !== null)
+                    .map((item: DocumentWithType) => item.document as Document);
+                setVendorDocuments(documents);
             }
 
             setUploadSuccess((prev) => ({ ...prev, [typeId]: true }));
 
-            // Clear the file input
+            // Clear the success message after a delay
             setTimeout(() => {
                 setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
             }, 3000);
+
+            // Clear the selected file
+            setSelectedFiles((prev) => ({ ...prev, [typeId]: null }));
         } catch (error) {
             console.error("Error uploading document:", error);
             alert("Failed to upload document. Please try again.");
@@ -1055,7 +1411,7 @@ export default function VendorOnboardingFlow() {
         fetchVendors();
     }, []);
 
-    // Replace the existing useEffect for fetching vendor details with this:
+    // fetching vendor details:
     useEffect(() => {
         const fetchVendorIdByEmail = async () => {
             setIsLoadingVendorId(true);
@@ -1158,7 +1514,7 @@ export default function VendorOnboardingFlow() {
                         const initialTrades = result.data.gewerks.map(
                             (gewerk: any) => ({
                                 trade: gewerk.name,
-                                count: gewerk.employee_number.toString(),
+                                count: gewerk.employee_number,
                                 gesys_gewerk_id: gewerk.gewerk_id,
                             })
                         );
@@ -1197,8 +1553,6 @@ export default function VendorOnboardingFlow() {
         );
         if (selectedPos) {
             setSelectedPositionId(selectedPos.position_id);
-        } else {
-            setSelectedPositionId(null);
         }
     }, [selectedPosition, positions]);
 
@@ -1287,14 +1641,14 @@ export default function VendorOnboardingFlow() {
                 }));
 
             // Prepare the request body using state variables with the new format
-            const requestBody = {
+            const vendorRequestBody = {
                 company_name: companyName,
                 street: street,
                 zip_code: zipCode,
                 federal_state_ids: selectedRegions, // Use the array of selected region IDs
                 tax_id: taxId || "",
                 trades: formattedTrades,
-                legal_form_id: legalFormId || 1,
+                legal_form_id: legalFormId || "null",
                 house_number: houseNumber,
                 apartment_number: apartmentNumber || "",
                 city: city,
@@ -1303,23 +1657,67 @@ export default function VendorOnboardingFlow() {
             };
 
             // Make the API call
-            const response = await fetch(
+            const vendorResponse = await fetch(
                 `${API_BASE_URL}/vendors/update?vendor_id=${vendorId}`,
                 {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify(requestBody),
+                    body: JSON.stringify(vendorRequestBody),
                 }
             );
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+            if (!vendorResponse.ok) {
+                throw new Error(`HTTP error! Status: ${vendorResponse.status}`);
             }
 
-            const result = await response.json();
-            console.log("Update successful:", result);
+            const vendorResult = await vendorResponse.json();
+            console.log("Vendor update successful:", vendorResult);
+
+            // Now prepare and send the legal representative (user) update request
+            // Get the user email and access token from localStorage
+            const userEmail = localStorage.getItem("userEmail");
+            const accessToken = localStorage.getItem("accessToken");
+
+            if (userEmail && accessToken) {
+                // Prepare the request body for user update with email included in the payload
+                const userRequestBody = {
+                    email: userEmail,
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone_number: phone || "",
+                    representative_position_id: selectedPositionId || null,
+                };
+
+                // Make the user update API call with authorization header
+                const userResponse = await fetch(
+                    `${API_BASE_URL}/users/update`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                        body: JSON.stringify(userRequestBody),
+                    }
+                );
+
+                if (!userResponse.ok) {
+                    console.error(
+                        "Error updating user:",
+                        await userResponse.text()
+                    );
+                    // Don't throw error here, as we've already updated the vendor successfully
+                } else {
+                    const userResult = await userResponse.json();
+                    console.log("User update successful:", userResult);
+                }
+            } else {
+                console.error(
+                    "User email or access token not found in localStorage"
+                );
+            }
 
             // Proceed to next step
             next();
@@ -2154,12 +2552,12 @@ export default function VendorOnboardingFlow() {
                             <Grid item xs={12}>
                                 <FormControl fullWidth>
                                     <InputLabel id="role-label">
-                                        {t.role}
+                                        {t.position}
                                     </InputLabel>
                                     <Select
                                         labelId="role-label"
                                         value={selectedPosition}
-                                        label={t.role}
+                                        label={t.position}
                                         onChange={(e) =>
                                             setSelectedPosition(e.target.value)
                                         }
