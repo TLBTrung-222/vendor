@@ -238,7 +238,7 @@ const translations = {
         tradeTitle: "Employees per Trade",
         selectTrade: "Select Trade",
         tradeCount: "Number of Employees",
-        addTrade: "+ Add Another Trade",
+        addTrade: "Add Another Trade",
         regions: "Regions Covered",
         legalRep: "Legal Representative",
         firstName: "First Name",
@@ -303,7 +303,6 @@ export default function VendorOnboardingFlow() {
     /* -------------------------------------------------------------------------- */
     const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
     const [vendorDocuments, setVendorDocuments] = useState<Document[]>([]);
-    const [loadingDocTypes, setLoadingDocTypes] = useState(false);
     const [loadingDocuments, setLoadingDocuments] = useState(false);
     const [uploadingDoc, setUploadingDoc] = useState<Record<number, boolean>>(
         {}
@@ -413,7 +412,7 @@ export default function VendorOnboardingFlow() {
         if (!vendorId || step !== 2) return;
 
         const fetchVendorDocuments = async () => {
-            setLoadingDocTypes(true);
+            setLoadingDocuments(true);
             setDocumentError(null);
             try {
                 const response = await fetch(
@@ -457,7 +456,7 @@ export default function VendorOnboardingFlow() {
                 console.error("Error fetching vendor documents:", error);
                 setDocumentError("Failed to load document requirements");
             } finally {
-                setLoadingDocTypes(false);
+                setLoadingDocuments(false);
             }
         };
 
@@ -1499,14 +1498,14 @@ export default function VendorOnboardingFlow() {
                             setPhone(result.data.contact_user.phone_number);
 
                         // Set role
-                        if (
-                            result.data.contact_user.role &&
-                            result.data.contact_user.role.title
-                        ) {
-                            setSelectedPosition(
-                                result.data.contact_user.role.title
-                            );
-                        }
+                        // if (
+                        //     result.data.contact_user.role &&
+                        //     result.data.contact_user.role.title
+                        // ) {
+                        //     setSelectedPosition(
+                        //         result.data.contact_user.role.title
+                        //     );
+                        // }
                     }
 
                     // Initialize trades from vendor gewerks
@@ -1629,6 +1628,22 @@ export default function VendorOnboardingFlow() {
             alert("Vendor ID not available. Please try again later.");
             return;
         }
+        // Validate mandatory fields
+        if (!country) {
+            alert("Please select a country");
+            return;
+        }
+
+        if (!legalForm) {
+            alert("Please select a legal form");
+            return;
+        }
+
+        if (!selectedPosition) {
+            alert("Please select a position");
+            return;
+        }
+
         try {
             setIsSubmitting(true);
 
@@ -2051,6 +2066,7 @@ export default function VendorOnboardingFlow() {
                                     <Select
                                         labelId="legal-form-label"
                                         value={legalForm}
+                                        required
                                         label={t.legalForm}
                                         onChange={(e) =>
                                             setLegalForm(e.target.value)
@@ -2123,7 +2139,6 @@ export default function VendorOnboardingFlow() {
                                 <TextField
                                     fullWidth
                                     label={t.street}
-                                    required
                                     value={street}
                                     onChange={(e) => setStreet(e.target.value)}
                                     sx={{
@@ -2138,7 +2153,6 @@ export default function VendorOnboardingFlow() {
                                 <TextField
                                     fullWidth
                                     label={t.houseNr}
-                                    required
                                     value={houseNumber}
                                     onChange={(e) =>
                                         setHouseNumber(e.target.value)
@@ -2171,7 +2185,6 @@ export default function VendorOnboardingFlow() {
                                 <TextField
                                     fullWidth
                                     label={t.zip}
-                                    required
                                     value={zipCode}
                                     onChange={(e) => setZipCode(e.target.value)}
                                     sx={{
@@ -2485,7 +2498,6 @@ export default function VendorOnboardingFlow() {
                                 <TextField
                                     fullWidth
                                     label={t.firstName}
-                                    required
                                     value={firstName}
                                     onChange={(e) =>
                                         setFirstName(e.target.value)
@@ -2502,7 +2514,6 @@ export default function VendorOnboardingFlow() {
                                 <TextField
                                     fullWidth
                                     label={t.lastName}
-                                    required
                                     value={lastName}
                                     onChange={(e) =>
                                         setLastName(e.target.value)
@@ -2538,7 +2549,6 @@ export default function VendorOnboardingFlow() {
                                 <TextField
                                     fullWidth
                                     label={t.phone}
-                                    required
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
                                     sx={{
@@ -2557,6 +2567,7 @@ export default function VendorOnboardingFlow() {
                                     <Select
                                         labelId="role-label"
                                         value={selectedPosition}
+                                        required
                                         label={t.position}
                                         onChange={(e) =>
                                             setSelectedPosition(e.target.value)
@@ -2675,7 +2686,7 @@ export default function VendorOnboardingFlow() {
                         </Stepper>
                     </StepperContainer>
 
-                    {loadingDocTypes || loadingDocuments ? (
+                    {loadingDocuments ? (
                         <Box
                             sx={{
                                 display: "flex",
@@ -2686,7 +2697,7 @@ export default function VendorOnboardingFlow() {
                         >
                             <CircularProgress />
                             <Typography sx={{ mt: 2 }}>
-                                Loading documents...
+                                Loading required documents...
                             </Typography>
                         </Box>
                     ) : documentError ? (
@@ -2694,10 +2705,19 @@ export default function VendorOnboardingFlow() {
                             {documentError}
                         </Alert>
                     ) : documentTypes.length === 0 ? (
-                        <Alert severity="info" sx={{ my: 2 }}>
-                            No document requirements specified for the selected
-                            country.
-                        </Alert>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                my: 4,
+                            }}
+                        >
+                            <CircularProgress />
+                            <Typography sx={{ mt: 2 }}>
+                                Loading required documents...
+                            </Typography>
+                        </Box>
                     ) : (
                         <Grid container spacing={3}>
                             {documentTypes.map((docType) => (
