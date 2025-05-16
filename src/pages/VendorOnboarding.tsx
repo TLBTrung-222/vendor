@@ -28,9 +28,6 @@ import {
   Tooltip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -1135,7 +1132,7 @@ export default function VendorOnboardingFlow() {
   //         setUploadingDoc((prev) => ({ ...prev, [typeId]: false }));
   //     }
   // };
-
+  
   const handleDocumentUpload = async (typeId: number) => {
     if (!vendorId) {
       alert("Vendor ID not available. Please try again later.");
@@ -1286,6 +1283,7 @@ export default function VendorOnboardingFlow() {
                 legal_form_id: form.legal_form_id,
                 title: form.title,
                 country_id: form.country_id,
+                description: form.description,
               },
             ]);
           });
