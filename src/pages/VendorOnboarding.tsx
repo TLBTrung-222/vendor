@@ -1575,7 +1575,10 @@ export default function VendorOnboardingFlow() {
                         if (result.data.legal_form_id) {
                             setLegalFormId(result.data.legal_form_id);
                         }
-                        if (result.data.contact_user.position.position_id) {
+                        if (
+                            result.data.contact_user.position &&
+                            result.data.contact_user.position.position_id
+                        ) {
                             setSelectedPositionId(
                                 result.data.contact_user.position.position_id
                             );
@@ -1601,6 +1604,8 @@ export default function VendorOnboardingFlow() {
                     }
 
                     // Initialize trades from vendor gewerks
+                    console.log("hello");
+                    console.log(result.data.gewerks);
                     if (result.data.gewerks && result.data.gewerks.length > 0) {
                         const initialTrades = result.data.gewerks.map(
                             (gewerk: any) => ({
@@ -1609,6 +1614,7 @@ export default function VendorOnboardingFlow() {
                                 gesys_gewerk_id: gewerk.gewerk_id,
                             })
                         );
+                        console.log(initialTrades);
                         setTrades(initialTrades);
                     }
                 } else {
@@ -1738,6 +1744,19 @@ export default function VendorOnboardingFlow() {
             return;
         }
 
+        // Check if any trade has a null, undefined, or empty count
+        const hasEmptyTradeCount = trades.some(
+            (trade) =>
+                trade.count === null ||
+                trade.count === undefined ||
+                trade.count === ""
+        );
+
+        // Example usage in validation
+        if (hasEmptyTradeCount) {
+            alert("Please enter employee count for all trades");
+            return;
+        }
         try {
             setIsSubmitting(true);
 
@@ -2451,6 +2470,7 @@ export default function VendorOnboardingFlow() {
                                             <Grid item xs={5}>
                                                 <TextField
                                                     fullWidth
+                                                    required
                                                     label={t.tradeCount}
                                                     value={item.count}
                                                     onChange={(e) =>
@@ -2485,6 +2505,7 @@ export default function VendorOnboardingFlow() {
                                         </Grid>
                                     ))
                                 )}
+
                                 <Button
                                     startIcon={<AddIcon />}
                                     onClick={addTrade}
