@@ -39,6 +39,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import { useContext } from "react";
 import { AuthContext } from "../App";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import logoImage from "../assets/logo.png"; // Import the logo at the top of your file
 
 // Types for API responses
 interface Country {
@@ -1838,7 +1839,17 @@ export default function VendorOnboardingFlow() {
                 }}
             >
                 {/* Left side - could be empty or add a logo here */}
-                <Box>{/* Empty or add logo */}</Box>
+                <Box>
+                    <img
+                        src={logoImage}
+                        alt="Galvanek Logo"
+                        style={{
+                            height: "40px", // Adjust size as needed
+                            width: "auto",
+                            display: "block",
+                        }}
+                    />
+                </Box>
 
                 {/* Right side - language selector and logout button */}
                 <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
