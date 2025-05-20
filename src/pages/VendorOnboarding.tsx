@@ -15,7 +15,6 @@ import {
   FormControl,
   InputLabel,
   Grid,
-  Checkbox,
   Card,
   CardContent,
   Chip,
@@ -24,9 +23,17 @@ import {
   Autocomplete,
   type SelectChangeEvent,
   CircularProgress,
-  Divider,
   Tooltip,
+  Tab,
+  Checkbox,
+  OutlinedInput,
+  IconButton,
+  InputAdornment,
+  Slider,
 } from "@mui/material";
+import TabContext from "@mui/lab/TabContext";
+import TabList from "@mui/lab/TabList";
+import TabPanel from "@mui/lab/TabPanel";
 import AddIcon from "@mui/icons-material/Add";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
@@ -39,6 +46,12 @@ import { AuthContext } from "../App";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import logoImage from "../assets/logo.png"; // Import the logo at the top of your file
 import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API responses
+import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
+import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import { color } from "@mui/system";
+import { VisibilityOff, Visibility } from "@mui/icons-material";
+
 interface Country {
   country_id: number;
   name: string;
@@ -345,6 +358,12 @@ export default function VendorOnboardingFlow() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [vendorEmail, setVendorEmail] = useState("");
+  const [region, setRegion] = useState("1");
+  const [postalCode, setPostalCode] = useState({
+    code: "",
+    radius: 0,
+  });
+  const [isAddedCode, setIsAddedCode] = useState(false);
 
   /* -------------------------------------------------------------------------- */
   /*                             // API data states                             */
@@ -447,318 +466,6 @@ export default function VendorOnboardingFlow() {
 
     fetchVendorDocuments();
   }, [vendorId, step]);
-
-  // Render document card with API data
-  // const renderDocumentCard = (docType: DocumentType) => {
-  //     const { type_id, title, mandatory } = docType;
-  //     const document = getDocumentForType(type_id);
-  //     const status = document?.document_status?.title || "Not Uploaded";
-  //     const fileName = document?.name || "";
-  //     const url = document?.url || "";
-  //     const isUploading = uploadingDoc[type_id] || false;
-  //     const showSuccess = uploadSuccess[type_id] || false;
-  //     const selectedFile = selectedFiles[type_id];
-  //     const docName = documentNames[type_id] || "";
-  //     const expiryDate = expiryDates[type_id] || "";
-
-  //     // Get styling based on status
-  //     const getStatusStyles = () => {
-  //         switch (status.toLowerCase()) {
-  //             case "approved":
-  //                 return {
-  //                     bgcolor: "#f1f8e9",
-  //                     border: "1px solid #c5e1a5",
-  //                     icon: <CheckCircleIcon sx={{ color: "#2e7d32" }} />,
-  //                     statusLabel: "Approved",
-  //                     statusColor: "#2e7d32",
-  //                     buttonDisabled: true,
-  //                 };
-  //             case "denied":
-  //             case "rejected":
-  //                 return {
-  //                     bgcolor: "#ffebee",
-  //                     border: "1px solid #ffcdd2",
-  //                     icon: <ErrorIcon sx={{ color: "#c62828" }} />,
-  //                     statusLabel: "Denied",
-  //                     statusColor: "#c62828",
-  //                     buttonDisabled: false,
-  //                 };
-  //             case "pending":
-  //                 return {
-  //                     bgcolor: "#e3f2fd",
-  //                     border: "1px solid #bbdefb",
-  //                     icon: <HourglassEmptyIcon sx={{ color: "#1565c0" }} />,
-  //                     statusLabel: "In Review",
-  //                     statusColor: "#1565c0",
-  //                     buttonDisabled: false,
-  //                 };
-  //             default:
-  //                 return {
-  //                     bgcolor: "#f5f5f5",
-  //                     border: "1px solid #e0e0e0",
-  //                     icon: null,
-  //                     statusLabel: "Not Uploaded",
-  //                     statusColor: "#757575",
-  //                     buttonDisabled: false,
-  //                 };
-  //         }
-  //     };
-
-  //     const styles = getStatusStyles();
-
-  //     return (
-  //         <Card
-  //             key={type_id}
-  //             variant="outlined"
-  //             sx={{
-  //                 bgcolor: styles.bgcolor,
-  //                 border: styles.border,
-  //                 borderRadius: 4,
-  //             }}
-  //         >
-  //             <CardContent sx={{ p: 3 }}>
-  //                 <Box
-  //                     sx={{
-  //                         display: "flex",
-  //                         justifyContent: "space-between",
-  //                         alignItems: "center",
-  //                         mb: 1,
-  //                     }}
-  //                 >
-  //                     <Box
-  //                         sx={{
-  //                             display: "flex",
-  //                             alignItems: "center",
-  //                             gap: 1,
-  //                         }}
-  //                     >
-  //                         <Checkbox
-  //                             checked={status.toLowerCase() === "approved"}
-  //                             disabled={status.toLowerCase() !== "approved"}
-  //                             sx={{
-  //                                 color:
-  //                                     status.toLowerCase() === "approved"
-  //                                         ? "#2e7d32"
-  //                                         : "#9e9e9e",
-  //                                 "&.Mui-checked": { color: "#2e7d32" },
-  //                             }}
-  //                         />
-  //                         <Box>
-  //                             <Typography
-  //                                 variant="subtitle1"
-  //                                 sx={{ fontWeight: 500, color: "#424242" }}
-  //                             >
-  //                                 {title} {mandatory && " *"}
-  //                             </Typography>
-  //                             <Typography
-  //                                 variant="body2"
-  //                                 color="text.secondary"
-  //                             >
-  //                                 {mandatory
-  //                                     ? "Required document"
-  //                                     : "Optional document"}
-  //                             </Typography>
-  //                         </Box>
-  //                     </Box>
-  //                     <Chip
-  //                         label={styles.statusLabel}
-  //                         sx={{
-  //                             color: styles.statusColor,
-  //                             bgcolor: "transparent",
-  //                             border: `1px solid ${styles.statusColor}`,
-  //                             fontWeight: 500,
-  //                         }}
-  //                     />
-  //                 </Box>
-
-  //                 {document && (
-  //                     <Box
-  //                         sx={{
-  //                             display: "flex",
-  //                             alignItems: "center",
-  //                             mt: 1,
-  //                             mb: 1,
-  //                             gap: 0.5,
-  //                         }}
-  //                     >
-  //                         <InsertDriveFileIcon
-  //                             fontSize="small"
-  //                             color="action"
-  //                         />
-  //                         <Typography
-  //                             variant="caption"
-  //                             color="text.secondary"
-  //                             sx={{
-  //                                 textDecoration: url ? "underline" : "none",
-  //                                 cursor: url ? "pointer" : "default",
-  //                                 "&:hover": {
-  //                                     color: url
-  //                                         ? "primary.main"
-  //                                         : "text.secondary",
-  //                                 },
-  //                             }}
-  //                             onClick={() =>
-  //                                 url && window.open(url, "_blank")
-  //                             }
-  //                         >
-  //                             {fileName} {url && "(Click to view)"}
-  //                         </Typography>
-  //                     </Box>
-  //                 )}
-
-  //                 {document?.document_status?.description && (
-  //                     <Typography
-  //                         variant="caption"
-  //                         sx={{
-  //                             color:
-  //                                 status.toLowerCase() === "denied" ||
-  //                                 status.toLowerCase() === "rejected"
-  //                                     ? "#c62828"
-  //                                     : "text.secondary",
-  //                             display: "block",
-  //                             mt: 0.5,
-  //                             mb: 1,
-  //                         }}
-  //                     >
-  //                         {document.document_status.description}
-  //                     </Typography>
-  //                 )}
-
-  //                 <Divider sx={{ my: 2 }} />
-
-  //                 <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-  //                     {document ? "Update document" : "Upload new document"}
-  //                 </Typography>
-
-  //                 <Box sx={{ mb: 1.5 }}>
-  //                     <TextField
-  //                         fullWidth
-  //                         label="Document name"
-  //                         margin="dense"
-  //                         value={docName}
-  //                         onChange={(e) =>
-  //                             handleDocumentNameChange(
-  //                                 type_id,
-  //                                 e.target.value
-  //                             )
-  //                         }
-  //                         sx={{ mb: 1 }}
-  //                     />
-
-  //                     <TextField
-  //                         fullWidth
-  //                         label="Expiry date (if applicable)"
-  //                         type="date"
-  //                         margin="dense"
-  //                         value={expiryDate}
-  //                         onChange={(e) =>
-  //                             handleExpiryDateChange(type_id, e.target.value)
-  //                         }
-  //                         InputLabelProps={{ shrink: true }}
-  //                         sx={{ mb: 1 }}
-  //                     />
-
-  //                     <label htmlFor={`file-upload-${type_id}`}>
-  //                         <UploadInput
-  //                             id={`file-upload-${type_id}`}
-  //                             type="file"
-  //                             accept="application/pdf"
-  //                             onChange={(e) => {
-  //                                 const files = (e.target as HTMLInputElement)
-  //                                     .files;
-  //                                 if (files && files.length > 0) {
-  //                                     handleFileSelection(type_id, files[0]);
-  //                                 }
-  //                             }}
-  //                         />
-  //                         <CustomFileInput>
-  //                             <Box
-  //                                 sx={{
-  //                                     flexGrow: 1,
-  //                                     overflow: "hidden",
-  //                                     textOverflow: "ellipsis",
-  //                                     whiteSpace: "nowrap",
-  //                                 }}
-  //                             >
-  //                                 {selectedFile
-  //                                     ? selectedFile.name
-  //                                     : "No file chosen"}
-  //                             </Box>
-  //                             <Button
-  //                                 component="span"
-  //                                 variant="contained"
-  //                                 size="small"
-  //                                 sx={{
-  //                                     ml: 1,
-  //                                     bgcolor: "#f5f5f5",
-  //                                     color: "#424242",
-  //                                     boxShadow: "none",
-  //                                     "&:hover": {
-  //                                         bgcolor: "#e0e0e0",
-  //                                         boxShadow: "none",
-  //                                     },
-  //                                 }}
-  //                             >
-  //                                 Choose file (PDF)
-  //                             </Button>
-  //                         </CustomFileInput>
-  //                     </label>
-  //                 </Box>
-
-  //                 <Box sx={{ position: "relative" }}>
-  //                     <Button
-  //                         variant="contained"
-  //                         size="small"
-  //                         disabled={
-  //                             isUploading ||
-  //                             !selectedFile ||
-  //                             styles.buttonDisabled
-  //                         }
-  //                         onClick={() => handleDocumentUpload(type_id)}
-  //                         sx={{
-  //                             bgcolor: styles.buttonDisabled
-  //                                 ? "#bdbdbd"
-  //                                 : "#F57C00",
-  //                             color: "#fff",
-  //                             "&:hover": {
-  //                                 bgcolor: styles.buttonDisabled
-  //                                     ? "#bdbdbd"
-  //                                     : "#EF6C00",
-  //                             },
-  //                             borderRadius: 4,
-  //                             textTransform: "none",
-  //                             px: 2,
-  //                         }}
-  //                     >
-  //                         {isUploading ? (
-  //                             <CircularProgress
-  //                                 size={24}
-  //                                 sx={{ color: "#fff" }}
-  //                             />
-  //                         ) : showSuccess ? (
-  //                             "Uploaded!"
-  //                         ) : (
-  //                             "Upload Document"
-  //                         )}
-  //                     </Button>
-  //                 </Box>
-
-  //                 {/* {mandatory && (
-  //                     <Typography
-  //                         variant="caption"
-  //                         sx={{
-  //                             display: "block",
-  //                             mt: 2,
-  //                             color: "text.secondary",
-  //                         }}
-  //                     >
-  //                         * This document is mandatory for vendor verification
-  //                     </Typography>
-  //                 )} */}
-  //             </CardContent>
-  //         </Card>
-  //     );
-  // };
 
   const renderDocumentCard = (docType: DocumentType) => {
     const { type_id, title, mandatory } = docType;
@@ -1053,98 +760,6 @@ export default function VendorOnboardingFlow() {
     }));
   };
 
-  // Handle file upload
-  // const handleDocumentUpload = async (typeId: number) => {
-  //     if (!vendorId) {
-  //         alert("Vendor ID not available. Please try again later.");
-  //         return;
-  //     }
-
-  //     const file = selectedFiles[typeId];
-  //     const name = documentNames[typeId] || file?.name || "Unnamed document";
-  //     const expiryDate = expiryDates[typeId] || null;
-
-  //     if (!file) {
-  //         alert("Please select a file to upload");
-  //         return;
-  //     }
-
-  //     setUploadingDoc((prev) => ({ ...prev, [typeId]: true }));
-  //     setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
-
-  //     try {
-  //         const formData = new FormData();
-  //         formData.append("file", file);
-  //         formData.append("vendor_id", vendorId.toString());
-  //         formData.append("type_id", typeId.toString());
-  //         formData.append("name", name);
-
-  //         // Only append expired_at if a date was provided
-  //         if (expiryDate) {
-  //             formData.append(
-  //                 "expired_at",
-  //                 new Date(expiryDate).toISOString()
-  //             );
-  //         }
-  //         const response = await fetch(
-  //             `${API_BASE_URL}/documents/vendors/documents`,
-  //             {
-  //                 method: "POST",
-  //                 body: formData,
-  //             }
-  //         );
-
-  //         if (!response.ok) {
-  //             throw new Error(`HTTP error! Status: ${response.status}`);
-  //         }
-
-  //         const result = await response.json();
-  //         console.log("Upload successful:", result);
-
-  //         // Refresh the documents list with the new combined API
-  //         const docResponse = await fetch(
-  //             `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
-  //         );
-  //         const docResult = await docResponse.json();
-
-  //         if (docResponse.ok && docResult.data) {
-  //             // Extract document types from the response
-  //             const types: DocumentType[] = docResult.data.map(
-  //                 (item: DocumentWithType) => {
-  //                     return {
-  //                         type_id: item.type_id,
-  //                         title: item.title,
-  //                         mandatory:
-  //                             item.document?.document_types?.mandatory ??
-  //                             false,
-  //                         category_id:
-  //                             item.document?.document_types?.category_id ?? 0,
-  //                     };
-  //                 }
-  //             );
-  //             setDocumentTypes(types);
-
-  //             // Extract submitted documents
-  //             const documents: Document[] = docResult.data
-  //                 .filter((item: DocumentWithType) => item.document !== null)
-  //                 .map((item: DocumentWithType) => item.document as Document);
-  //             setVendorDocuments(documents);
-  //         }
-
-  //         setUploadSuccess((prev) => ({ ...prev, [typeId]: true }));
-
-  //         // Clear the file input
-  //         setTimeout(() => {
-  //             setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
-  //         }, 3000);
-  //     } catch (error) {
-  //         console.error("Error uploading document:", error);
-  //         alert("Failed to upload document. Please try again.");
-  //     } finally {
-  //         setUploadingDoc((prev) => ({ ...prev, [typeId]: false }));
-  //     }
-  // };
-
   const handleDocumentUpload = async (typeId: number) => {
     if (!vendorId) {
       alert("Vendor ID not available. Please try again later.");
@@ -1237,24 +852,11 @@ export default function VendorOnboardingFlow() {
 
   // Check if any mandatory document is not yet approved to enable Continue button
   const getDocumentStatus = () => {
-    //const mandatoryTypes = documentTypes.filter((type) => type.mandatory);
-
-    // User can proceed if all mandatory documents are uploaded
-    // Ideally we'd check for approved status, but for now we'll allow if they're at least uploaded
-    // return mandatoryTypes.every((type) => {
-    //   const doc = getDocumentForType(type.type_id);
-    //   return doc !== undefined;
-    // });
     return documentTypes.every((type) => {
       const doc = getDocumentForType(type.type_id);
       return doc !== undefined && doc.document_status?.title === "Approved";
     });
   };
-
-  console.log("vendorDocuments");
-  
-  console.log(vendorDocuments);
-  
 
   // Fetch countries from API
   useEffect(() => {
@@ -1316,7 +918,7 @@ export default function VendorOnboardingFlow() {
       setLoadingTrades(true);
       setTradesError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/gewerks`);
+        const response = await fetch(`${API_BASE_URL}/gewerks/assign`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -1453,7 +1055,7 @@ export default function VendorOnboardingFlow() {
         }
 
         const result = await response.json();
-        //console.log("Vendor data:", result);
+        console.log("Vendor data:", result);
 
         if (result.data) {
           // Set vendor ID
@@ -1473,6 +1075,21 @@ export default function VendorOnboardingFlow() {
           if (result.data.zip_code) setZipCode(result.data.zip_code);
           if (result.data.city) setCity(result.data.city);
           if (result.data.website_url) setWebsite(result.data.website_url);
+          if (result.data.cover_region)
+            setRegion(
+              result.data.cover_region === "NationalWide"
+                ? "1"
+                : result.data.cover_region === "State"
+                ? "2"
+                : "3"
+            );
+          if (result.data.postcode) {
+            setPostalCode({
+              code: result.data.postcode,
+              radius: result.data.radius,
+            });
+            setIsAddedCode(true);
+          }
 
           // Set country and country ID
           if (result.data.country_id) {
@@ -1543,15 +1160,12 @@ export default function VendorOnboardingFlow() {
           }
 
           // Initialize trades from vendor gewerks
-          console.log("hello");
-          console.log(result.data.gewerks);
           if (result.data.gewerks && result.data.gewerks.length > 0) {
             const initialTrades = result.data.gewerks.map((gewerk: any) => ({
               trade: gewerk.name,
               count: gewerk.employee_number,
               gesys_gewerk_id: gewerk.gewerk_id,
             }));
-            console.log(initialTrades);
             setTrades(initialTrades);
           }
         } else {
@@ -1715,6 +1329,14 @@ export default function VendorOnboardingFlow() {
         city: city,
         country_id: countryId,
         website_url: website || "", // Note the name change from website to website_url
+        cover_region:
+          region === "1"
+            ? "NationalWide"
+            : region === "2"
+            ? "State"
+            : "PostCode",
+        postcode: region === "3" ? postalCode.code : "",
+        radius: region === "3" ? postalCode.radius : "",
       };
 
       // Make the API call
@@ -2260,16 +1882,13 @@ export default function VendorOnboardingFlow() {
                             <MenuItem value="">
                               <em>{t.selectTrade}</em>
                             </MenuItem>
-                            {/* Filter trade options to keep current selection and remove ones used elsewhere */}
                             {tradeOptions
                               .filter((option) => {
-                                // "used elsewhere"?
                                 const usedByAnotherRow = trades.some(
                                   (t, idx) =>
                                     idx !== i &&
                                     t.gesys_gewerk_id === option.gesys_gewerk_id
                                 );
-                                // keep this row's current pick, or anything not used by another
                                 return (
                                   option.gewerk_name === item.trade ||
                                   !usedByAnotherRow
@@ -2340,66 +1959,285 @@ export default function VendorOnboardingFlow() {
                 <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
                   {t.regions}
                 </Typography>
-                <FormControl fullWidth>
-                  <InputLabel id="regions-label">{t.regions}</InputLabel>
-                  <Select
-                    labelId="regions-label"
-                    multiple
-                    value={selectedRegions.map((id) => id.toString())}
-                    label={t.regions}
-                    onChange={(e) => {
-                      const selectedValues = e.target.value as string[];
-                      setSelectedRegions(
-                        selectedValues.map((val) => Number.parseInt(val))
-                      );
-                    }}
-                    renderValue={(selected) => {
-                      const selectedNames = selected
-                        .map((id) => {
-                          const state = federalStates.find(
-                            (s) => s.id === Number.parseInt(id as string)
-                          );
-                          return state ? state.german_name : "";
-                        })
-                        .filter(Boolean);
-                      return selectedNames.join(", ");
-                    }}
-                    sx={{ borderRadius: 4 }}
-                    disabled={loadingFederalStates}
-                  >
-                    {federalStates.map((state) => (
-                      <MenuItem key={state.id} value={state.id.toString()}>
-                        <Checkbox
-                          checked={selectedRegions.includes(state.id)}
-                        />
-                        <Typography>
-                          {state.german_name} ({state.english_name})
-                        </Typography>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {loadingFederalStates && (
-                    <Box
+                <Box
+                  border={1}
+                  borderColor="#e0e0e0"
+                  borderRadius={2}
+                  sx={{ p: 2 }}
+                >
+                  <TabContext value={region}>
+                    <TabList
+                      onChange={(
+                        _event: React.SyntheticEvent,
+                        value: string
+                      ) => {
+                        setRegion(value);
+                      }}
+                      variant="fullWidth"
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        mt: 1,
+                        "& .MuiTabs-indicator": {
+                          display: "none",
+                        },
                       }}
                     >
-                      <CircularProgress size={16} sx={{ mr: 1 }} />
-                      <Typography variant="caption" color="text.secondary">
-                        {t.loadingRegions || "Loading regions..."}
+                      <Tab
+                        sx={{
+                          backgroundColor:
+                            region === "1" ? "#F57C00" : "transparent",
+                          color: region === "1" ? "#fff" : "#000",
+                          "&.Mui-selected": {
+                            color: "#fff",
+                          },
+                          borderRadius: 2,
+                          textTransform: "none",
+                          p: 1,
+                        }}
+                        label={
+                          <span
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <LanguageOutlinedIcon sx={{ fontSize: 20 }} />
+                            Nationwide
+                          </span>
+                        }
+                        value="1"
+                      />
+                      <Tab
+                        sx={{
+                          backgroundColor:
+                            region === "2" ? "#F57C00" : "transparent",
+                          color: region === "2" ? "#fff" : "#000",
+                          "&.Mui-selected": {
+                            color: "#fff",
+                          },
+                          borderRadius: 2,
+                          textTransform: "none",
+                        }}
+                        label={
+                          <span
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <MapOutlinedIcon sx={{ fontSize: 20 }} />
+                            States
+                          </span>
+                        }
+                        value="2"
+                      />
+                      <Tab
+                        sx={{
+                          backgroundColor:
+                            region === "3" ? "#F57C00" : "transparent",
+                          color: region === "3" ? "#fff" : "#000",
+                          "&.Mui-selected": {
+                            color: "#fff",
+                          },
+                          borderRadius: 2,
+                          textTransform: "none",
+                          padding: "6px 16px",
+                        }}
+                        label={
+                          <span
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <PlaceOutlinedIcon sx={{ fontSize: 20 }} />
+                            Postcode
+                          </span>
+                        }
+                        value="3"
+                      />
+                    </TabList>
+                    <TabPanel value="1">
+                      Your services reach the whole country
+                    </TabPanel>
+                    <TabPanel value="2">
+                      <Typography sx={{ mb: 2 }}>
+                        If you operate in specific postal code areas, switch to
+                        the Postcode tab.
                       </Typography>
-                    </Box>
-                  )}
-                  {federalStatesError && (
-                    <Alert severity="error" sx={{ mt: 1, py: 0 }}>
-                      <Typography variant="caption">
-                        {federalStatesError}
+                      <Box sx={{ maxHeight: 400, overflowY: "auto" }}>
+                        {federalStates.map((state) => (
+                          <Box
+                            key={state.id}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mt: 1,
+                            }}
+                          >
+                            <Checkbox
+                              checked={selectedRegions.includes(state.id)}
+                              onChange={(e) => {
+                                const selectedValues = e.target.checked
+                                  ? [...selectedRegions, state.id]
+                                  : selectedRegions.filter(
+                                      (id) => id !== state.id
+                                    );
+                                setSelectedRegions(selectedValues);
+                              }}
+                            />
+                            <Typography>
+                              {state.german_name} ({state.english_name})
+                            </Typography>
+                          </Box>
+                        ))}
+                        {loadingFederalStates && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mt: 1,
+                            }}
+                          >
+                            <CircularProgress size={16} sx={{ mr: 1 }} />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {t.loadingRegions || "Loading regions..."}
+                            </Typography>
+                          </Box>
+                        )}
+                        {federalStatesError && (
+                          <Alert severity="error" sx={{ mt: 1, py: 0 }}>
+                            <Typography variant="caption">
+                              {federalStatesError}
+                            </Typography>
+                          </Alert>
+                        )}
+                      </Box>
+                      {selectedRegions.map((id) => (
+                        <Chip
+                          key={id}
+                          label={
+                            <Typography>
+                              {
+                                federalStates.find((s) => s.id === id)
+                                  ?.german_name
+                              }{" "}
+                              (
+                              {
+                                federalStates.find((s) => s.id === id)
+                                  ?.english_name
+                              }
+                              )
+                            </Typography>
+                          }
+                          onDelete={() => {
+                            setSelectedRegions((prev) =>
+                              prev.filter((regionId) => regionId !== id)
+                            );
+                          }}
+                          sx={{
+                            mr: 1,
+                            mt: 1,
+                            backgroundColor: "rgba(245, 124, 0, 0.1)",
+                            color: "primary.main",
+                          }}
+                        />
+                      ))}
+                    </TabPanel>
+                    <TabPanel value="3">
+                      <Typography sx={{ mb: 2 }}>
+                        If you cover entire states, switch to the States tab.
                       </Typography>
-                    </Alert>
-                  )}
-                </FormControl>
+
+                      {isAddedCode ? (
+                        <Box
+                          sx={{
+                            mt: 1,
+                            border: "1px solid #e0e0e0",
+                            borderRadius: 2,
+                            p: 0.5,
+                          }}
+                        >
+                          <Typography sx={{ p: 1 }}>
+                            {postalCode.code}
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              ml: 2,
+                              gap: 4,
+                              width: "100%",
+                            }}
+                          >
+                            <Slider
+                              value={postalCode.radius}
+                              aria-label="Small"
+                              size="small"
+                              valueLabelDisplay="auto"
+                              onChange={(_event, value) =>
+                                setPostalCode({
+                                  ...postalCode,
+                                  radius: parseInt(value.toString()),
+                                })
+                              }
+                              min={1}
+                              sx={{ width: "80%" }}
+                            />
+                            <Typography>Radius: {postalCode.radius}</Typography>
+                          </Box>
+                          <Button
+                            variant="text"
+                            onClick={() => {
+                              setPostalCode({
+                                code: "",
+                                radius: 0,
+                              });
+                              setIsAddedCode(false);
+                            }}
+                            sx={{ color: "red" }}
+                          >
+                            Remove
+                          </Button>
+                        </Box>
+                      ) : (
+                        <FormControl variant="outlined" fullWidth size="small">
+                          <InputLabel>Enter postcode</InputLabel>
+                          <OutlinedInput
+                            id="outlined-adornment-password"
+                            value={postalCode.code}
+                            onChange={(e) => {
+                              setPostalCode({
+                                ...postalCode,
+                                code: e.target.value,
+                              });
+                            }}
+                            disabled={isAddedCode}
+                            endAdornment={
+                              <InputAdornment position="end">
+                                <Button
+                                  onClick={() => {
+                                    if (!postalCode.code) {
+                                      alert("Please enter a postcode");
+                                      return;
+                                    }
+                                    setIsAddedCode(true);
+                                  }}
+                                >
+                                  Add
+                                </Button>
+                              </InputAdornment>
+                            }
+                            label="Enter postcode"
+                          />
+                        </FormControl>
+                      )}
+                    </TabPanel>
+                  </TabContext>
+                </Box>
               </Grid>
 
               <Grid item xs={12}>
@@ -2556,9 +2394,6 @@ export default function VendorOnboardingFlow() {
             >
               {t.uploadDocumentsTitle}
             </Typography>
-            {/* <Typography variant="body2" color="text.secondary">
-              {t.uploadDocumentsSubtitle}
-            </Typography> */}
           </Box>
 
           <StepperContainer>
