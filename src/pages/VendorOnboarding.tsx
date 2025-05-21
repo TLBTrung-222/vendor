@@ -27,7 +27,6 @@ import {
   Tab,
   Checkbox,
   OutlinedInput,
-  IconButton,
   InputAdornment,
   Slider,
 } from "@mui/material";
@@ -49,8 +48,6 @@ import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API respons
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
-import { color } from "@mui/system";
-import { VisibilityOff, Visibility } from "@mui/icons-material";
 
 interface Country {
   country_id: number;
@@ -359,11 +356,13 @@ export default function VendorOnboardingFlow() {
   const [phone, setPhone] = useState("");
   const [vendorEmail, setVendorEmail] = useState("");
   const [region, setRegion] = useState("1");
-  const [postalCode, setPostalCode] = useState({
+  const [postalCode, setPostalCode] = useState<
+    { code: string; radius: number }[]
+  >([]);
+  const [newPostalCode, setNewPostalCode] = useState({
     code: "",
-    radius: 0,
+    radius: 1,
   });
-  const [isAddedCode, setIsAddedCode] = useState(false);
 
   /* -------------------------------------------------------------------------- */
   /*                             // API data states                             */
@@ -918,7 +917,7 @@ export default function VendorOnboardingFlow() {
       setLoadingTrades(true);
       setTradesError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/gewerks/assign`);
+        const response = await fetch(`${API_BASE_URL}/gewerks`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -1083,12 +1082,12 @@ export default function VendorOnboardingFlow() {
                 ? "2"
                 : "3"
             );
-          if (result.data.postcode) {
-            setPostalCode({
-              code: result.data.postcode,
-              radius: result.data.radius,
-            });
-            setIsAddedCode(true);
+          if (result.data.postcodes) {
+            const postcodes = result.data.postcodes.map((item: any) => ({
+              code: item.postcode,
+              radius: item.radius,
+            }));
+            setPostalCode(postcodes);
           }
 
           // Set country and country ID
@@ -1335,8 +1334,11 @@ export default function VendorOnboardingFlow() {
             : region === "2"
             ? "State"
             : "PostCode",
-        postcode: region === "3" ? postalCode.code : "",
-        radius: region === "3" ? postalCode.radius : "",
+        postcodes: postalCode.map((item) => ({
+          postcode: item.code,
+          radius: item.radius,
+        }))
+        
       };
 
       // Make the API call
@@ -2152,89 +2154,105 @@ export default function VendorOnboardingFlow() {
                       <Typography sx={{ mb: 2 }}>
                         If you cover entire states, switch to the States tab.
                       </Typography>
-
-                      {isAddedCode ? (
-                        <Box
-                          sx={{
-                            mt: 1,
-                            border: "1px solid #e0e0e0",
-                            borderRadius: 2,
-                            p: 0.5,
+                      <FormControl variant="outlined" fullWidth size="small">
+                        <InputLabel>Enter postcode</InputLabel>
+                        <OutlinedInput
+                          id="outlined-adornment-password"
+                          value={newPostalCode.code}
+                          onChange={(e) => {
+                            setNewPostalCode({
+                              ...newPostalCode,
+                              code: e.target.value,
+                            });
                           }}
-                        >
-                          <Typography sx={{ p: 1 }}>
-                            {postalCode.code}
-                          </Typography>
+                          endAdornment={
+                            <InputAdornment position="end">
+                              <Button
+                                onClick={() => {
+                                  if (!newPostalCode.code) {
+                                    alert("Please enter a postcode");
+                                    return;
+                                  }
+                                  setPostalCode((prev) => [
+                                    ...prev,
+                                    {
+                                      code: newPostalCode.code,
+                                      radius: newPostalCode.radius,
+                                    },
+                                  ]);
+                                  setNewPostalCode({
+                                    code: "",
+                                    radius: 1,
+                                  });
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </InputAdornment>
+                          }
+                          label="Enter postcode"
+                        />
+                      </FormControl>
+                      {postalCode &&
+                        postalCode.map((_, index) => (
                           <Box
+                            key={index}
                             sx={{
-                              display: "flex",
-                              ml: 2,
-                              gap: 4,
-                              width: "100%",
+                              mt: 1,
+                              border: "1px solid #e0e0e0",
+                              borderRadius: 2,
+                              p: 0.5,
                             }}
                           >
-                            <Slider
-                              value={postalCode.radius}
-                              aria-label="Small"
-                              size="small"
-                              valueLabelDisplay="auto"
-                              onChange={(_event, value) =>
-                                setPostalCode({
-                                  ...postalCode,
-                                  radius: parseInt(value.toString()),
-                                })
-                              }
-                              min={1}
-                              sx={{ width: "80%" }}
-                            />
-                            <Typography>Radius: {postalCode.radius}</Typography>
+                            <Typography sx={{ p: 1 }}>
+                              {postalCode[index].code}
+                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                ml: 2,
+                                gap: 4,
+                                width: "100%",
+                              }}
+                            >
+                              <Slider
+                                value={postalCode[index].radius}
+                                aria-label="Small"
+                                size="small"
+                                valueLabelDisplay="auto"
+                                onChange={(_event, value) =>
+                                  setPostalCode((prev) =>
+                                    prev.map((item, idx) =>
+                                      idx === index
+                                        ? {
+                                            ...item,
+                                            radius: parseInt(value.toString()),
+                                          }
+                                        : item
+                                    )
+                                  )
+                                }
+                                min={1}
+                                max={500}
+                                sx={{ width: "80%" }}
+                              />
+                              <Typography>
+                                Radius: {postalCode[index].radius} km
+                              </Typography>
+                            </Box>
+                            <Button
+                              variant="text"
+                              onClick={() => {
+                                setPostalCode((prev) =>
+                                  prev.filter((_item, idx) => idx !== index)
+                                );
+                              }}
+                              sx={{ color: "red" }}
+                            >
+                              Remove
+                            </Button>
                           </Box>
-                          <Button
-                            variant="text"
-                            onClick={() => {
-                              setPostalCode({
-                                code: "",
-                                radius: 0,
-                              });
-                              setIsAddedCode(false);
-                            }}
-                            sx={{ color: "red" }}
-                          >
-                            Remove
-                          </Button>
-                        </Box>
-                      ) : (
-                        <FormControl variant="outlined" fullWidth size="small">
-                          <InputLabel>Enter postcode</InputLabel>
-                          <OutlinedInput
-                            id="outlined-adornment-password"
-                            value={postalCode.code}
-                            onChange={(e) => {
-                              setPostalCode({
-                                ...postalCode,
-                                code: e.target.value,
-                              });
-                            }}
-                            disabled={isAddedCode}
-                            endAdornment={
-                              <InputAdornment position="end">
-                                <Button
-                                  onClick={() => {
-                                    if (!postalCode.code) {
-                                      alert("Please enter a postcode");
-                                      return;
-                                    }
-                                    setIsAddedCode(true);
-                                  }}
-                                >
-                                  Add
-                                </Button>
-                              </InputAdornment>
-                            }
-                            label="Enter postcode"
-                          />
-                        </FormControl>
-                      )}
+                        ))}
                     </TabPanel>
                   </TabContext>
                 </Box>
