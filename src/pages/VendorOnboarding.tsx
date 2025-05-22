@@ -2095,14 +2095,14 @@ export default function VendorOnboardingFlow() {
                         If you operate in specific postal code areas, switch to
                         the Postcode tab.
                       </Typography>
-                      <Box sx={{ maxHeight: 400, overflowY: "auto" }}>
+                      <Box sx={{ maxHeight: 200, overflowY: "auto" }}>
                         {federalStates.map((state) => (
                           <Box
                             key={state.id}
                             sx={{
                               display: "flex",
                               alignItems: "center",
-                              mt: 1,
+                              maxHeight: 32,
                             }}
                           >
                             <Checkbox
