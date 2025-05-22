@@ -1078,7 +1078,7 @@ export default function VendorOnboardingFlow() {
             setRegion(
               result.data.cover_region === "NationalWide"
                 ? "1"
-                : result.data.cover_region === "State"
+                : result.data.cover_region === "States"
                 ? "2"
                 : "3"
             );
@@ -1332,7 +1332,7 @@ export default function VendorOnboardingFlow() {
           region === "1"
             ? "NationalWide"
             : region === "2"
-            ? "State"
+            ? "States"
             : "PostCode",
         postcodes: postalCode.map((item) => ({
           postcode: item.code,
