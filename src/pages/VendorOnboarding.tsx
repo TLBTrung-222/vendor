@@ -343,6 +343,7 @@ export default function VendorOnboardingFlow() {
   /* -------------------------------------------------------------------------- */
   /*                            // Form field states                            */
   /* -------------------------------------------------------------------------- */
+  const [onboardingStatus, setOnboardingStatus] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [taxId, setTaxId] = useState("");
   const [street, setStreet] = useState("");
@@ -502,7 +503,7 @@ export default function VendorOnboardingFlow() {
         case "denied":
         case "rejected":
           return {
-            bgcolor: "#ffebee",
+            bgcolor: "#fff3f3",
             border: "1px solid #ffcdd2",
             icon: (
               <HelpIcon
@@ -646,6 +647,7 @@ export default function VendorOnboardingFlow() {
                 variant="caption"
                 color="text.secondary"
                 sx={{
+                  ml: 1,
                   textDecoration: url ? "underline" : "none",
                   cursor: url ? "pointer" : "default",
                   "&:hover": {
@@ -657,6 +659,20 @@ export default function VendorOnboardingFlow() {
                 {fileName} {url && "(Click to view)"}
               </Typography>
             </Box>
+          )}
+
+          {document?.description && (
+            <Alert
+              severity="error"
+              sx={{
+                backgroundColor: "transparent",
+                color: "#c62828",
+                padding: 0,
+                fontWeight: 500,
+              }}
+            >
+              {document?.description}
+            </Alert>
           )}
 
           {/* {document?.document_status?.description && (
@@ -1054,7 +1070,7 @@ export default function VendorOnboardingFlow() {
         }
 
         const result = await response.json();
-        console.log("Vendor data:", result);
+        //console.log("Vendor data:", result);
 
         if (result.data) {
           // Set vendor ID
@@ -1063,6 +1079,8 @@ export default function VendorOnboardingFlow() {
           }
 
           // Prefill form fields with vendor data
+          if (result.data.onboarding_status_description)
+            setOnboardingStatus(result.data.onboarding_status_description);
           if (result.data.company_name)
             setCompanyName(result.data.company_name);
           if (result.data.tax_id) setTaxId(result.data.tax_id);
@@ -1078,7 +1096,7 @@ export default function VendorOnboardingFlow() {
             setRegion(
               result.data.cover_region === "NationalWide"
                 ? "1"
-                : result.data.cover_region === "State"
+                : result.data.cover_region === "States"
                 ? "2"
                 : "3"
             );
@@ -1107,7 +1125,6 @@ export default function VendorOnboardingFlow() {
           // Set legal form ID
           if (result.data.legal_form_id) {
             setLegalFormId(result.data.legal_form_id);
-            // Find legal form from ID (will be populated after country is set)
           }
 
           // Set federal states (regions)
@@ -1327,18 +1344,17 @@ export default function VendorOnboardingFlow() {
         apartment_number: apartmentNumber || "",
         city: city,
         country_id: countryId,
-        website_url: website || "", // Note the name change from website to website_url
+        website_url: website || "",
         cover_region:
           region === "1"
             ? "NationalWide"
             : region === "2"
-            ? "State"
+            ? "States"
             : "PostCode",
         postcodes: postalCode.map((item) => ({
           postcode: item.code,
           radius: item.radius,
-        }))
-        
+        })),
       };
 
       // Make the API call
@@ -1360,8 +1376,6 @@ export default function VendorOnboardingFlow() {
       const vendorResult = await vendorResponse.json();
       //console.log("Vendor update successful:", vendorResult);
 
-      // Now prepare and send the legal representative (user) update request
-      // Get the user email and access token from localStorage
       const userEmail = localStorage.getItem("userEmail");
       const accessToken = localStorage.getItem("accessToken");
 
@@ -1554,6 +1568,7 @@ export default function VendorOnboardingFlow() {
               </Typography>
             )}
           </Box>
+
           <Alert
             severity="info"
             sx={{
@@ -1582,6 +1597,18 @@ export default function VendorOnboardingFlow() {
               </Step>
             </Stepper>
           </StepperContainer>
+
+          {onboardingStatus && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderLeft: "5px solid #D74141",
+              }}
+            >
+              {onboardingStatus}
+            </Alert>
+          )}
 
           <FormContainer>
             <Grid container spacing={2}>
