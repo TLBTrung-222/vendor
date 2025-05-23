@@ -48,6 +48,7 @@ import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API respons
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import { display } from "@mui/system";
 
 interface Country {
   country_id: number;
@@ -117,6 +118,9 @@ interface DocumentType {
   title: string;
   mandatory: boolean;
   category_id: number;
+  issued_by: string;
+  how_to_optain: string;
+  appearance: string;
 }
 
 interface DocumentStatus {
@@ -143,6 +147,9 @@ interface DocumentWithType {
   title: string;
   country_id: number;
   document: Document | null;
+  issued_by: string;
+  how_to_optain: string;
+  appearance: string;
 }
 
 // Contract data
@@ -437,6 +444,8 @@ export default function VendorOnboardingFlow() {
 
         const result = await response.json();
         if (result.data) {
+          console.log(result.data);
+
           // Extract document types from the response
           const types: DocumentType[] = result.data.map(
             (item: DocumentWithType) => {
@@ -445,6 +454,9 @@ export default function VendorOnboardingFlow() {
                 title: item.title,
                 mandatory: item.document?.document_types?.mandatory ?? false,
                 category_id: item.document?.document_types?.category_id ?? 0,
+                issued_by: item?.issued_by ?? "",
+                how_to_optain: item?.how_to_optain ?? "",
+                appearance: item?.appearance ?? "",
               };
             }
           );
@@ -468,7 +480,8 @@ export default function VendorOnboardingFlow() {
   }, [vendorId, step]);
 
   const renderDocumentCard = (docType: DocumentType) => {
-    const { type_id, title, mandatory } = docType;
+    const { type_id, title, mandatory, issued_by, how_to_optain, appearance } =
+      docType;
     const document = getDocumentForType(type_id);
     const status = document?.document_status?.title || "Not Uploaded";
     const fileName = document?.name || "";
@@ -485,7 +498,33 @@ export default function VendorOnboardingFlow() {
             bgcolor: "#f1f8e9",
             border: "1px solid #c5e1a5",
             icon: (
-              <Tooltip title="Document approved" placement="bottom" arrow>
+              <Tooltip
+                title={
+                  <Box
+                    sx={{
+                      width: 150,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                    className="tooltip"
+                  >
+                    <Box sx={{ display: "flex", gap: 1 }} className="issued-by">
+                      <Typography variant="subtitle2">Issued by: </Typography>
+                      <Typography variant="body2">{issued_by}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-optain">
+                      <Typography variant="subtitle2">How to optain: </Typography>
+                      <Typography variant="body2">{how_to_optain}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }} className="appearance">
+                      <Typography variant="subtitle2">Appearance: </Typography>
+                      <Typography variant="body2">{appearance}</Typography>
+                    </Box>
+                  </Box>
+                }
+                placement="bottom"
+                arrow
+              >
                 <HelpIcon
                   sx={{
                     color: "#2563eb",
@@ -506,14 +545,42 @@ export default function VendorOnboardingFlow() {
             bgcolor: "#fff3f3",
             border: "1px solid #ffcdd2",
             icon: (
-              <HelpIcon
-                sx={{
-                  color: "#2563eb",
-                  background: "#dbeafe",
-                  borderRadius: 50,
-                  padding: 0.3,
-                }}
-              />
+              <Tooltip
+                title={
+                  <Box
+                    sx={{
+                      width: 150,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                    className="tooltip"
+                  >
+                    <Box sx={{ display: "flex", gap: 1 }} className="issued-by">
+                      <Typography variant="subtitle2">Issued by: </Typography>
+                      <Typography variant="body2">{issued_by}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-optain">
+                      <Typography variant="subtitle2">How to optain: </Typography>
+                      <Typography variant="body2">{how_to_optain}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }} className="appearance">
+                      <Typography variant="subtitle2">Appearance: </Typography>
+                      <Typography variant="body2">{appearance}</Typography>
+                    </Box>
+                  </Box>
+                }
+                placement="bottom"
+                arrow
+              >
+                <HelpIcon
+                  sx={{
+                    color: "#2563eb",
+                    background: "#dbeafe",
+                    borderRadius: 50,
+                    padding: 0.3,
+                  }}
+                />
+              </Tooltip>
             ),
             statusLabel: "Denied",
             statusColor: "#c62828",
@@ -524,14 +591,42 @@ export default function VendorOnboardingFlow() {
             bgcolor: "#e3f2fd",
             border: "1px solid #bbdefb",
             icon: (
-              <HelpIcon
-                sx={{
-                  color: "#2563eb",
-                  background: "#dbeafe",
-                  borderRadius: 50,
-                  padding: 0.3,
-                }}
-              />
+              <Tooltip
+                title={
+                  <Box
+                    sx={{
+                      width: 150,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                    className="tooltip"
+                  >
+                    <Box sx={{ display: "flex", gap: 1 }} className="issued-by">
+                      <Typography variant="subtitle2">Issued by: </Typography>
+                      <Typography variant="body2">{issued_by}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-optain">
+                      <Typography variant="subtitle2">How to optain: </Typography>
+                      <Typography variant="body2">{how_to_optain}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }} className="appearance">
+                      <Typography variant="subtitle2">Appearance: </Typography>
+                      <Typography variant="body2">{appearance}</Typography>
+                    </Box>
+                  </Box>
+                }
+                placement="bottom"
+                arrow
+              >
+                <HelpIcon
+                  sx={{
+                    color: "#2563eb",
+                    background: "#dbeafe",
+                    borderRadius: 50,
+                    padding: 0.3,
+                  }}
+                />
+              </Tooltip>
             ),
             statusLabel: "In Review",
             statusColor: "#1565c0",
@@ -542,14 +637,42 @@ export default function VendorOnboardingFlow() {
             bgcolor: "#f5f5f5",
             border: "1px solid #e0e0e0",
             icon: (
-              <HelpIcon
-                sx={{
-                  color: "#2563eb",
-                  background: "#dbeafe",
-                  borderRadius: 50,
-                  padding: 0.3,
-                }}
-              />
+              <Tooltip
+                title={
+                  <Box
+                    sx={{
+                      width: 150,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                    className="tooltip"
+                  >
+                    <Box sx={{ display: "flex", gap: 1 }} className="issued-by">
+                      <Typography variant="subtitle2">Issued by: </Typography>
+                      <Typography variant="body2">{issued_by}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-optain">
+                      <Typography variant="subtitle2">How to optain: </Typography>
+                      <Typography variant="body2">{how_to_optain}</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }} className="appearance">
+                      <Typography variant="subtitle2">Appearance: </Typography>
+                      <Typography variant="body2">{appearance}</Typography>
+                    </Box>
+                  </Box>
+                }
+                placement="bottom"
+                arrow
+              >
+                <HelpIcon
+                  sx={{
+                    color: "#2563eb",
+                    background: "#dbeafe",
+                    borderRadius: 50,
+                    padding: 0.3,
+                  }}
+                />
+              </Tooltip>
             ),
             statusLabel: "Not Uploaded",
             statusColor: "#757575",
@@ -587,15 +710,6 @@ export default function VendorOnboardingFlow() {
                 gap: 1,
               }}
             >
-              {/* <Checkbox
-                checked={status.toLowerCase() === "approved"}
-                disabled={status.toLowerCase() !== "approved"}
-                sx={{
-                  color:
-                    status.toLowerCase() === "approved" ? "#2e7d32" : "#9e9e9e",
-                  "&.Mui-checked": { color: "#2e7d32" },
-                }}
-              /> */}
               <Box
                 sx={{
                   display: "flex",
@@ -616,9 +730,6 @@ export default function VendorOnboardingFlow() {
                 >
                   {title} {mandatory && " *"}
                 </Typography>
-                {/* <Typography variant="body2" color="text.secondary">
-                  {mandatory ? "Required document" : "Optional document"}
-                </Typography> */}
               </Box>
             </Box>
             <Chip
@@ -674,26 +785,6 @@ export default function VendorOnboardingFlow() {
               {document?.description}
             </Alert>
           )}
-
-          {/* {document?.document_status?.description && (
-            <Typography
-              variant="caption"
-              sx={{
-                color:
-                  status.toLowerCase() === "denied" ||
-                  status.toLowerCase() === "rejected"
-                    ? "#c62828"
-                    : "text.secondary",
-                display: "block",
-                mt: 0.5,
-                mb: 1,
-              }}
-            >
-              {document.document_status.description}
-            </Typography>
-          )} */}
-
-          {/* <Divider sx={{ my: 2 }} /> */}
 
           {/* Simplified upload section */}
           {(status === "Not Uploaded" || status === "Denied") && (
@@ -1304,6 +1395,11 @@ export default function VendorOnboardingFlow() {
       return;
     }
 
+    if (!trades || trades[0].trade === "") {
+      alert("Please add at least one trade");
+      return;
+    }
+
     if (!selectedPosition) {
       alert("Please select a position");
       return;
@@ -1614,17 +1710,23 @@ export default function VendorOnboardingFlow() {
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel id="country-label">{t.country}</InputLabel>
+                  <InputLabel
+                    id="country-label"
+                    sx={{ display: "flex", gap: 0.5 }}
+                  >
+                    {t.country}
+                    <Typography color="error.main">*</Typography>
+                  </InputLabel>
                   <Select
                     labelId="country-label"
                     value={country}
-                    label={t.country}
+                    label={t.country + "**"}
                     onChange={handleCountryChange}
                     sx={{ borderRadius: 4 }}
                     disabled={loadingCountries}
                   >
                     <MenuItem value="">
-                      <em>{t.country}</em>
+                      <em>{t.country} *</em>
                     </MenuItem>
                     {countries.map((country) => (
                       <MenuItem key={country.country_id} value={country.name}>
@@ -1673,8 +1775,12 @@ export default function VendorOnboardingFlow() {
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label={t.company}
-                        required
+                        label={
+                          <Box sx={{ display: "flex", gap: 0.5 }}>
+                            {t.company}
+                            <Typography color="error.main">*</Typography>
+                          </Box>
+                        }
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         sx={{
@@ -1709,7 +1815,13 @@ export default function VendorOnboardingFlow() {
 
               <Grid item xs={12}>
                 <FormControl fullWidth disabled={!country}>
-                  <InputLabel id="legal-form-label">{t.legalForm}</InputLabel>
+                  <InputLabel
+                    id="legal-form-label"
+                    sx={{ display: "flex", gap: 0.5 }}
+                  >
+                    {t.legalForm}
+                    <Typography color="error.main">*</Typography>
+                  </InputLabel>
                   <Select
                     labelId="legal-form-label"
                     value={legalForm}
@@ -1765,8 +1877,12 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label={t.taxId}
-                  required
+                  label={
+                    <Box id="tax-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.taxId}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={taxId}
                   onChange={(e) => setTaxId(e.target.value)}
                   sx={{
@@ -1780,7 +1896,12 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={6}>
                 <TextField
                   fullWidth
-                  label={t.street}
+                  label={
+                    <Box id="street-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.street}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={street}
                   onChange={(e) => setStreet(e.target.value)}
                   sx={{
@@ -1794,7 +1915,12 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={6}>
                 <TextField
                   fullWidth
-                  label={t.houseNr}
+                  label={
+                    <Box id="house-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.houseNr}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={houseNumber}
                   onChange={(e) => setHouseNumber(e.target.value)}
                   sx={{
@@ -1822,7 +1948,12 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={6}>
                 <TextField
                   fullWidth
-                  label={t.zip}
+                  label={
+                    <Box id="zip-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.zip}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={zipCode}
                   onChange={(e) => setZipCode(e.target.value)}
                   sx={{
@@ -1836,8 +1967,12 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label={t.city}
-                  required
+                  label={
+                    <Box id="city-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.city}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   sx={{
@@ -1851,7 +1986,12 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label={t.website}
+                  label={
+                    <Box id="website-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.website}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
                   sx={{
@@ -1893,15 +2033,19 @@ export default function VendorOnboardingFlow() {
                       sx={{ mb: 2 }}
                       alignItems="center"
                     >
-                      <Grid item xs={5}>
+                      <Grid item xs={5.6}>
                         <FormControl fullWidth>
-                          <InputLabel id={`trade-label-${i}`}>
+                          <InputLabel
+                            id="trade-label"
+                            sx={{ display: "flex", gap: 0.5 }}
+                          >
                             {t.selectTrade}
+                            <Typography color="error.main">*</Typography>
                           </InputLabel>
                           <Select
                             labelId={`trade-label-${i}`}
                             value={item.trade}
-                            label={t.selectTrade}
+                            label={t.selectTrade + "**"}
                             onChange={(e) =>
                               updateTrade(i, "trade", e.target.value)
                             }
@@ -1934,11 +2078,18 @@ export default function VendorOnboardingFlow() {
                           </Select>
                         </FormControl>
                       </Grid>
-                      <Grid item xs={5}>
+                      <Grid item xs={5.6}>
                         <TextField
                           fullWidth
-                          required
-                          label={t.tradeCount}
+                          label={
+                            <Box
+                              id="trade-count-label"
+                              sx={{ display: "flex", gap: 0.5 }}
+                            >
+                              {t.tradeCount}
+                              <Typography color="error.main">*</Typography>
+                            </Box>
+                          }
                           value={item.count}
                           onChange={(e) =>
                             updateTrade(i, "count", e.target.value)
@@ -1948,11 +2099,17 @@ export default function VendorOnboardingFlow() {
                           }}
                         />
                       </Grid>
-                      <Grid item xs={2}>
+                      <Grid item xs={0.5}>
                         <Button
                           variant="outlined"
                           color="error"
-                          onClick={() => handleDeleteTrade(i)}
+                          disabled={trades.length === 1 && item.trade === ""}
+                          onClick={() => {
+                            handleDeleteTrade(i);
+                            if (trades.length === 1) {
+                              setTrades([{ trade: "", count: "" }]);
+                            }
+                          }}
                           sx={{
                             borderRadius: 4,
                             minWidth: "auto",
@@ -2095,14 +2252,14 @@ export default function VendorOnboardingFlow() {
                         If you operate in specific postal code areas, switch to
                         the Postcode tab.
                       </Typography>
-                      <Box sx={{ maxHeight: 400, overflowY: "auto" }}>
+                      <Box sx={{ maxHeight: 200, overflowY: "auto" }}>
                         {federalStates.map((state) => (
                           <Box
                             key={state.id}
                             sx={{
                               display: "flex",
                               alignItems: "center",
-                              mt: 1,
+                              maxHeight: 32,
                             }}
                           >
                             <Checkbox
@@ -2294,7 +2451,15 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t.firstName}
+                  label={
+                    <Box
+                      id="first-name-label"
+                      sx={{ display: "flex", gap: 0.5 }}
+                    >
+                      {t.firstName}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   sx={{
@@ -2308,7 +2473,15 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t.lastName}
+                  label={
+                    <Box
+                      id="last-name-label"
+                      sx={{ display: "flex", gap: 0.5 }}
+                    >
+                      {t.lastName}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   sx={{
@@ -2322,13 +2495,17 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t.email}
+                  label={
+                    <Box id="email-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.email}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   type="email"
                   value={vendorEmail}
                   InputProps={{
                     readOnly: true,
                   }}
-                  required
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2341,7 +2518,12 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t.phone}
+                  label={
+                    <Box id="phone-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.phone}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   sx={{
@@ -2354,12 +2536,25 @@ export default function VendorOnboardingFlow() {
 
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel id="role-label">{t.position}</InputLabel>
+                  <InputLabel
+                    id="position-label"
+                    sx={{ display: "flex", gap: 0.5 }}
+                  >
+                    {t.position}
+                    <Typography color="error.main">*</Typography>
+                  </InputLabel>
                   <Select
                     labelId="role-label"
                     value={selectedPosition}
-                    required
-                    label={t.position}
+                    label={
+                      <Box
+                        id="position-label"
+                        sx={{ display: "flex", gap: 0.5 }}
+                      >
+                        {t.position}
+                        <Typography color="error.main">*</Typography>
+                      </Box>
+                    }
                     onChange={(e) => setSelectedPosition(e.target.value)}
                     sx={{ borderRadius: 4 }}
                     disabled={loadingPositions}
