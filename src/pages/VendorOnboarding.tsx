@@ -119,7 +119,7 @@ interface DocumentType {
   mandatory: boolean;
   category_id: number;
   issued_by: string;
-  how_to_optain: string;
+  how_to_obtain: string;
   appearance: string;
 }
 
@@ -148,7 +148,7 @@ interface DocumentWithType {
   country_id: number;
   document: Document | null;
   issued_by: string;
-  how_to_optain: string;
+  how_to_obtain: string;
   appearance: string;
 }
 
@@ -455,7 +455,7 @@ export default function VendorOnboardingFlow() {
                 mandatory: item.document?.document_types?.mandatory ?? false,
                 category_id: item.document?.document_types?.category_id ?? 0,
                 issued_by: item?.issued_by ?? "",
-                how_to_optain: item?.how_to_optain ?? "",
+                how_to_obtain: item?.how_to_obtain ?? "",
                 appearance: item?.appearance ?? "",
               };
             }
@@ -480,7 +480,7 @@ export default function VendorOnboardingFlow() {
   }, [vendorId, step]);
 
   const renderDocumentCard = (docType: DocumentType) => {
-    const { type_id, title, mandatory, issued_by, how_to_optain, appearance } =
+    const { type_id, title, mandatory, issued_by, how_to_obtain, appearance } =
       docType;
     const document = getDocumentForType(type_id);
     const status = document?.document_status?.title || "Not Uploaded";
@@ -512,9 +512,9 @@ export default function VendorOnboardingFlow() {
                       <Typography variant="subtitle2">Issued by: </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-optain">
-                      <Typography variant="subtitle2">How to optain: </Typography>
-                      <Typography variant="body2">{how_to_optain}</Typography>
+                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-obtain">
+                      <Typography variant="subtitle2">How to obtain: </Typography>
+                      <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 1 }} className="appearance">
                       <Typography variant="subtitle2">Appearance: </Typography>
@@ -559,9 +559,9 @@ export default function VendorOnboardingFlow() {
                       <Typography variant="subtitle2">Issued by: </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-optain">
-                      <Typography variant="subtitle2">How to optain: </Typography>
-                      <Typography variant="body2">{how_to_optain}</Typography>
+                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-obtain">
+                      <Typography variant="subtitle2">How to obtain: </Typography>
+                      <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 1 }} className="appearance">
                       <Typography variant="subtitle2">Appearance: </Typography>
@@ -605,9 +605,9 @@ export default function VendorOnboardingFlow() {
                       <Typography variant="subtitle2">Issued by: </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-optain">
-                      <Typography variant="subtitle2">How to optain: </Typography>
-                      <Typography variant="body2">{how_to_optain}</Typography>
+                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-obtain">
+                      <Typography variant="subtitle2">How to obtain: </Typography>
+                      <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 1 }} className="appearance">
                       <Typography variant="subtitle2">Appearance: </Typography>
@@ -651,9 +651,9 @@ export default function VendorOnboardingFlow() {
                       <Typography variant="subtitle2">Issued by: </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-optain">
-                      <Typography variant="subtitle2">How to optain: </Typography>
-                      <Typography variant="body2">{how_to_optain}</Typography>
+                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-obtain">
+                      <Typography variant="subtitle2">How to obtain: </Typography>
+                      <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 1 }} className="appearance">
                       <Typography variant="subtitle2">Appearance: </Typography>
