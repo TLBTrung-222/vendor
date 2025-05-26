@@ -1521,7 +1521,7 @@ export default function VendorOnboardingFlow() {
         country_id: countryId,
         website_url: website || "",
         cover_region:
-          region === "1"
+          region === "3"
             ? "NationalWide"
             : region === "2"
             ? "States"
