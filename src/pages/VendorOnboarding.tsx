@@ -48,7 +48,6 @@ import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API respons
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
-import { display } from "@mui/system";
 
 interface Country {
   country_id: number;
@@ -140,6 +139,12 @@ interface Document {
   url: string;
   document_status: DocumentStatus;
   document_types: DocumentType;
+  updated_by: {
+    first_name: string | null;
+    last_name: string | null;
+    user_id: number | null;
+  };
+  updated_at: string | null;
 }
 
 interface DocumentWithType {
@@ -351,6 +356,8 @@ export default function VendorOnboardingFlow() {
   /*                            // Form field states                            */
   /* -------------------------------------------------------------------------- */
   const [onboardingStatus, setOnboardingStatus] = useState("");
+  const [pmName, setPmName] = useState("");
+  const [updateDate, setUpdateDate] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [taxId, setTaxId] = useState("");
   const [street, setStreet] = useState("");
@@ -363,7 +370,7 @@ export default function VendorOnboardingFlow() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [vendorEmail, setVendorEmail] = useState("");
-  const [region, setRegion] = useState("1");
+  const [region, setRegion] = useState("");
   const [postalCode, setPostalCode] = useState<
     { code: string; radius: number }[]
   >([]);
@@ -444,8 +451,6 @@ export default function VendorOnboardingFlow() {
 
         const result = await response.json();
         if (result.data) {
-          console.log(result.data);
-
           // Extract document types from the response
           const types: DocumentType[] = result.data.map(
             (item: DocumentWithType) => {
@@ -478,6 +483,8 @@ export default function VendorOnboardingFlow() {
 
     fetchVendorDocuments();
   }, [vendorId, step]);
+
+  console.log(vendorDocuments);
 
   const renderDocumentCard = (docType: DocumentType) => {
     const { type_id, title, mandatory, issued_by, how_to_obtain, appearance } =
@@ -512,11 +519,19 @@ export default function VendorOnboardingFlow() {
                       <Typography variant="subtitle2">Issued by: </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-obtain">
-                      <Typography variant="subtitle2">How to obtain: </Typography>
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      className="how-to-obtain"
+                    >
+                      <Typography variant="subtitle2">
+                        How to obtain:{" "}
+                      </Typography>
                       <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="appearance">
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      className="appearance"
+                    >
                       <Typography variant="subtitle2">Appearance: </Typography>
                       <Typography variant="body2">{appearance}</Typography>
                     </Box>
@@ -559,11 +574,19 @@ export default function VendorOnboardingFlow() {
                       <Typography variant="subtitle2">Issued by: </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-obtain">
-                      <Typography variant="subtitle2">How to obtain: </Typography>
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      className="how-to-obtain"
+                    >
+                      <Typography variant="subtitle2">
+                        How to obtain:{" "}
+                      </Typography>
                       <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="appearance">
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      className="appearance"
+                    >
                       <Typography variant="subtitle2">Appearance: </Typography>
                       <Typography variant="body2">{appearance}</Typography>
                     </Box>
@@ -605,11 +628,19 @@ export default function VendorOnboardingFlow() {
                       <Typography variant="subtitle2">Issued by: </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-obtain">
-                      <Typography variant="subtitle2">How to obtain: </Typography>
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      className="how-to-obtain"
+                    >
+                      <Typography variant="subtitle2">
+                        How to obtain:{" "}
+                      </Typography>
                       <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="appearance">
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      className="appearance"
+                    >
                       <Typography variant="subtitle2">Appearance: </Typography>
                       <Typography variant="body2">{appearance}</Typography>
                     </Box>
@@ -651,11 +682,19 @@ export default function VendorOnboardingFlow() {
                       <Typography variant="subtitle2">Issued by: </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="how-to-obtain">
-                      <Typography variant="subtitle2">How to obtain: </Typography>
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      className="how-to-obtain"
+                    >
+                      <Typography variant="subtitle2">
+                        How to obtain:{" "}
+                      </Typography>
                       <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }} className="appearance">
+                    <Box
+                      sx={{ display: "flex", gap: 1 }}
+                      className="appearance"
+                    >
                       <Typography variant="subtitle2">Appearance: </Typography>
                       <Typography variant="body2">{appearance}</Typography>
                     </Box>
@@ -783,6 +822,20 @@ export default function VendorOnboardingFlow() {
               }}
             >
               {document?.description}
+              <br />
+              <Typography variant="caption" color="text.secondary">
+                Rejected by{" "}
+                <b>
+                  {document?.updated_by.first_name +
+                    " " +
+                    " " +
+                    document?.updated_by.last_name || "N/A"}
+                </b>{" "}
+                on{" "}
+                <b>
+                  {new Date(document?.updated_at || "").toLocaleDateString()}
+                </b>
+              </Typography>
             </Alert>
           )}
 
@@ -1170,8 +1223,19 @@ export default function VendorOnboardingFlow() {
           }
 
           // Prefill form fields with vendor data
-          if (result.data.onboarding_status_description)
-            setOnboardingStatus(result.data.onboarding_status_description);
+          if (result.data.onboarding_transaction.onboarding_status_description)
+            setOnboardingStatus(
+              result.data.onboarding_transaction.onboarding_status_description
+            );
+          if (result.data.onboarding_transaction.pm_name)
+            setPmName(result.data.onboarding_transaction.pm_name);
+          if (result.data.onboarding_transaction.created_at) {
+            setUpdateDate(
+              new Date(
+                result.data.onboarding_transaction.created_at
+              ).toLocaleDateString()
+            );
+          }
           if (result.data.company_name)
             setCompanyName(result.data.company_name);
           if (result.data.tax_id) setTaxId(result.data.tax_id);
@@ -1186,10 +1250,10 @@ export default function VendorOnboardingFlow() {
           if (result.data.cover_region)
             setRegion(
               result.data.cover_region === "NationalWide"
-                ? "1"
+                ? "3"
                 : result.data.cover_region === "States"
                 ? "2"
-                : "3"
+                : "1"
             );
           if (result.data.postcodes) {
             const postcodes = result.data.postcodes.map((item: any) => ({
@@ -1397,6 +1461,21 @@ export default function VendorOnboardingFlow() {
 
     if (!trades || trades[0].trade === "") {
       alert("Please add at least one trade");
+      return;
+    }
+
+    if (region === "") {
+      alert("Please select a cover region");
+      return;
+    }
+
+    if (region === "2" && selectedRegions.length === 0) {
+      alert("Please select at least one federal state");
+      return;
+    }
+
+    if (region === "1" && postalCode.length === 0) {
+      alert("Please add at least one postal code");
       return;
     }
 
@@ -1702,7 +1781,10 @@ export default function VendorOnboardingFlow() {
                 borderLeft: "5px solid #D74141",
               }}
             >
-              {onboardingStatus}
+              <Typography>{onboardingStatus} </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Rejected by <b>{pmName}</b> on <b>{updateDate}</b>
+              </Typography>
             </Alert>
           )}
 
@@ -2186,8 +2268,8 @@ export default function VendorOnboardingFlow() {
                               gap: 4,
                             }}
                           >
-                            <LanguageOutlinedIcon sx={{ fontSize: 20 }} />
-                            Nationwide
+                            <PlaceOutlinedIcon sx={{ fontSize: 20 }} />
+                            Postcode
                           </span>
                         }
                         value="1"
@@ -2237,104 +2319,14 @@ export default function VendorOnboardingFlow() {
                               gap: 4,
                             }}
                           >
-                            <PlaceOutlinedIcon sx={{ fontSize: 20 }} />
-                            Postcode
+                            <LanguageOutlinedIcon sx={{ fontSize: 20 }} />
+                            Nationwide
                           </span>
                         }
                         value="3"
                       />
                     </TabList>
                     <TabPanel value="1">
-                      Your services reach the whole country
-                    </TabPanel>
-                    <TabPanel value="2">
-                      <Typography sx={{ mb: 2 }}>
-                        If you operate in specific postal code areas, switch to
-                        the Postcode tab.
-                      </Typography>
-                      <Box sx={{ maxHeight: 200, overflowY: "auto" }}>
-                        {federalStates.map((state) => (
-                          <Box
-                            key={state.id}
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              maxHeight: 32,
-                            }}
-                          >
-                            <Checkbox
-                              checked={selectedRegions.includes(state.id)}
-                              onChange={(e) => {
-                                const selectedValues = e.target.checked
-                                  ? [...selectedRegions, state.id]
-                                  : selectedRegions.filter(
-                                      (id) => id !== state.id
-                                    );
-                                setSelectedRegions(selectedValues);
-                              }}
-                            />
-                            <Typography>
-                              {state.german_name} ({state.english_name})
-                            </Typography>
-                          </Box>
-                        ))}
-                        {loadingFederalStates && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              mt: 1,
-                            }}
-                          >
-                            <CircularProgress size={16} sx={{ mr: 1 }} />
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {t.loadingRegions || "Loading regions..."}
-                            </Typography>
-                          </Box>
-                        )}
-                        {federalStatesError && (
-                          <Alert severity="error" sx={{ mt: 1, py: 0 }}>
-                            <Typography variant="caption">
-                              {federalStatesError}
-                            </Typography>
-                          </Alert>
-                        )}
-                      </Box>
-                      {selectedRegions.map((id) => (
-                        <Chip
-                          key={id}
-                          label={
-                            <Typography>
-                              {
-                                federalStates.find((s) => s.id === id)
-                                  ?.german_name
-                              }{" "}
-                              (
-                              {
-                                federalStates.find((s) => s.id === id)
-                                  ?.english_name
-                              }
-                              )
-                            </Typography>
-                          }
-                          onDelete={() => {
-                            setSelectedRegions((prev) =>
-                              prev.filter((regionId) => regionId !== id)
-                            );
-                          }}
-                          sx={{
-                            mr: 1,
-                            mt: 1,
-                            backgroundColor: "rgba(245, 124, 0, 0.1)",
-                            color: "primary.main",
-                          }}
-                        />
-                      ))}
-                    </TabPanel>
-                    <TabPanel value="3">
                       <Typography sx={{ mb: 2 }}>
                         If you cover entire states, switch to the States tab.
                       </Typography>
@@ -2437,6 +2429,96 @@ export default function VendorOnboardingFlow() {
                             </Button>
                           </Box>
                         ))}
+                    </TabPanel>
+                    <TabPanel value="2">
+                      <Typography sx={{ mb: 2 }}>
+                        If you operate in specific postal code areas, switch to
+                        the Postcode tab.
+                      </Typography>
+                      <Box sx={{ maxHeight: 200, overflowY: "auto" }}>
+                        {federalStates.map((state) => (
+                          <Box
+                            key={state.id}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              maxHeight: 32,
+                            }}
+                          >
+                            <Checkbox
+                              checked={selectedRegions.includes(state.id)}
+                              onChange={(e) => {
+                                const selectedValues = e.target.checked
+                                  ? [...selectedRegions, state.id]
+                                  : selectedRegions.filter(
+                                      (id) => id !== state.id
+                                    );
+                                setSelectedRegions(selectedValues);
+                              }}
+                            />
+                            <Typography>
+                              {state.german_name} ({state.english_name})
+                            </Typography>
+                          </Box>
+                        ))}
+                        {loadingFederalStates && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mt: 1,
+                            }}
+                          >
+                            <CircularProgress size={16} sx={{ mr: 1 }} />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {t.loadingRegions || "Loading regions..."}
+                            </Typography>
+                          </Box>
+                        )}
+                        {federalStatesError && (
+                          <Alert severity="error" sx={{ mt: 1, py: 0 }}>
+                            <Typography variant="caption">
+                              {federalStatesError}
+                            </Typography>
+                          </Alert>
+                        )}
+                      </Box>
+                      {selectedRegions.map((id) => (
+                        <Chip
+                          key={id}
+                          label={
+                            <Typography>
+                              {
+                                federalStates.find((s) => s.id === id)
+                                  ?.german_name
+                              }{" "}
+                              (
+                              {
+                                federalStates.find((s) => s.id === id)
+                                  ?.english_name
+                              }
+                              )
+                            </Typography>
+                          }
+                          onDelete={() => {
+                            setSelectedRegions((prev) =>
+                              prev.filter((regionId) => regionId !== id)
+                            );
+                          }}
+                          sx={{
+                            mr: 1,
+                            mt: 1,
+                            backgroundColor: "rgba(245, 124, 0, 0.1)",
+                            color: "primary.main",
+                          }}
+                        />
+                      ))}
+                    </TabPanel>
+                    <TabPanel value="3">
+                      Your services reach the whole country
                     </TabPanel>
                   </TabContext>
                 </Box>
