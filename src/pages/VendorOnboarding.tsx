@@ -2957,3 +2957,9 @@ export default function VendorOnboardingFlow() {
     </Box>
   );
 }
+
+// add some comments
+// Helper function to render document cards
+// function renderDocumentCard(docType: DocumentType) {
+//  return (function renderDocumentCard(docType) {
+//   return (
