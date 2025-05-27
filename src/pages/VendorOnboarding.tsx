@@ -1320,23 +1320,14 @@ export default function VendorOnboardingFlow() {
                 setSelectedPosition(position.title);
               }
             }
-            if (result.data.contact_user.position.position_id) {
+            if (result.data.contact_user.position) {
               setSelectedPositionId(
                 result.data.contact_user.position.position_id
               );
             }
-            if (result.data.contact_user.position.title) {
+            if (result.data.contact_user.position) {
               setSelectedPosition(result.data.contact_user.position.title);
             }
-            // Set role
-            // if (
-            //     result.data.contact_user.role &&
-            //     result.data.contact_user.role.title
-            // ) {
-            //     setSelectedPosition(
-            //         result.data.contact_user.role.title
-            //     );
-            // }
           }
 
           // Initialize trades from vendor gewerks
@@ -1431,7 +1422,7 @@ export default function VendorOnboardingFlow() {
   // Add a new trade
   const addTrade = () => {
     setTrades([...trades, { trade: "", count: "" }]);
-  };
+  };  
 
   // Handle country change
   const handleCountryChange = (event: SelectChangeEvent) => {
@@ -1465,10 +1456,27 @@ export default function VendorOnboardingFlow() {
       return;
     }
 
+    if (!companyName) {
+      alert("Please enter a company name");
+      setIsInfoUpdated(false);
+      return;
+    }
+
     if (!legalForm) {
       alert("Please select a legal form");
       setIsInfoUpdated(false);
       return;
+    }
+
+    if (!taxId) {
+      alert("Please enter a tax ID");
+      setIsInfoUpdated(false);
+      return;
+    }
+
+    if (!street || !houseNumber || !zipCode || !city) {
+      alert("Please fill in the complete address (street, house number, zip code, city)");
+      setIsInfoUpdated(false);
     }
 
     if (!trades || trades[0].trade === "") {
@@ -1550,6 +1558,8 @@ export default function VendorOnboardingFlow() {
         })),
       };
 
+      const vendorAccessToken = localStorage.getItem("accessToken");
+
       // Make the API call
       const vendorResponse = await fetch(
         `${API_BASE_URL}/vendors/update?vendor_id=${vendorId}`,
@@ -1557,6 +1567,7 @@ export default function VendorOnboardingFlow() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${vendorAccessToken}`,
           },
           body: JSON.stringify(vendorRequestBody),
         }
@@ -1864,7 +1875,7 @@ export default function VendorOnboardingFlow() {
                 }}
               >
                 {t.continue}
-              </Button>)}
+          </Button>)}
         </Box>
         {/* Step 1: Company Details */}
         <TabPanel value="1">
