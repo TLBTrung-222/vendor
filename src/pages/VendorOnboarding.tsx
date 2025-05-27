@@ -345,6 +345,7 @@ export default function VendorOnboardingFlow() {
     return savedStep ? parseInt(savedStep, 10) : 1;
   });
   const [language, setLanguage] = useState("EN");
+  const [isDisabled, setIsDisabled] = useState(false);
 
   // Create a custom function to update step that also saves to localStorage
   const updateStep = (newStep: number) => {
@@ -355,6 +356,7 @@ export default function VendorOnboardingFlow() {
   /* -------------------------------------------------------------------------- */
   /*                            // Form field states                            */
   /* -------------------------------------------------------------------------- */
+  const [isInfoUpdated, setIsInfoUpdated] = useState(false);  
   const [onboardingStatus, setOnboardingStatus] = useState("");
   const [pmName, setPmName] = useState("");
   const [updateDate, setUpdateDate] = useState("");
@@ -483,8 +485,6 @@ export default function VendorOnboardingFlow() {
 
     fetchVendorDocuments();
   }, [vendorId, step]);
-
-  console.log(vendorDocuments);
 
   const renderDocumentCard = (docType: DocumentType) => {
     const { type_id, title, mandatory, issued_by, how_to_obtain, appearance } =
@@ -1275,6 +1275,7 @@ export default function VendorOnboardingFlow() {
             } else if (result.data.country_name) {
               setCountry(result.data.country_name);
             }
+            setIsDisabled(true);
           }
 
           // Set legal form ID
@@ -1318,6 +1319,14 @@ export default function VendorOnboardingFlow() {
               if (position) {
                 setSelectedPosition(position.title);
               }
+            }
+            if (result.data.contact_user.position.position_id) {
+              setSelectedPositionId(
+                result.data.contact_user.position.position_id
+              );
+            }
+            if (result.data.contact_user.position.title) {
+              setSelectedPosition(result.data.contact_user.position.title);
             }
             // Set role
             // if (
@@ -1446,41 +1455,49 @@ export default function VendorOnboardingFlow() {
     // Check if vendorId is available
     if (!vendorId) {
       alert("Vendor ID not available. Please try again later.");
+      setIsInfoUpdated(false);
       return;
     }
     // Validate mandatory fields
     if (!country) {
       alert("Please select a country");
+      setIsInfoUpdated(false);
       return;
     }
 
     if (!legalForm) {
       alert("Please select a legal form");
+      setIsInfoUpdated(false);
       return;
     }
 
     if (!trades || trades[0].trade === "") {
       alert("Please add at least one trade");
+      setIsInfoUpdated(false);
       return;
     }
 
     if (region === "") {
       alert("Please select a cover region");
+      setIsInfoUpdated(false);
       return;
     }
 
     if (region === "2" && selectedRegions.length === 0) {
       alert("Please select at least one federal state");
+      setIsInfoUpdated(false);
       return;
     }
 
     if (region === "1" && postalCode.length === 0) {
       alert("Please add at least one postal code");
+      setIsInfoUpdated(false);
       return;
     }
 
     if (!selectedPosition) {
       alert("Please select a position");
+      setIsInfoUpdated(false);
       return;
     }
 
@@ -1493,6 +1510,7 @@ export default function VendorOnboardingFlow() {
     // Example usage in validation
     if (hasEmptyTradeCount) {
       alert("Please enter employee count for all trades");
+      setIsInfoUpdated(false);
       return;
     }
     try {
@@ -1587,6 +1605,8 @@ export default function VendorOnboardingFlow() {
 
       // Proceed to next step
       next();
+      setIsDisabled(true);
+      setIsInfoUpdated(true);
     } catch (error) {
       console.error("Error updating vendor information:", error);
       alert("Failed to update vendor information. Please try again.");
@@ -1672,78 +1692,182 @@ export default function VendorOnboardingFlow() {
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
+          padding: "8px 0 0 0",
+          position: "sticky",
+          top: 0,
+          zIndex: 1000,
+          backgroundColor: "background.paper",
         }}
       >
-        {/* Left side - could be empty or add a logo here */}
-        <Box>
-          <img
-            src={logoImage}
-            alt="Galvanek Logo"
-            style={{
-              height: "40px", // Adjust size as needed
-              width: "auto",
-              display: "block",
-            }}
-          />
-        </Box>
-
-        {/* Right side - language selector and logout button */}
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <FormControl size="small" sx={{ width: 120 }}>
-            <Select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as string)}
-              sx={{ borderRadius: 4 }}
-            >
-              <MenuItem value="EN">English</MenuItem>
-              <MenuItem value="DE">Deutsch</MenuItem>
-              <MenuItem value="PL">Polski</MenuItem>
-              <MenuItem value="SK">Slovenský</MenuItem>
-            </Select>
-          </FormControl>
-
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<LogoutIcon />}
-            onClick={handleLogout}
-            sx={{
-              borderRadius: 4,
-              borderColor: "#ffcdd2",
-              color: "#d32f2f",
-              "&:hover": {
-                backgroundColor: "#ffebee",
-                borderColor: "#ef9a9a",
-              },
-            }}
-          >
-            Logout
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Step 1: Company Details */}
-      {step === 1 && (
-        <Box>
-          <Box sx={{ textAlign: "center", mb: 3 }}>
-            <Typography
-              variant="h5"
-              component="h1"
-              sx={{ fontWeight: 600, color: "text.primary" }}
-            >
-              {t.welcome}
-            </Typography>
-            {companyName && (
-              <Typography variant="body2" color="text.secondary">
-                {companyName}
-              </Typography>
-            )}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          {/* Left side - could be empty or add a logo here */}
+          <Box>
+            <img
+              src={logoImage}
+              alt="Galvanek Logo"
+              style={{
+                height: "40px", // Adjust size as needed
+                width: "auto",
+                display: "block",
+              }}
+            />
           </Box>
 
+          {/* Right side - language selector and logout button */}
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <FormControl size="small" sx={{ width: 120 }}>
+              <Select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as string)}
+                sx={{ borderRadius: 4 }}
+              >
+                <MenuItem value="EN">English</MenuItem>
+                <MenuItem value="DE">Deutsch</MenuItem>
+                <MenuItem value="PL">Polski</MenuItem>
+                <MenuItem value="SK">Slovenský</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{
+                borderRadius: 4,
+                borderColor: "#ffcdd2",
+                color: "#d32f2f",
+                "&:hover": {
+                  backgroundColor: "#ffebee",
+                  borderColor: "#ef9a9a",
+                },
+              }}
+            >
+              Logout
+            </Button>
+          </Box>
+        </Box>
+        <Box sx={{ textAlign: "center", mb: 3 }}>
+          <Typography
+            variant="h5"
+            component="h1"
+            sx={{ fontWeight: 600, color: "text.primary" }}
+          >
+            {t.welcome}
+          </Typography>
+          {companyName && (
+            <Typography variant="body2" color="text.secondary">
+              {companyName}
+            </Typography>
+          )}
+        </Box>
+        <StepperContainer>
+          <LinearProgress
+            variant="determinate"
+            value={(100 / 3) * step}
+            sx={{ borderRadius: 4 }}
+          />
+          <Typography variant="caption" color="text.secondary">
+            Step {step}/3: {t.step1}
+          </Typography>
+        </StepperContainer>{" "}
+      </Box>
+      <TabContext value={step.toString()}>
+        <Box
+          sx={{
+            position: "sticky",
+            top: 165,
+            zIndex: 1000,
+            backgroundColor: "background.paper",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box sx={{ width: "50%", ".Mui-disabled": { color: "rgba(0,0,0,0.2)" } }}>
+            <TabList
+              onChange={(_event: React.SyntheticEvent, value: string) => {
+                isInfoUpdated && setStep(Number(value));
+              }}
+              variant="fullWidth"
+            >
+              <Tab
+                sx={{
+                  textTransform: "none",
+                }}
+                label={t.step1}
+                value="1"
+                onClick={() => updateStep(1)}
+              />
+              <Tab
+                sx={{
+                  textTransform: "none",
+                }}
+                label={t.step2}
+                value="2"
+                onClick={() => {
+                  handleFormSubmit();
+                }}
+              />
+              <Tab
+                sx={{
+                  textTransform: "none",
+                }}
+                label={t.step3}
+                value="3"
+                onClick={() => updateStep(3)}
+                disabled={!getDocumentStatus() || !isInfoUpdated}
+              />
+            </TabList>
+          </Box>
+          {step === 1 && (<Button
+            variant="contained"
+            onClick={handleFormSubmit}
+            disabled={isSubmitting}
+            sx={{
+              borderRadius: 4,
+              backgroundColor: "#F57C00",
+              "&:hover": {
+                backgroundColor: "#EF6C00",
+              },
+              color: "#fff",
+            }}
+          >
+            {isSubmitting ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Continue"
+            )}
+          </Button>)}
+          {step === 2 && (<Button
+                variant="contained"
+                onClick={next}
+                disabled={!getDocumentStatus()}
+                sx={{
+                  borderRadius: 4,
+              backgroundColor: "#F57C00",
+              "&:hover": {
+                backgroundColor: "#EF6C00",
+              },
+              color: "#fff",
+                  "&.Mui-disabled": {
+                    backgroundColor: "#e0e0e0",
+                    color: "#9e9e9e",
+                  },
+                }}
+              >
+                {t.continue}
+              </Button>)}
+        </Box>
+        {/* Step 1: Company Details */}
+        <TabPanel value="1">
           <Alert
             severity="info"
             sx={{
@@ -1756,22 +1880,6 @@ export default function VendorOnboardingFlow() {
           >
             {t.infoBox}
           </Alert>
-
-          <StepperContainer>
-            <Stepper activeStep={0} alternativeLabel>
-              <Step>
-                <StepLabel>
-                  <ActiveStep>{t.step1}</ActiveStep>
-                </StepLabel>
-              </Step>
-              <Step>
-                <StepLabel>{t.step2}</StepLabel>
-              </Step>
-              <Step>
-                <StepLabel>{t.step3}</StepLabel>
-              </Step>
-            </Stepper>
-          </StepperContainer>
 
           {onboardingStatus && (
             <Alert
@@ -1805,7 +1913,7 @@ export default function VendorOnboardingFlow() {
                     label={t.country + "**"}
                     onChange={handleCountryChange}
                     sx={{ borderRadius: 4 }}
-                    disabled={loadingCountries}
+                    disabled={loadingCountries || isDisabled}
                   >
                     <MenuItem value="">
                       <em>{t.country} *</em>
@@ -1842,56 +1950,22 @@ export default function VendorOnboardingFlow() {
 
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <Autocomplete
-                    id="company-name-autocomplete"
-                    options={vendors}
-                    getOptionLabel={(option: any) => option.company_name || ""}
-                    loading={isLoadingVendors}
-                    value={
-                      vendors.find((v) => v.company_name === companyName) ||
-                      null
-                    }
-                    onChange={(event, newValue: any) => {
-                      setCompanyName(newValue ? newValue.company_name : "");
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={
-                          <Box sx={{ display: "flex", gap: 0.5 }}>
-                            {t.company}
-                            <Typography color="error.main">*</Typography>
-                          </Box>
-                        }
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 4,
-                          },
-                        }}
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              {isLoadingVendors ? (
-                                <CircularProgress color="inherit" size={20} />
-                              ) : null}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        }}
-                      />
-                    )}
-                    renderOption={(props, option) => (
-                      <li {...props} key={option.vendor_id}>
-                        {option.company_name}
-                      </li>
-                    )}
-                    freeSolo
-                    autoHighlight
-                    autoComplete
-                  />
+                  <TextField
+                  fullWidth
+                  label={
+                    <Box id="tax-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.company}
+                      <Typography color="error.main">*</Typography>
+                    </Box>
+                  }
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 4,
+                    },
+                  }}
+                />
                 </FormControl>
               </Grid>
 
@@ -2071,7 +2145,6 @@ export default function VendorOnboardingFlow() {
                   label={
                     <Box id="website-label" sx={{ display: "flex", gap: 0.5 }}>
                       {t.website}
-                      <Typography color="error.main">*</Typography>
                     </Box>
                   }
                   value={website}
@@ -2676,290 +2749,150 @@ export default function VendorOnboardingFlow() {
                   )}
                 </FormControl>
               </Grid>
-
-              <Grid item xs={12}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={handleFormSubmit} // TODO: change to handleSubmit function
-                  disabled={isSubmitting}
-                  sx={{
-                    mt: 2,
-                    py: 1.5,
-                    borderRadius: 4,
-                    backgroundColor: "#F57C00",
-                    "&:hover": {
-                      backgroundColor: "#EF6C00",
-                    },
-                  }}
-                >
-                  {isSubmitting ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    t.continue
-                  )}
-                </Button>
-              </Grid>
             </Grid>
           </FormContainer>
-        </Box>
-      )}
+        </TabPanel>
 
-      {/* Step 2: Document Upload */}
-      {step === 2 && (
-        <Box>
-          <Box sx={{ textAlign: "center", mb: 3 }}>
-            <Typography
-              variant="h5"
-              component="h1"
-              sx={{ fontWeight: 600, color: "text.primary" }}
-            >
-              {t.uploadDocumentsTitle}
-            </Typography>
+        {/* Step 2: Document Upload */}
+        <TabPanel value="2">
+          <Box>
+            {/* <Box sx={{ textAlign: "center", mb: 3 }}>
+                <Typography
+                  variant="h5"
+                  component="h1"
+                  sx={{ fontWeight: 600, color: "text.primary" }}
+                >
+                  {t.uploadDocumentsTitle}
+                </Typography>
+              </Box> */}
+
+            {loadingDocuments ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  my: 4,
+                }}
+              >
+                <CircularProgress />
+                <Typography sx={{ mt: 2 }}>
+                  Loading required documents...
+                </Typography>
+              </Box>
+            ) : documentError ? (
+              <Alert severity="error" sx={{ my: 2 }}>
+                {documentError}
+              </Alert>
+            ) : documentTypes.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  my: 4,
+                }}
+              >
+                <CircularProgress />
+                <Typography sx={{ mt: 2 }}>
+                  Loading required documents...
+                </Typography>
+              </Box>
+            ) : (
+              <Grid container spacing={3}>
+                {documentTypes.map((docType) => (
+                  <Grid item xs={12} sm={6} key={docType.type_id}>
+                    {renderDocumentCard(docType)}
+                  </Grid>
+                ))}
+              </Grid>
+            )}
           </Box>
+        </TabPanel>
 
-          <StepperContainer>
-            <Stepper activeStep={1} alternativeLabel>
-              <Step>
-                <StepLabel>{t.step1}</StepLabel>
-              </Step>
-              <Step>
-                <StepLabel>
-                  <ActiveStep>{t.step2}</ActiveStep>
-                </StepLabel>
-              </Step>
-              <Step>
-                <StepLabel>{t.step3}</StepLabel>
-              </Step>
-            </Stepper>
-          </StepperContainer>
+        {/* Step 3: Contract Signature */}
+        <TabPanel value="3">
+          <Box>
+            {/* <Box sx={{ textAlign: "center", mb: 4 }}>
+                <Typography
+                  variant="h4"
+                  component="h2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "text.primary",
+                    mb: 1,
+                  }}
+                >
+                  {t.contractSigningTitle}
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  {t.contractSigningSubtitle}
+                </Typography>
+              </Box> */}
 
-          {loadingDocuments ? (
-            <Box
+            <Alert
+              severity="info"
               sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                my: 4,
+                mb: 4,
+                borderRadius: 4,
+                backgroundColor: "#FFF3E0",
+                color: "text.primary",
+                border: "1px solid #FFE0B2",
               }}
             >
-              <CircularProgress />
-              <Typography sx={{ mt: 2 }}>
-                Loading required documents...
+              <Typography variant="body2">
+                {t.contractsSentTo}
+                <Typography
+                  component="span"
+                  sx={{ fontWeight: 600, color: "#F57C00" }}
+                >
+                  jonas.mueller@example.com
+                </Typography>
+                .<br />
+                {t.pleaseSignAll}
+                <Typography component="span" sx={{ fontWeight: 600 }}>
+                  Non-solicitation Agreement (Abwehrverbot)
+                </Typography>
+                {t.toProceed}
               </Typography>
-            </Box>
-          ) : documentError ? (
-            <Alert severity="error" sx={{ my: 2 }}>
-              {documentError}
             </Alert>
-          ) : documentTypes.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                my: 4,
-              }}
-            >
-              <CircularProgress />
-              <Typography sx={{ mt: 2 }}>
-                Loading required documents...
-              </Typography>
-            </Box>
-          ) : (
+
             <Grid container spacing={3}>
-              {documentTypes.map((docType) => (
-                <Grid item xs={12} sm={6} key={docType.type_id}>
-                  {renderDocumentCard(docType)}
+              {contracts.map((contract) => (
+                <Grid item xs={12} sm={4} key={contract.title}>
+                  {renderContractCard(contract)}
                 </Grid>
               ))}
             </Grid>
-          )}
 
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              mt: 4,
-            }}
-          >
-            <Button
-              variant="outlined"
-              onClick={back}
-              sx={{
-                px: 4,
-                py: 1.5,
-                borderRadius: 4,
-                borderColor: "#e0e0e0",
-                color: "#616161",
-                "&:hover": {
-                  borderColor: "#bdbdbd",
-                  backgroundColor: "#f5f5f5",
-                },
-              }}
-            >
-              {t.back}
-            </Button>
-            <Button
-              variant="contained"
-              onClick={next}
-              disabled={!getDocumentStatus()}
-              sx={{
-                px: 4,
-                py: 1.5,
-                borderRadius: 4,
-                backgroundColor: "#F57C00",
-                "&:hover": {
-                  backgroundColor: "#EF6C00",
-                },
-                "&.Mui-disabled": {
-                  backgroundColor: "#e0e0e0",
-                  color: "#9e9e9e",
-                },
-              }}
-            >
-              {t.continue}
-            </Button>
-          </Box>
-        </Box>
-      )}
-
-      {/* Step 3: Contract Signature */}
-      {step === 3 && (
-        <Box>
-          <Box sx={{ textAlign: "center", mb: 3 }}>
-            <Typography
-              variant="h5"
-              component="h1"
-              sx={{ fontWeight: 600, color: "text.primary" }}
-            >
-              {t.welcome}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t.companyName}
-            </Typography>
-          </Box>
-
-          <Box sx={{ textAlign: "center", mb: 4 }}>
-            <Typography
-              variant="h4"
-              component="h2"
-              sx={{
-                fontWeight: 600,
-                color: "text.primary",
-                mb: 1,
-              }}
-            >
-              {t.contractSigningTitle}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {t.contractSigningSubtitle}
-            </Typography>
-          </Box>
-
-          <StepperContainer>
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "center",
-                gap: 2,
-                mb: 2,
+                justifyContent: "space-between",
+                mt: 4,
               }}
             >
-              <Typography
-                variant="body2"
-                sx={{ color: "#F57C00", fontWeight: 500 }}
+              <Button
+                variant="outlined"
+                onClick={back}
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 4,
+                  borderColor: "#e0e0e0",
+                  color: "#616161",
+                  "&:hover": {
+                    borderColor: "#bdbdbd",
+                    backgroundColor: "#f5f5f5",
+                  },
+                }}
               >
-                {t.dataEntry}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: "#F57C00", fontWeight: 500 }}
-              >
-                {t.documentUpload}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: "#F57C00", fontWeight: 500 }}
-              >
-                {t.signContracts}
-              </Typography>
+                {t.back}
+              </Button>
             </Box>
-            <StyledLinearProgress
-              variant="determinate"
-              value={100}
-              sx={{ mb: 3 }}
-            />
-          </StepperContainer>
-
-          <Alert
-            severity="info"
-            sx={{
-              mb: 4,
-              borderRadius: 4,
-              backgroundColor: "#FFF3E0",
-              color: "text.primary",
-              border: "1px solid #FFE0B2",
-            }}
-          >
-            <Typography variant="body2">
-              {t.contractsSentTo}
-              <Typography
-                component="span"
-                sx={{ fontWeight: 600, color: "#F57C00" }}
-              >
-                jonas.mueller@example.com
-              </Typography>
-              .<br />
-              {t.pleaseSignAll}
-              <Typography component="span" sx={{ fontWeight: 600 }}>
-                Non-solicitation Agreement (Abwehrverbot)
-              </Typography>
-              ) {t.toProceed}
-            </Typography>
-          </Alert>
-
-          <Grid container spacing={3}>
-            {contracts.map((contract) => (
-              <Grid item xs={12} sm={4} key={contract.title}>
-                {renderContractCard(contract)}
-              </Grid>
-            ))}
-          </Grid>
-
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              mt: 4,
-            }}
-          >
-            <Button
-              variant="outlined"
-              onClick={back}
-              sx={{
-                px: 4,
-                py: 1.5,
-                borderRadius: 4,
-                borderColor: "#e0e0e0",
-                color: "#616161",
-                "&:hover": {
-                  borderColor: "#bdbdbd",
-                  backgroundColor: "#f5f5f5",
-                },
-              }}
-            >
-              {t.back}
-            </Button>
           </Box>
-        </Box>
-      )}
+        </TabPanel>
+      </TabContext>
     </Box>
   );
 }
-
-// add some comments
-// Helper function to render document cards
-// function renderDocumentCard(docType: DocumentType) {
-//  return (function renderDocumentCard(docType) {
-//   return (
