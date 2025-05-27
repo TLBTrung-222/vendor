@@ -72,6 +72,7 @@ beta_build_and_push_ecr:
   variables:
     ENV_FILE: .env.beta
   script:
+    - echo "APP_VERSION=${CI_COMMIT_TAG}" >> $ENV_FILE
     - docker build --build-arg ENV_FILE=$ENV_FILE -t $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG} .
     - docker push $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}
   rules: !reference [.ref, rule_beta]
