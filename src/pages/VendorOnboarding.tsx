@@ -50,6 +50,7 @@ import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import Papa from "papaparse";
+import {postcodeList} from "../utils/PostalcodeList.ts";
 
 interface Country {
   country_id: number;
@@ -1717,30 +1718,15 @@ export default function VendorOnboardingFlow() {
   };
 
   useEffect(() => {
-    fetch("../../public/PostalcodeList.csv")
-      .then((res) => res.text())
-      .then((text) => {
-        Papa.parse(text, {
-          header: false,
-          skipEmptyLines: true,
-          complete: (result) => {
-            const parsed = result.data as string[][];
-            const mapped = parsed
-              .map((row) => ({
-                code: row[0].padStart(5, "0"),
-                label: row[0].padStart(5, "0") + "-" + row[1] + "-" + row[2],
-              }))
-              .filter(
-                (obj, index, self) =>
-                  index ===
-                  self.findIndex(
-                    (t) => t.code === obj.code && t.label === obj.label
-                  )
-              );
-            setPostalCodes(mapped);
-          },
-        });
-      });
+    const tmp = postcodeList.map((item, index) => {
+      let code: string = item.code.toString().padStart(5, "0");
+      let label: string = item.code.toString().padStart(5, "0") + " - " + item.state + " - " + item.district;
+      return { code: code!, label: label! }
+  }).filter((item, index, self) =>  index === self.findIndex((t)=> t.code === item.code && t.label === item.label)
+  )
+  console.log(tmp);
+  
+    setPostalCodes(tmp);
   }, []);
 
   const filterOptions = createFilterOptions<PostalCode>({
