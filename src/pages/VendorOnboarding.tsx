@@ -2502,7 +2502,7 @@ useEffect(() => {
                                       alert("Please enter a postcode");
                                       return;
                                     }
-                                    if (newPostalCode.code != newPostalCode.code.trim()) {
+                                    if (!postalCodes.find(pc => pc.code === newPostalCode.code)?.code) {
                                       alert("Please enter a valid postcode");
                                       return;
                                     }
@@ -2528,42 +2528,6 @@ useEffect(() => {
                         />
                       )}
                     />
-                        {/* <OutlinedInput
-                          id="outlined-adornment-password"
-                          value={newPostalCode.code}
-                          onChange={(e) => {
-                            setNewPostalCode({
-                              ...newPostalCode,
-                              code: e.target.value,
-                            });
-                          }}
-                          endAdornment={
-                            <InputAdornment position="end">
-                              <Button
-                                onClick={() => {
-                                  if (!newPostalCode.code) {
-                                    alert("Please enter a postcode");
-                                    return;
-                                  }
-                                  setPostalCode((prev) => [
-                                    ...prev,
-                                    {
-                                      code: newPostalCode.code,
-                                      radius: newPostalCode.radius,
-                                    },
-                                  ]);
-                                  setNewPostalCode({
-                                    code: "",
-                                    radius: 1,
-                                  });
-                                }}
-                              >
-                                Add
-                              </Button>
-                            </InputAdornment>
-                          }
-                          label="Enter postcode"
-                        /> */}
                       </FormControl>
                       {postalCode &&
                         postalCode.map((_, index) => (
