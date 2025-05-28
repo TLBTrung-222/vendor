@@ -95,7 +95,7 @@ export default function SignIn() {
     try {
       // Call the login API endpoint
       const response = await fetch(
-        "https://fastapi.gesys.automate-solutions.net/gesys/auth/login",
+        "https://alpha.be.atlas.galvanek-bau.de/gesys/auth/login",
         {
           method: "POST",
           headers: {
@@ -157,7 +157,7 @@ export default function SignIn() {
     try {
       // Call the reset password API endpoint
       const response = await fetch(
-        "https://fastapi.gesys.automate-solutions.net/gesys/users/reset-password?email=" +
+        "https://alpha.be.atlas.galvanek-bau.de/gesys/users/reset-password?email=" +
           resetEmail,
         {
           method: "PUT",
