@@ -29,6 +29,7 @@ import {
   OutlinedInput,
   InputAdornment,
   Slider,
+  createFilterOptions,
 } from "@mui/material";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
@@ -48,6 +49,7 @@ import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API respons
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import Papa from "papaparse";
 
 interface Country {
   country_id: number;
@@ -155,6 +157,12 @@ interface DocumentWithType {
   issued_by: string;
   how_to_obtain: string;
   appearance: string;
+}
+
+type PostalCode = {
+  code: string;
+  state: string;
+  city: string;
 }
 
 // Contract data
@@ -307,7 +315,7 @@ const translations = {
 };
 
 // API endpoints
-const API_BASE_URL = "https://fastapi.gesys.automate-solutions.net/gesys";
+const API_BASE_URL = "https://alpha.be.atlas.galvanek-bau.de/gesys";
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
@@ -380,6 +388,8 @@ export default function VendorOnboardingFlow() {
     code: "",
     radius: 1,
   });
+  const [postalCodes, setPostalCodes] = useState<PostalCode[]>([]);
+  const [selectedCode, setSelectedCode] = useState<PostalCode | null>(null);
 
   /* -------------------------------------------------------------------------- */
   /*                             // API data states                             */
@@ -496,6 +506,9 @@ export default function VendorOnboardingFlow() {
     const isUploading = uploadingDoc[type_id] || false;
     const showSuccess = uploadSuccess[type_id] || false;
     const selectedFile = selectedFiles[type_id];
+
+    console.log(document);
+    
 
     // Get styling based on status
     const getStatusStyles = () => {
@@ -1223,19 +1236,19 @@ export default function VendorOnboardingFlow() {
           }
 
           // Prefill form fields with vendor data
-          if (result.data.onboarding_transaction.onboarding_status_description)
+          if (result.data.onboarding_transaction.stage_1.status_description)
+          {
             setOnboardingStatus(
-              result.data.onboarding_transaction.onboarding_status_description
+              result.data.onboarding_transaction.stage_1.status_description
             );
-          if (result.data.onboarding_transaction.pm_name)
             setPmName(result.data.onboarding_transaction.pm_name);
-          if (result.data.onboarding_transaction.created_at) {
             setUpdateDate(
               new Date(
-                result.data.onboarding_transaction.created_at
+                result.data.onboarding_transaction.stage_1.created_at
               ).toLocaleDateString()
             );
-          }
+          }            
+          
           if (result.data.company_name)
             setCompanyName(result.data.company_name);
           if (result.data.tax_id) setTaxId(result.data.tax_id);
@@ -1475,8 +1488,9 @@ export default function VendorOnboardingFlow() {
     }
 
     if (!street || !houseNumber || !zipCode || !city) {
-      alert("Please fill in the complete address (street, house number, zip code, city)");
+      alert("Please fill in the complete address");
       setIsInfoUpdated(false);
+      return;
     }
 
     if (!trades || trades[0].trade === "") {
@@ -1499,6 +1513,12 @@ export default function VendorOnboardingFlow() {
 
     if (region === "1" && postalCode.length === 0) {
       alert("Please add at least one postal code");
+      setIsInfoUpdated(false);
+      return;
+    }
+
+    if (!firstName || !lastName || !phone) {
+      alert("Please fill in all contact details");
       setIsInfoUpdated(false);
       return;
     }
@@ -1615,7 +1635,7 @@ export default function VendorOnboardingFlow() {
       }
 
       // Proceed to next step
-      next();
+      updateStep(2);
       setIsDisabled(true);
       setIsInfoUpdated(true);
     } catch (error) {
@@ -1698,6 +1718,31 @@ export default function VendorOnboardingFlow() {
       </Card>
     );
   };
+
+useEffect(() => {
+    fetch("../../public/PostalcodeList.csv")
+      .then((res) => res.text())
+      .then((text) => {
+        Papa.parse(text, {
+          header: false,
+          skipEmptyLines: true,
+          complete: (result) => {
+            const parsed = result.data as string[][];
+            const mapped = parsed.map((row) => ({
+              code: row[0].padStart(5, "0"),
+              state: row[1],
+              city: row[2],
+            }));
+            setPostalCodes(mapped);
+          },
+        });
+      });
+  }, []);  
+
+  const filterOptions = createFilterOptions<PostalCode>({
+    stringify: (option) => `${option.code} - ${option.state} - ${option.city}`,
+    matchFrom: "any",
+});
 
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
@@ -1794,7 +1839,8 @@ export default function VendorOnboardingFlow() {
         <Box
           sx={{
             position: "sticky",
-            top: 165,
+            p: 1,
+            top: "22.5%",
             zIndex: 1000,
             backgroundColor: "background.paper",
             display: "flex",
@@ -1802,7 +1848,7 @@ export default function VendorOnboardingFlow() {
             justifyContent: "space-between",
           }}
         >
-          <Box sx={{ width: "50%", ".Mui-disabled": { color: "rgba(0,0,0,0.2)" } }}>
+          <Box sx={{ width: "50%", ".Mui-disabled": { color: "rgba(0,0,0,0.2) !important" } }}>
             <TabList
               onChange={(_event: React.SyntheticEvent, value: string) => {
                 isInfoUpdated && setStep(Number(value));
@@ -2415,8 +2461,74 @@ export default function VendorOnboardingFlow() {
                         If you cover entire states, switch to the States tab.
                       </Typography>
                       <FormControl variant="outlined" fullWidth size="small">
-                        <InputLabel>Enter postcode</InputLabel>
-                        <OutlinedInput
+                        {/* <InputLabel>Enter postcode</InputLabel> */}
+                    <Autocomplete
+                      freeSolo
+                      options={postalCodes}
+                      getOptionLabel={(option) =>
+                        typeof option === "string"
+                          ? option
+                          : `${option.code} - ${option.state} - ${option.city}`
+                      }
+                      filterOptions={filterOptions}
+                      value={newPostalCode.code}
+                      onChange={(_e, newValue) =>
+                        setNewPostalCode({
+                          ...newPostalCode,
+                          code:
+                            typeof newValue === "string"
+                              ? newValue
+                              : newValue?.code || "",
+                        })
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          onChange={(e) => {
+                            setNewPostalCode({
+                              ...newPostalCode,
+                              code: e.target.value,
+                            });
+                          }}
+                          label="Select Postal Code"
+                          variant="outlined"
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <Button
+                                  onClick={() => {
+                                    if (!newPostalCode.code) {
+                                      alert("Please enter a postcode");
+                                      return;
+                                    }
+                                    if (newPostalCode.code != newPostalCode.code.trim()) {
+                                      alert("Please enter a valid postcode");
+                                      return;
+                                    }
+                                    setPostalCode((prev) => [
+                                      ...prev,
+                                      {
+                                        code: newPostalCode.code,
+                                        radius: newPostalCode.radius,
+                                      },
+                                    ]);
+                                    setNewPostalCode({
+                                      code: "",
+                                      radius: 1,
+                                    });
+                                  }}
+                                >
+                                  Add
+                                </Button>
+                                {params.InputProps.endAdornment}
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                        {/* <OutlinedInput
                           id="outlined-adornment-password"
                           value={newPostalCode.code}
                           onChange={(e) => {
@@ -2451,7 +2563,7 @@ export default function VendorOnboardingFlow() {
                             </InputAdornment>
                           }
                           label="Enter postcode"
-                        />
+                        /> */}
                       </FormControl>
                       {postalCode &&
                         postalCode.map((_, index) => (
