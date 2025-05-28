@@ -161,9 +161,8 @@ interface DocumentWithType {
 
 type PostalCode = {
   code: string;
-  state: string;
-  city: string;
-}
+  label: string;
+};
 
 // Contract data
 const contracts = [
@@ -364,7 +363,7 @@ export default function VendorOnboardingFlow() {
   /* -------------------------------------------------------------------------- */
   /*                            // Form field states                            */
   /* -------------------------------------------------------------------------- */
-  const [isInfoUpdated, setIsInfoUpdated] = useState(false);  
+  const [isInfoUpdated, setIsInfoUpdated] = useState(false);
   const [onboardingStatus, setOnboardingStatus] = useState("");
   const [pmName, setPmName] = useState("");
   const [updateDate, setUpdateDate] = useState("");
@@ -508,7 +507,6 @@ export default function VendorOnboardingFlow() {
     const selectedFile = selectedFiles[type_id];
 
     console.log(document);
-    
 
     // Get styling based on status
     const getStatusStyles = () => {
@@ -1236,8 +1234,7 @@ export default function VendorOnboardingFlow() {
           }
 
           // Prefill form fields with vendor data
-          if (result.data.onboarding_transaction.stage_1.status_description)
-          {
+          if (result.data.onboarding_transaction.stage_1.status_description) {
             setOnboardingStatus(
               result.data.onboarding_transaction.stage_1.status_description
             );
@@ -1247,8 +1244,8 @@ export default function VendorOnboardingFlow() {
                 result.data.onboarding_transaction.stage_1.created_at
               ).toLocaleDateString()
             );
-          }            
-          
+          }
+
           if (result.data.company_name)
             setCompanyName(result.data.company_name);
           if (result.data.tax_id) setTaxId(result.data.tax_id);
@@ -1435,7 +1432,7 @@ export default function VendorOnboardingFlow() {
   // Add a new trade
   const addTrade = () => {
     setTrades([...trades, { trade: "", count: "" }]);
-  };  
+  };
 
   // Handle country change
   const handleCountryChange = (event: SelectChangeEvent) => {
@@ -1719,8 +1716,8 @@ export default function VendorOnboardingFlow() {
     );
   };
 
-useEffect(() => {
-    fetch("../../PostalcodeList.csv")
+  useEffect(() => {
+    fetch("../../public/PostalcodeList.csv")
       .then((res) => res.text())
       .then((text) => {
         Papa.parse(text, {
@@ -1728,21 +1725,28 @@ useEffect(() => {
           skipEmptyLines: true,
           complete: (result) => {
             const parsed = result.data as string[][];
-            const mapped = parsed.map((row) => ({
-              code: row[0].padStart(5, "0"),
-              state: row[1],
-              city: row[2],
-            }));
+            const mapped = parsed
+              .map((row) => ({
+                code: row[0].padStart(5, "0"),
+                label: row[0].padStart(5, "0") + "-" + row[1] + "-" + row[2],
+              }))
+              .filter(
+                (obj, index, self) =>
+                  index ===
+                  self.findIndex(
+                    (t) => t.code === obj.code && t.label === obj.label
+                  )
+              );
             setPostalCodes(mapped);
           },
         });
       });
-  }, []);  
+  }, []);
 
   const filterOptions = createFilterOptions<PostalCode>({
-    stringify: (option) => `${option.code} - ${option.state} - ${option.city}`,
-    matchFrom: "any",
-});
+    stringify: (option) => `${option.label}`,
+    matchFrom: "start",
+  });
 
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
@@ -1848,7 +1852,12 @@ useEffect(() => {
             justifyContent: "space-between",
           }}
         >
-          <Box sx={{ width: "50%", ".Mui-disabled": { color: "rgba(0,0,0,0.2) !important" } }}>
+          <Box
+            sx={{
+              width: "50%",
+              ".Mui-disabled": { color: "rgba(0,0,0,0.2) !important" },
+            }}
+          >
             <TabList
               onChange={(_event: React.SyntheticEvent, value: string) => {
                 isInfoUpdated && setStep(Number(value));
@@ -1884,44 +1893,48 @@ useEffect(() => {
               />
             </TabList>
           </Box>
-          {step === 1 && (<Button
-            variant="contained"
-            onClick={handleFormSubmit}
-            disabled={isSubmitting}
-            sx={{
-              borderRadius: 4,
-              backgroundColor: "#F57C00",
-              "&:hover": {
-                backgroundColor: "#EF6C00",
-              },
-              color: "#fff",
-            }}
-          >
-            {isSubmitting ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Continue"
-            )}
-          </Button>)}
-          {step === 2 && (<Button
-                variant="contained"
-                onClick={next}
-                disabled={!getDocumentStatus()}
-                sx={{
-                  borderRadius: 4,
-              backgroundColor: "#F57C00",
-              "&:hover": {
-                backgroundColor: "#EF6C00",
-              },
-              color: "#fff",
-                  "&.Mui-disabled": {
-                    backgroundColor: "#e0e0e0",
-                    color: "#9e9e9e",
-                  },
-                }}
-              >
-                {t.continue}
-          </Button>)}
+          {step === 1 && (
+            <Button
+              variant="contained"
+              onClick={handleFormSubmit}
+              disabled={isSubmitting}
+              sx={{
+                borderRadius: 4,
+                backgroundColor: "#F57C00",
+                "&:hover": {
+                  backgroundColor: "#EF6C00",
+                },
+                color: "#fff",
+              }}
+            >
+              {isSubmitting ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Continue"
+              )}
+            </Button>
+          )}
+          {step === 2 && (
+            <Button
+              variant="contained"
+              onClick={next}
+              disabled={!getDocumentStatus()}
+              sx={{
+                borderRadius: 4,
+                backgroundColor: "#F57C00",
+                "&:hover": {
+                  backgroundColor: "#EF6C00",
+                },
+                color: "#fff",
+                "&.Mui-disabled": {
+                  backgroundColor: "#e0e0e0",
+                  color: "#9e9e9e",
+                },
+              }}
+            >
+              {t.continue}
+            </Button>
+          )}
         </Box>
         {/* Step 1: Company Details */}
         <TabPanel value="1">
@@ -2008,21 +2021,21 @@ useEffect(() => {
               <Grid item xs={12}>
                 <FormControl fullWidth>
                   <TextField
-                  fullWidth
-                  label={
-                    <Box id="tax-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t.company}
-                      <Typography color="error.main">*</Typography>
-                    </Box>
-                  }
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 4,
-                    },
-                  }}
-                />
+                    fullWidth
+                    label={
+                      <Box id="tax-label" sx={{ display: "flex", gap: 0.5 }}>
+                        {t.company}
+                        <Typography color="error.main">*</Typography>
+                      </Box>
+                    }
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 4,
+                      },
+                    }}
+                  />
                 </FormControl>
               </Grid>
 
@@ -2462,72 +2475,71 @@ useEffect(() => {
                       </Typography>
                       <FormControl variant="outlined" fullWidth size="small">
                         {/* <InputLabel>Enter postcode</InputLabel> */}
-                    <Autocomplete
-                      freeSolo
-                      options={postalCodes}
-                      getOptionLabel={(option) =>
-                        typeof option === "string"
-                          ? option
-                          : `${option.code} - ${option.state} - ${option.city}`
-                      }
-                      filterOptions={filterOptions}
-                      value={newPostalCode.code}
-                      onChange={(_e, newValue) =>
-                        setNewPostalCode({
-                          ...newPostalCode,
-                          code:
-                            typeof newValue === "string"
-                              ? newValue
-                              : newValue?.code || "",
-                        })
-                      }
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          onChange={(e) => {
+                        <Autocomplete
+                          freeSolo
+                          options={postalCodes}
+                          filterOptions={filterOptions}
+                          value={newPostalCode.code}
+                          onChange={(_e, newValue: any) => {
                             setNewPostalCode({
                               ...newPostalCode,
-                              code: e.target.value,
+                              code: newValue?.code,
                             });
                           }}
-                          label="Select Postal Code"
-                          variant="outlined"
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <Button
-                                  onClick={() => {
-                                    if (!newPostalCode.code) {
-                                      alert("Please enter a postcode");
-                                      return;
-                                    }
-                                    if (!postalCodes.find(pc => pc.code === newPostalCode.code)?.code) {
-                                      alert("Please enter a valid postcode");
-                                      return;
-                                    }
-                                    setPostalCode((prev) => [
-                                      ...prev,
-                                      {
-                                        code: newPostalCode.code,
-                                        radius: newPostalCode.radius,
-                                      },
-                                    ]);
-                                    setNewPostalCode({
-                                      code: "",
-                                      radius: 1,
-                                    });
-                                  }}
-                                >
-                                  Add
-                                </Button>
-                                {params.InputProps.endAdornment}
-                              </InputAdornment>
-                            ),
-                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              onChange={(e) => {
+                                setNewPostalCode({
+                                  ...newPostalCode,
+                                  code: e.target.value,
+                                });
+                              }}
+                              label="Select Postal Code"
+                              variant="outlined"
+                              InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    <Button
+                                      onClick={() => {
+                                        if (!newPostalCode.code) {
+                                          alert("Please enter a postcode");
+                                          return;
+                                        }
+                                        if (
+                                          !postalCodes.find(
+                                            (pc) =>
+                                              pc.code === newPostalCode.code
+                                          )?.code
+                                        ) {
+                                          alert(
+                                            "Please enter a valid postcode"
+                                          );
+                                          return;
+                                        }
+                                        setPostalCode((prev) => [
+                                          ...prev,
+                                          {
+                                            code: newPostalCode.code,
+                                            radius: newPostalCode.radius,
+                                          },
+                                        ]);
+                                        setNewPostalCode({
+                                          code: "",
+                                          radius: 1,
+                                        });
+                                      }}
+                                    >
+                                      Add
+                                    </Button>
+                                    {params.InputProps.endAdornment}
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          )}
                         />
-                      )}
-                    />
                       </FormControl>
                       {postalCode &&
                         postalCode.map((_, index) => (
