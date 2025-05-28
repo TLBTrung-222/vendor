@@ -1724,8 +1724,6 @@ export default function VendorOnboardingFlow() {
       return { code: code!, label: label! }
   }).filter((item, index, self) =>  index === self.findIndex((t)=> t.code === item.code && t.label === item.label)
   )
-  console.log(tmp);
-  
     setPostalCodes(tmp);
   }, []);
 
@@ -1738,7 +1736,7 @@ export default function VendorOnboardingFlow() {
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
       <Box
         sx={{
-          padding: "8px 0 0 0",
+          height: "20%",
           position: "sticky",
           top: 0,
           zIndex: 1000,
@@ -1830,8 +1828,8 @@ export default function VendorOnboardingFlow() {
           sx={{
             position: "sticky",
             p: 1,
-            top: "22.5%",
-            zIndex: 1000,
+            top: "20%",
+            zIndex: 900,
             backgroundColor: "background.paper",
             display: "flex",
             alignItems: "center",
