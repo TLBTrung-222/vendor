@@ -1720,7 +1720,7 @@ export default function VendorOnboardingFlow() {
   };
 
 useEffect(() => {
-    fetch("../../public/PostalcodeList.csv")
+    fetch("../../PostalcodeList.csv")
       .then((res) => res.text())
       .then((text) => {
         Papa.parse(text, {
