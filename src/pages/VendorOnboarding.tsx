@@ -30,6 +30,12 @@ import {
   InputAdornment,
   Slider,
   createFilterOptions,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Badge,
+  IconButton,
+  Popover,
 } from "@mui/material";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
@@ -49,8 +55,10 @@ import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API respons
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
-import Papa from "papaparse";
 import {postcodeList} from "../utils/PostalcodeList.ts";
+import { usePusher } from "../contexts/PusherContext.tsx";
+import NotiItem from "./NotiItem/NotiItem.tsx";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 
 interface Country {
   country_id: number;
@@ -200,11 +208,6 @@ const StepperContainer = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(3),
 }));
 
-const ActiveStep = styled(Box)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  fontWeight: 600,
-}));
-
 const FormContainer = styled("form")(({ theme }) => ({
   marginTop: theme.spacing(3),
   marginBottom: theme.spacing(3),
@@ -213,16 +216,6 @@ const FormContainer = styled("form")(({ theme }) => ({
 const UploadInput = styled("input")({
   display: "none",
 });
-
-const CustomFileInput = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: `1px solid ${theme.palette.divider}`,
-  fontSize: "0.875rem",
-  color: theme.palette.text.secondary,
-}));
 
 const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
   height: 8,
@@ -320,6 +313,17 @@ const API_BASE_URL = "https://alpha.be.atlas.galvanek-bau.de/gesys";
 // Modify the component state
 export default function VendorOnboardingFlow() {
   const { logout } = useContext(AuthContext);
+  const { playNoti } = usePusher();
+  const { message } = usePusher();
+  const [notiItems, setNotiItems] = useState<any>([]);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   // Add logout handler function
   const handleLogout = () => {
@@ -340,10 +344,6 @@ export default function VendorOnboardingFlow() {
   const [selectedFiles, setSelectedFiles] = useState<
     Record<number, File | null>
   >({});
-  const [documentNames, setDocumentNames] = useState<Record<number, string>>(
-    {}
-  );
-  const [expiryDates, setExpiryDates] = useState<Record<number, string>>({});
 
   /* -------------------------------------------------------------------------- */
   /*                           // Form state variables                          */
@@ -389,7 +389,6 @@ export default function VendorOnboardingFlow() {
     radius: 1,
   });
   const [postalCodes, setPostalCodes] = useState<PostalCode[]>([]);
-  const [selectedCode, setSelectedCode] = useState<PostalCode | null>(null);
 
   /* -------------------------------------------------------------------------- */
   /*                             // API data states                             */
@@ -446,6 +445,17 @@ export default function VendorOnboardingFlow() {
   /* -------------------------------------------------------------------------- */
   /*                                For screen 2                                */
   /* -------------------------------------------------------------------------- */
+
+  useEffect(() => {
+    if (message) {
+      playNoti();
+      const newMessageItem = {
+        key: Math.random(),
+        label: <NotiItem message={message} />,
+      };
+      setNotiItems((prev: any) => [newMessageItem, ...prev!]);
+    }
+  }, [message]);
 
   useEffect(() => {
     if (!vendorId || step !== 2) return;
@@ -506,8 +516,6 @@ export default function VendorOnboardingFlow() {
     const isUploading = uploadingDoc[type_id] || false;
     const showSuccess = uploadSuccess[type_id] || false;
     const selectedFile = selectedFiles[type_id];
-
-    console.log(document);
 
     // Get styling based on status
     const getStatusStyles = () => {
@@ -1239,7 +1247,7 @@ export default function VendorOnboardingFlow() {
             setOnboardingStatus(
               result.data.onboarding_transaction.stage_1.status_description
             );
-            setPmName(result.data.onboarding_transaction.pm_name);
+            setPmName(result.data.onboarding_transaction.stage_1.pm_name);
             setUpdateDate(
               new Date(
                 result.data.onboarding_transaction.stage_1.created_at
@@ -1766,6 +1774,41 @@ export default function VendorOnboardingFlow() {
 
           {/* Right side - language selector and logout button */}
           <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <IconButton onClick={handleClick}>
+        <Badge badgeContent={notiItems.length} color="error">
+          <NotificationsIcon sx={{ fontSize: 20, color: "#000" }} />
+        </Badge>
+      </IconButton>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        PaperProps={{
+          sx: { width: "fit-content" },
+          className: "noti-dropdown",
+        }}
+      >
+        <Box>
+          {notiItems.length === 0 ? (
+            <MenuItem disabled>No new notifications</MenuItem>
+          ) : (
+            notiItems.map((item: any) => (
+              <MenuItem key={item.key} onClick={handleClose}>
+                {item.label}
+              </MenuItem>
+            ))
+          )}
+        </Box>
+      </Popover>
             <FormControl size="small" sx={{ width: 120 }}>
               <Select
                 value={language}
@@ -1828,7 +1871,8 @@ export default function VendorOnboardingFlow() {
           sx={{
             position: "sticky",
             p: 1,
-            top: "20%",
+            top: "10rem",
+            padding: "0 16px",
             zIndex: 900,
             backgroundColor: "background.paper",
             display: "flex",
