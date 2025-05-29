@@ -1,0 +1,13 @@
+.NotiItem {
+    display: flex;
+    gap: 5px;
+
+    .notification-icon {
+        color: var(--primary-500);
+    }
+
+    .date {
+        font-size: 12px;
+        color: var(--muted);
+    }
+}
