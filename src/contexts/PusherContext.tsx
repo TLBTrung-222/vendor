@@ -75,10 +75,10 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
-    return () => {
-      userChannel.unbind_all();
-      userChannel.unsubscribe();
-    };
+    // return () => {
+    //   userChannel.unbind_all();
+    //   userChannel.unsubscribe();
+    // };
   }, [vendorId]);  
 
   const playNoti = async () => {
