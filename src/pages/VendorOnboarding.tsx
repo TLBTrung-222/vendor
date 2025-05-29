@@ -30,6 +30,13 @@ import {
   InputAdornment,
   Slider,
   createFilterOptions,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Badge,
+  IconButton,
+  Popover,
+  Modal,
 } from "@mui/material";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
@@ -49,8 +56,11 @@ import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API respons
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
-import Papa from "papaparse";
 import {postcodeList} from "../utils/PostalcodeList.ts";
+import { usePusher } from "../contexts/PusherContext.tsx";
+import NotiItem from "./NotiItem/NotiItem.tsx";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import { style } from "@mui/system";
 
 interface Country {
   country_id: number;
@@ -81,6 +91,18 @@ interface VendorDetail {
   vendor_id: number;
   contact_user_id: number;
   onboarding_status_id: number;
+  onboarding_transaction: {
+    stage_1: {
+      status_description: string;
+      pm_name: string;
+      created_at: string;
+    };
+    stage_2: {
+      status_description: string;
+      pm_name: string;
+      created_at: string;
+    };
+  };
   legal_form_id: number | null;
   country_id: number | null;
   gewerk_ids: {
@@ -100,6 +122,7 @@ interface VendorDetail {
   contact_user: string | null;
   contact_user_role: string | null;
   country_name: string | null;
+  tax_id: string;
 }
 
 // Update the Vendor interface
@@ -200,11 +223,6 @@ const StepperContainer = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(3),
 }));
 
-const ActiveStep = styled(Box)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  fontWeight: 600,
-}));
-
 const FormContainer = styled("form")(({ theme }) => ({
   marginTop: theme.spacing(3),
   marginBottom: theme.spacing(3),
@@ -213,16 +231,6 @@ const FormContainer = styled("form")(({ theme }) => ({
 const UploadInput = styled("input")({
   display: "none",
 });
-
-const CustomFileInput = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  padding: "10px 12px",
-  borderRadius: "8px",
-  border: `1px solid ${theme.palette.divider}`,
-  fontSize: "0.875rem",
-  color: theme.palette.text.secondary,
-}));
 
 const StyledLinearProgress = styled(LinearProgress)(({ theme }) => ({
   height: 8,
@@ -320,6 +328,17 @@ const API_BASE_URL = "https://alpha.be.atlas.galvanek-bau.de/gesys";
 // Modify the component state
 export default function VendorOnboardingFlow() {
   const { logout } = useContext(AuthContext);
+  const { playNoti } = usePusher();
+  const { message } = usePusher();
+  const [notiItems, setNotiItems] = useState<any>([]);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   // Add logout handler function
   const handleLogout = () => {
@@ -340,10 +359,6 @@ export default function VendorOnboardingFlow() {
   const [selectedFiles, setSelectedFiles] = useState<
     Record<number, File | null>
   >({});
-  const [documentNames, setDocumentNames] = useState<Record<number, string>>(
-    {}
-  );
-  const [expiryDates, setExpiryDates] = useState<Record<number, string>>({});
 
   /* -------------------------------------------------------------------------- */
   /*                           // Form state variables                          */
@@ -364,6 +379,10 @@ export default function VendorOnboardingFlow() {
   /* -------------------------------------------------------------------------- */
   /*                            // Form field states                            */
   /* -------------------------------------------------------------------------- */
+  const [isEditing, setIsEditing] = useState(false);
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [isOpenModal, setIsOpenModal] = useState(false);
+  const [vendorDetails, setVendorDetails] = useState<any>(null);
   const [isInfoUpdated, setIsInfoUpdated] = useState(false);
   const [onboardingStatus, setOnboardingStatus] = useState("");
   const [pmName, setPmName] = useState("");
@@ -389,7 +408,6 @@ export default function VendorOnboardingFlow() {
     radius: 1,
   });
   const [postalCodes, setPostalCodes] = useState<PostalCode[]>([]);
-  const [selectedCode, setSelectedCode] = useState<PostalCode | null>(null);
 
   /* -------------------------------------------------------------------------- */
   /*                             // API data states                             */
@@ -405,15 +423,12 @@ export default function VendorOnboardingFlow() {
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(
     null
   );
-  const [uploads, setUploads] = useState<Record<string, string>>({});
 
   // API data
   const [countries, setCountries] = useState<Country[]>([]);
   const [legalForms, setLegalForms] = useState<LegalForm[]>([]);
   const [tradeOptions, setTradeOptions] = useState<Trade[]>([]);
   const [federalStates, setFederalStates] = useState<FederalState[]>([]);
-  const [vendorDetails, setVendorDetails] = useState<VendorDetail | null>(null);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [positions, setPositions] = useState<RepresentativePosition[]>([]);
 
   // Loading states
@@ -422,7 +437,6 @@ export default function VendorOnboardingFlow() {
   const [loadingTrades, setLoadingTrades] = useState(false);
   const [loadingFederalStates, setLoadingFederalStates] = useState(false);
   const [loadingVendorDetails, setLoadingVendorDetails] = useState(false);
-  const [isLoadingVendors, setIsLoadingVendors] = useState(false);
   const [loadingPositions, setLoadingPositions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -446,6 +460,17 @@ export default function VendorOnboardingFlow() {
   /* -------------------------------------------------------------------------- */
   /*                                For screen 2                                */
   /* -------------------------------------------------------------------------- */
+
+  useEffect(() => {
+    if (message) {
+      playNoti();
+      const newMessageItem = {
+        key: Math.random(),
+        label: <NotiItem message={message} />,
+      };
+      setNotiItems((prev: any) => [newMessageItem, ...prev!]);
+    }
+  }, [message]);
 
   useEffect(() => {
     if (!vendorId || step !== 2) return;
@@ -506,8 +531,6 @@ export default function VendorOnboardingFlow() {
     const isUploading = uploadingDoc[type_id] || false;
     const showSuccess = uploadSuccess[type_id] || false;
     const selectedFile = selectedFiles[type_id];
-
-    console.log(document);
 
     // Get styling based on status
     const getStatusStyles = () => {
@@ -1175,31 +1198,6 @@ export default function VendorOnboardingFlow() {
     fetchFederalStates();
   }, []);
 
-  // Fetch vendors to get all companies name
-  useEffect(() => {
-    const fetchVendors = async () => {
-      setIsLoadingVendors(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/vendors`);
-        const result = await response.json();
-        if (result.data) {
-          setVendors(
-            result.data.map((vendor: any) => ({
-              vendor_id: vendor.vendor_id,
-              company_name: vendor.company_name,
-            }))
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching vendors:", error);
-      } finally {
-        setIsLoadingVendors(false);
-      }
-    };
-
-    fetchVendors();
-  }, []);
-
   // fetching vendor details:
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {
@@ -1229,6 +1227,8 @@ export default function VendorOnboardingFlow() {
         //console.log("Vendor data:", result);
 
         if (result.data) {
+          setVendorDetails(result.data);
+
           // Set vendor ID
           if (result.data.vendor_id) {
             setVendorId(result.data.vendor_id);
@@ -1239,7 +1239,7 @@ export default function VendorOnboardingFlow() {
             setOnboardingStatus(
               result.data.onboarding_transaction.stage_1.status_description
             );
-            setPmName(result.data.onboarding_transaction.pm_name);
+            setPmName(result.data.onboarding_transaction.stage_1.pm_name);
             setUpdateDate(
               new Date(
                 result.data.onboarding_transaction.stage_1.created_at
@@ -1362,7 +1362,7 @@ export default function VendorOnboardingFlow() {
     };
 
     fetchVendorIdByEmail();
-  }, [countries]);
+  }, [countries]);  
 
   // Update legal form ID when legal form changes
   useEffect(() => {
@@ -1732,8 +1732,108 @@ export default function VendorOnboardingFlow() {
     matchFrom: "start",
   });
 
+  const handleCancel = () => {
+    setOnboardingStatus(vendorDetails?.onboarding_transaction?.stage_1?.status_description || "");
+    setPmName(vendorDetails?.onboarding_transaction?.stage_1?.pm_name || "");
+    setUpdateDate(
+      new Date(
+        vendorDetails?.onboarding_transaction?.stage_1?.created_at || ""
+      ).toLocaleDateString()
+    );
+    setCompanyName(vendorDetails?.company_name || "");
+    setCountry(vendorDetails?.country_name || "");
+    setLegalFormId(vendorDetails?.legal_form_id || null);
+    setTaxId(vendorDetails?.tax_id || "");
+    setStreet(vendorDetails?.street || "");
+    setHouseNumber(vendorDetails?.house_number || "");
+    setApartmentNumber(vendorDetails?.apartment_number || "");
+    setZipCode(vendorDetails?.zip_code || "");
+    setCity(vendorDetails?.city || "");
+    setWebsite(vendorDetails?.website_url || "");
+    setTrades(
+      vendorDetails?.gewerks?.map((gewerk: any) => ({
+        trade: gewerk.name,
+        count: gewerk.employee_number,
+        gesys_gewerk_id: gewerk.gewerk_id,
+      })) || []
+    );
+    
+    setRegion(
+      vendorDetails?.cover_region === "NationalWide"
+        ? "3"
+        : vendorDetails?.cover_region === "States"
+        ? "2"
+        : "1"
+    );
+    setPostalCode(
+      vendorDetails?.postcodes?.map((item: any) => ({
+        code: item.postcode,
+        radius: item.radius,
+      })) || []
+    );
+    setSelectedRegions(
+      vendorDetails?.federal_state_ids || []
+    );
+    setFirstName(vendorDetails?.contact_user?.first_name || "");
+    setLastName(vendorDetails?.contact_user?.last_name || "");
+    setPhone(vendorDetails?.contact_user?.phone_number || "");
+    const position = vendorDetails?.contact_user?.position;
+    if (position) {
+      setSelectedPositionId(position.position_id || null);
+      setSelectedPosition(position.title || "");
+    }
+  }
+
+
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
+    <Modal
+      open={isOpenModal}
+      onClose={() => setIsOpenModal(false)}
+      aria-labelledby="modal-modal-title"
+      aria-describedby="modal-modal-description"
+    >
+      <Box sx={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 400,
+        bgcolor: 'background.paper',
+        border: '2px solid #000',
+        boxShadow: 24,
+        p: 4}}
+      >
+        <Typography id="modal-modal-title" variant="h6" component="h2">
+          Your information is not saved!
+        </Typography>
+        <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+          Are you sure you want to move to the following step? Your changes will not be saved.
+        </Typography>
+        <Box sx={{
+          display: 'flex',
+          gap: 2,
+          justifyContent: 'flex-end',
+        }}>
+          <Button
+            variant="outlined"
+            onClick={() => setIsOpenModal(false)}
+            sx={{ mt: 2, borderColor: "#F57C00", color: "#F57C00", borderRadius: 4 }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {updateStep(2)
+            setIsOpenModal(false)
+            }}
+            sx={{ mt: 2, backgroundColor: "#F57C00", color: "#fff", borderRadius: 4 }}
+          >
+            Continue
+          </Button>
+        </Box>
+      </Box>
+    </Modal>
       <Box
         sx={{
           height: "20%",
@@ -1766,6 +1866,41 @@ export default function VendorOnboardingFlow() {
 
           {/* Right side - language selector and logout button */}
           <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <IconButton onClick={handleClick}>
+        <Badge badgeContent={notiItems.length} color="error">
+          <NotificationsIcon sx={{ fontSize: 20, color: "#000" }} />
+        </Badge>
+      </IconButton>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        PaperProps={{
+          sx: { width: "fit-content" },
+          className: "noti-dropdown",
+        }}
+      >
+        <Box>
+          {notiItems.length === 0 ? (
+            <MenuItem disabled>No new notifications</MenuItem>
+          ) : (
+            notiItems.map((item: any) => (
+              <MenuItem key={item.key} onClick={handleClose}>
+                {item.label}
+              </MenuItem>
+            ))
+          )}
+        </Box>
+      </Popover>
             <FormControl size="small" sx={{ width: 120 }}>
               <Select
                 value={language}
@@ -1828,7 +1963,8 @@ export default function VendorOnboardingFlow() {
           sx={{
             position: "sticky",
             p: 1,
-            top: "20%",
+            top: "10rem",
+            padding: "0 16px",
             zIndex: 900,
             backgroundColor: "background.paper",
             display: "flex",
@@ -1863,7 +1999,8 @@ export default function VendorOnboardingFlow() {
                 label={t.step2}
                 value="2"
                 onClick={() => {
-                  handleFormSubmit();
+                  isEditing ? setIsOpenModal(true) : updateStep(2);
+
                 }}
               />
               <Tab
@@ -1878,6 +2015,27 @@ export default function VendorOnboardingFlow() {
             </TabList>
           </Box>
           {step === 1 && (
+            <Box sx={{display: "flex", gap: 1}}>
+            {vendorDetails?.country_name !== "" && isEditing && (
+            <Button
+              variant="outlined"
+              onClick={() => {
+                handleCancel();
+                setIsEditing(false);
+              }}
+              sx={{
+                borderRadius: 4,
+                borderColor: "#F57C00",
+                color: "#F57C00",
+                "&:hover": {
+                  backgroundColor: "#FFF3E0",
+                  borderColor: "#EF6C00",
+                },
+              }}
+            >
+              Cancel
+            </Button>
+            )}
             <Button
               variant="contained"
               onClick={handleFormSubmit}
@@ -1894,9 +2052,10 @@ export default function VendorOnboardingFlow() {
               {isSubmitting ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
-                "Continue"
+                vendorDetails?.country_name !== "" && isEditing ? "Update" : "Continue"
               )}
             </Button>
+            </Box>
           )}
           {step === 2 && (
             <Button
@@ -2013,7 +2172,10 @@ export default function VendorOnboardingFlow() {
                       </Box>
                     }
                     value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
+                    onChange={(e) => {
+                      setCompanyName(e.target.value);
+                      setIsEditing(true);
+                    }}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 4,
@@ -2047,6 +2209,7 @@ export default function VendorOnboardingFlow() {
                       } else {
                         setLegalFormId(null);
                       }
+                      setIsEditing(true);
                     }}
                     sx={{ borderRadius: 4 }}
                     disabled={loadingLegalForms || !country}
@@ -2094,7 +2257,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={taxId}
-                  onChange={(e) => setTaxId(e.target.value)}
+                  onChange={(e) => {setTaxId(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2113,7 +2278,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={street}
-                  onChange={(e) => setStreet(e.target.value)}
+                  onChange={(e) => {setStreet(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2132,7 +2299,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={houseNumber}
-                  onChange={(e) => setHouseNumber(e.target.value)}
+                  onChange={(e) => {setHouseNumber(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2146,7 +2315,9 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={t.apartmentNr}
                   value={apartmentNumber}
-                  onChange={(e) => setApartmentNumber(e.target.value)}
+                  onChange={(e) => {setApartmentNumber(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2165,7 +2336,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={zipCode}
-                  onChange={(e) => setZipCode(e.target.value)}
+                  onChange={(e) => {setZipCode(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2184,7 +2357,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => {setCity(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2202,7 +2377,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
+                  onChange={(e) => {setWebsite(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2256,7 +2433,9 @@ export default function VendorOnboardingFlow() {
                             value={item.trade}
                             label={t.selectTrade + "**"}
                             onChange={(e) =>
-                              updateTrade(i, "trade", e.target.value)
+                              {updateTrade(i, "trade", e.target.value)
+                                setIsEditing(true);
+                              }
                             }
                             sx={{ borderRadius: 4 }}
                             disabled={!!item.gesys_gewerk_id || loadingTrades}
@@ -2301,7 +2480,9 @@ export default function VendorOnboardingFlow() {
                           }
                           value={item.count}
                           onChange={(e) =>
-                            updateTrade(i, "count", e.target.value)
+                            {updateTrade(i, "count", e.target.value)
+                              setIsEditing(true);
+                            }
                           }
                           sx={{
                             "& .MuiOutlinedInput-root": { borderRadius: 4 },
@@ -2318,6 +2499,7 @@ export default function VendorOnboardingFlow() {
                             if (trades.length === 1) {
                               setTrades([{ trade: "", count: "" }]);
                             }
+                            setIsEditing(true);
                           }}
                           sx={{
                             borderRadius: 4,
@@ -2367,6 +2549,7 @@ export default function VendorOnboardingFlow() {
                         value: string
                       ) => {
                         setRegion(value);
+                        setIsEditing(true);
                       }}
                       variant="fullWidth"
                       sx={{
@@ -2469,6 +2652,7 @@ export default function VendorOnboardingFlow() {
                               ...newPostalCode,
                               code: newValue?.code,
                             });
+                            setIsEditing(true);
                           }}
                           renderInput={(params) => (
                             <TextField
@@ -2610,6 +2794,7 @@ export default function VendorOnboardingFlow() {
                                       (id) => id !== state.id
                                     );
                                 setSelectedRegions(selectedValues);
+                                setIsEditing(true);
                               }}
                             />
                             <Typography>
@@ -2663,6 +2848,7 @@ export default function VendorOnboardingFlow() {
                             setSelectedRegions((prev) =>
                               prev.filter((regionId) => regionId !== id)
                             );
+                            setIsEditing(true);
                           }}
                           sx={{
                             mr: 1,
@@ -2699,7 +2885,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => {setFirstName(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2721,7 +2909,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={(e) => {setLastName(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2763,7 +2953,9 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {setPhone(e.target.value)
+                    setIsEditing(true);
+                  }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 4,
@@ -2793,7 +2985,9 @@ export default function VendorOnboardingFlow() {
                         <Typography color="error.main">*</Typography>
                       </Box>
                     }
-                    onChange={(e) => setSelectedPosition(e.target.value)}
+                    onChange={(e) => {setSelectedPosition(e.target.value)
+                      setIsEditing(true);
+                    }}
                     sx={{ borderRadius: 4 }}
                     disabled={loadingPositions}
                   >
