@@ -1286,7 +1286,6 @@ export default function VendorOnboardingFlow() {
             } else if (result.data.country_name) {
               setCountry(result.data.country_name);
             }
-            setIsDisabled(true);
           }
 
           // Set legal form ID
@@ -1640,7 +1639,6 @@ export default function VendorOnboardingFlow() {
 
       // Proceed to next step
       updateStep(2);
-      setIsDisabled(true);
       setIsInfoUpdated(true);
     } catch (error) {
       console.error("Error updating vendor information:", error);
@@ -1789,7 +1787,6 @@ export default function VendorOnboardingFlow() {
       setSelectedPosition(position.title || "");
     }
   }
-
 
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
@@ -2008,7 +2005,7 @@ export default function VendorOnboardingFlow() {
                 onClick={() => {
                   isEditing ? setIsOpenModal(true) : updateStep(2);
                 }}
-                disabled={!vendorDetails}
+                disabled={vendorDetails?.country_name === null}
               />
               <Tab
                 sx={{
@@ -2023,7 +2020,7 @@ export default function VendorOnboardingFlow() {
           </Box>
           {step === 1 && (
             <Box sx={{display: "flex", gap: 1}}>
-            {isEditing && (
+            {vendorDetails?.country_name !== null && isEditing && (
             <Button
               variant="outlined"
               onClick={() => {
@@ -2059,7 +2056,7 @@ export default function VendorOnboardingFlow() {
               {isSubmitting ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
-                !vendorDetails || !isEditing ? "Continue" : "Update"
+                vendorDetails?.country_name === null || !isEditing ? "Continue" : "Update"
               )}
             </Button>
             </Box>
@@ -2133,7 +2130,7 @@ export default function VendorOnboardingFlow() {
                     label={t.country + "**"}
                     onChange={handleCountryChange}
                     sx={{ borderRadius: 4 }}
-                    disabled={loadingCountries || isDisabled}
+                    disabled={loadingCountries || vendorDetails?.country_name !== null}
                   >
                     <MenuItem value="">
                       <em>{t.country} *</em>
