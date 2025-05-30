@@ -2006,7 +2006,7 @@ export default function VendorOnboardingFlow() {
                 label={t.step2}
                 value="2"
                 onClick={() => {
-                  isEditing && setIsOpenModal(true);
+                  isEditing ? setIsOpenModal(true) : updateStep(2);
                 }}
                 disabled={!vendorDetails}
               />
