@@ -1825,6 +1825,7 @@ export default function VendorOnboardingFlow() {
           <Button
             variant="contained"
             onClick={() => {updateStep(2)
+              handleCancel()
             setIsOpenModal(false)
             }}
             sx={{ mt: 2, backgroundColor: "#F57C00", color: "#fff", borderRadius: 4 }}
