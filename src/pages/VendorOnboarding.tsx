@@ -1491,6 +1491,12 @@ export default function VendorOnboardingFlow() {
       return;
     }
 
+    if (country === "Poland" && !apartmentNumber) {
+      alert("Please add an apartment number");
+      setIsInfoUpdated(false);
+      return;
+    }
+
     if (!trades || trades[0].trade === "") {
       alert("Please add at least one trade");
       setIsInfoUpdated(false);
@@ -2000,9 +2006,9 @@ export default function VendorOnboardingFlow() {
                 label={t.step2}
                 value="2"
                 onClick={() => {
-                  isEditing ? setIsOpenModal(true) : updateStep(2);
-
+                  isEditing && setIsOpenModal(true);
                 }}
+                disabled={!vendorDetails}
               />
               <Tab
                 sx={{
@@ -2017,7 +2023,7 @@ export default function VendorOnboardingFlow() {
           </Box>
           {step === 1 && (
             <Box sx={{display: "flex", gap: 1}}>
-            {vendorDetails?.country_name !== "" && isEditing && (
+            {isEditing && (
             <Button
               variant="outlined"
               onClick={() => {
@@ -2053,7 +2059,7 @@ export default function VendorOnboardingFlow() {
               {isSubmitting ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
-                vendorDetails?.country_name !== "" && isEditing ? "Update" : "Continue"
+                !vendorDetails || !isEditing ? "Continue" : "Update"
               )}
             </Button>
             </Box>
@@ -2314,7 +2320,10 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={6}>
                 <TextField
                   fullWidth
-                  label={t.apartmentNr}
+                  label={<Box id="house-label" sx={{ display: "flex", gap: 0.5 }}>
+                      {t.apartmentNr}
+                      {country === "Poland" && <Typography color="error.main">*</Typography>}
+                    </Box>}
                   value={apartmentNumber}
                   onChange={(e) => {setApartmentNumber(e.target.value)
                     setIsEditing(true);
