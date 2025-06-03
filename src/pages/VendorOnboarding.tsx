@@ -5,9 +5,6 @@ import {
   Box,
   Typography,
   Alert,
-  Stepper,
-  Step,
-  StepLabel,
   TextField,
   Button,
   MenuItem,
@@ -26,13 +23,9 @@ import {
   Tooltip,
   Tab,
   Checkbox,
-  OutlinedInput,
   InputAdornment,
   Slider,
   createFilterOptions,
-  Menu,
-  ListItemIcon,
-  ListItemText,
   Badge,
   IconButton,
   Popover,
@@ -60,7 +53,7 @@ import {postcodeList} from "../utils/PostalcodeList.ts";
 import { usePusher } from "../contexts/PusherContext.tsx";
 import NotiItem from "./NotiItem/NotiItem.tsx";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import { style } from "@mui/system";
+import CheckIcon from '@mui/icons-material/Check';
 
 interface Country {
   country_id: number;
@@ -84,51 +77,6 @@ interface FederalState {
   id: number;
   german_name: string;
   english_name: string;
-}
-
-// Add a new interface for vendor details with gewerk_ids
-interface VendorDetail {
-  vendor_id: number;
-  contact_user_id: number;
-  onboarding_status_id: number;
-  onboarding_transaction: {
-    stage_1: {
-      status_description: string;
-      pm_name: string;
-      created_at: string;
-    };
-    stage_2: {
-      status_description: string;
-      pm_name: string;
-      created_at: string;
-    };
-  };
-  legal_form_id: number | null;
-  country_id: number | null;
-  gewerk_ids: {
-    scope_id: number | null;
-    gewerk_name: string;
-    gesys_gewerk_id: number;
-  }[];
-  name: string | null;
-  company_name: string | null;
-  email: string;
-  phone: string | null;
-  department: string | null;
-  description: string | null;
-  address: string | null;
-  company_size: string | null;
-  website: string | null;
-  contact_user: string | null;
-  contact_user_role: string | null;
-  country_name: string | null;
-  tax_id: string;
-}
-
-// Update the Vendor interface
-interface Vendor {
-  vendor_id: number;
-  company_name: string | null;
 }
 
 // Add a new interface for representative positions
@@ -187,35 +135,6 @@ type PostalCode = {
   code: string;
   label: string;
 };
-
-// Contract data
-const contracts = [
-  {
-    title: "Photovoltaik Framework Agreement",
-    email: "jonas.mueller@example.com",
-    status: ["Sent", "Viewed", "Signed"],
-  },
-  {
-    title: "Heat Pump Framework Agreement",
-    email: "jonas.mueller@example.com",
-    status: ["Sent", "Viewed", "Signed"],
-  },
-  {
-    title: "Appendix incl. Price List",
-    email: "jonas.mueller@example.com",
-    status: ["Sent", "Viewed"],
-  },
-  {
-    title: "NDA",
-    email: "jonas.mueller@example.com",
-    status: ["Sent", "Viewed", "Signed"],
-  },
-  {
-    title: "Non-solicitation Agreement (Abwehrverbot)",
-    email: "jonas.mueller@example.com",
-    status: ["Sent", "Viewed", "Signed"],
-  },
-];
 
 // Styled components
 const StepperContainer = styled(Box)(({ theme }) => ({
@@ -368,7 +287,6 @@ export default function VendorOnboardingFlow() {
     return savedStep ? parseInt(savedStep, 10) : 1;
   });
   const [language, setLanguage] = useState("EN");
-  const [isDisabled, setIsDisabled] = useState(false);
 
   // Create a custom function to update step that also saves to localStorage
   const updateStep = (newStep: number) => {
@@ -380,7 +298,6 @@ export default function VendorOnboardingFlow() {
   /*                            // Form field states                            */
   /* -------------------------------------------------------------------------- */
   const [isEditing, setIsEditing] = useState(false);
-  const [isCancelled, setIsCancelled] = useState(false);
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [vendorDetails, setVendorDetails] = useState<any>(null);
   const [isInfoUpdated, setIsInfoUpdated] = useState(false);
@@ -430,6 +347,7 @@ export default function VendorOnboardingFlow() {
   const [tradeOptions, setTradeOptions] = useState<Trade[]>([]);
   const [federalStates, setFederalStates] = useState<FederalState[]>([]);
   const [positions, setPositions] = useState<RepresentativePosition[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
 
   // Loading states
   const [loadingCountries, setLoadingCountries] = useState(false);
@@ -473,7 +391,7 @@ export default function VendorOnboardingFlow() {
   }, [message]);
 
   useEffect(() => {
-    if (!vendorId || step !== 2) return;
+    if (!vendorId) return;
 
     const fetchVendorDocuments = async () => {
       setLoadingDocuments(true);
@@ -1131,6 +1049,33 @@ export default function VendorOnboardingFlow() {
     fetchTrades();
   }, []);
 
+  // Fetch vendor contracts
+  useEffect(() => {
+    const fetchVendorContracts = async () => {
+      if (!vendorId) return;
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/contracts/vendor?vendor_id=${vendorId}`
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.data) {
+          setContracts(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching vendor contracts:", error);
+      }
+    };
+
+    fetchVendorContracts();
+  }, [vendorId])
+
+  console.log(contracts);
+  
+
   // Handle dropdown closing
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1601,7 +1546,10 @@ export default function VendorOnboardingFlow() {
       }
 
       const vendorResult = await vendorResponse.json();
-      //console.log("Vendor update successful:", vendorResult);
+      setVendorDetails((prev: any) => ({
+        ...prev,
+        ...vendorResult.data,
+      }));
 
       const userEmail = localStorage.getItem("userEmail");
       const accessToken = localStorage.getItem("accessToken");
@@ -1631,7 +1579,13 @@ export default function VendorOnboardingFlow() {
           // Don't throw error here, as we've already updated the vendor successfully
         } else {
           const userResult = await userResponse.json();
-          //console.log("User update successful:", userResult);
+          setVendorDetails((prev: any) => ({
+            ...prev,
+            contact_user: {
+              ...prev.contact_user,
+              ...userResult.data, 
+            },
+          }));
         }
       } else {
         console.error("User email or access token not found in localStorage");
@@ -1646,17 +1600,39 @@ export default function VendorOnboardingFlow() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  };  
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return (
+      date.getDate().toString().padStart(2, "0") +
+      "/" +
+      (date.getMonth() + 1).toString().padStart(2, "0") +
+      "/" +
+      date.getFullYear() +
+      " " +
+      date.getHours().toString().padStart(2, "0") +
+      ":" +
+      date.getMinutes().toString().padStart(2, "0")
+    );
+  }
 
   const renderContractCard = (contract: (typeof contracts)[0]) => {
-    const { title, status } = contract;
-    const isSigned = status.includes("Signed");
-    const isViewed = status.includes("Viewed");
-
     // Calculate progress value
-    let progressValue = 33.3; // Sent
-    if (isViewed) progressValue = 66.6; // Viewed
-    if (isSigned) progressValue = 100; // Signed
+    let progressValue = 25;
+    
+    const { title, events, created_at } = contract;
+    const isVendorSigned = events[0]?.event_type==="SigningSuccess";
+    const isCompleted = events[0]?.event_type==="Completed";
+    const isViewed = events[0]?.event_type === "Viewed";
+
+    if (isViewed) progressValue = 50;
+    if (isVendorSigned) progressValue = 75;
+    if (isCompleted) progressValue = 100;
+
+    const sentDate = formatDate(created_at);
+    const viewDate = progressValue >= 50 ? formatDate(events.find((event:any) => event.event_type === "Viewed")?.created_at || "") : "";
+    const signDate = progressValue >= 75 ? formatDate(events.find((event:any) => event.event_type === "SigningSuccess")?.created_at || "") : "";
 
     return (
       <Card variant="outlined" sx={{ borderRadius: 4, height: "100%" }}>
@@ -1683,27 +1659,37 @@ export default function VendorOnboardingFlow() {
           >
             <StatusIcon>
               <MailOutlineIcon sx={{ color: "#F57C00", fontSize: "1.25rem" }} />
-              <Typography variant="caption">{t.sent}</Typography>
+              <Typography variant="caption">{t.sent} at {sentDate}</Typography>
             </StatusIcon>
 
             <StatusIcon>
               <VisibilityIcon
                 sx={{
-                  color: isViewed ? "#F57C00" : "#e0e0e0",
+                  color: progressValue >= 50 ? "#F57C00" : "#e0e0e0",
                   fontSize: "1.25rem",
                 }}
               />
-              <Typography variant="caption">{t.viewed}</Typography>
+              <Typography variant="caption">{progressValue >= 50 ? `${t.viewed} at ${viewDate}` : `${t.viewed}`}</Typography>
             </StatusIcon>
 
             <StatusIcon>
               <EditIcon
                 sx={{
-                  color: isSigned ? "#F57C00" : "#e0e0e0",
+                  color: progressValue >= 75 ? "#F57C00" : "#e0e0e0",
                   fontSize: "1.25rem",
                 }}
               />
-              <Typography variant="caption">{t.signed}</Typography>
+              <Typography variant="caption">{progressValue >= 50 ? `Vendor Signed at ${signDate}` : `Vendor Signed`}</Typography>
+            </StatusIcon>
+
+            <StatusIcon>
+              <CheckIcon
+                sx={{
+                  color: progressValue === 100 ? "#F57C00" : "#e0e0e0",
+                  fontSize: "1.25rem",
+                }}
+              />
+              <Typography variant="caption">Completed</Typography>
             </StatusIcon>
           </Box>
 
@@ -1711,10 +1697,10 @@ export default function VendorOnboardingFlow() {
             variant="body2"
             sx={{
               fontWeight: 500,
-              color: isSigned ? "#F57C00" : "#ffc107",
+              color: (isVendorSigned || isCompleted) ? "#F57C00" : "#ffc107",
             }}
           >
-            {isSigned ? t.completed : t.awaitingSignature}
+            {isViewed ? "Waiting for Vendor Signature" : isVendorSigned ? "Waiting for Gesys Signature" : "Completed"}
           </Typography>
         </CardContent>
       </Card>
@@ -1786,6 +1772,7 @@ export default function VendorOnboardingFlow() {
       setSelectedPositionId(position.position_id || null);
       setSelectedPosition(position.title || "");
     }
+    setIsEditing(false);
   }
 
   return (
@@ -2003,9 +1990,12 @@ export default function VendorOnboardingFlow() {
                 label={t.step2}
                 value="2"
                 onClick={() => {
-                  isEditing ? setIsOpenModal(true) : updateStep(2);
-                }}
-                disabled={vendorDetails?.country_name === null}
+                  if (isEditing) {
+                    setIsOpenModal(true);
+                } else {
+                  updateStep(2);
+                }}}
+                disabled={vendorDetails?.country_name === undefined || vendorDetails?.country_name === null}
               />
               <Tab
                 sx={{
@@ -2014,13 +2004,13 @@ export default function VendorOnboardingFlow() {
                 label={t.step3}
                 value="3"
                 onClick={() => updateStep(3)}
-                disabled={!getDocumentStatus() || !isInfoUpdated}
+                disabled={!getDocumentStatus() || vendorDetails?.country_name === undefined || vendorDetails?.country_name === null}
               />
             </TabList>
           </Box>
           {step === 1 && (
             <Box sx={{display: "flex", gap: 1}}>
-            {vendorDetails?.country_name !== null && isEditing && (
+            {(vendorDetails?.country_name !== undefined || vendorDetails?.country_name !== null) && isEditing && (
             <Button
               variant="outlined"
               onClick={() => {
@@ -2042,7 +2032,12 @@ export default function VendorOnboardingFlow() {
             )}
             <Button
               variant="contained"
-              onClick={handleFormSubmit}
+              onClick={()=> {
+                if (isEditing) {
+                  handleFormSubmit();
+                } else {
+                  updateStep(2);
+              }}}
               disabled={isSubmitting}
               sx={{
                 borderRadius: 4,
@@ -2056,7 +2051,7 @@ export default function VendorOnboardingFlow() {
               {isSubmitting ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
-                vendorDetails?.country_name === null || !isEditing ? "Continue" : "Update"
+                (vendorDetails?.country_name === undefined || vendorDetails?.country_name === null) || isEditing === false ? "Continue" : "Update"
               )}
             </Button>
             </Box>
@@ -3097,23 +3092,6 @@ export default function VendorOnboardingFlow() {
         {/* Step 3: Contract Signature */}
         <TabPanel value="3">
           <Box>
-            {/* <Box sx={{ textAlign: "center", mb: 4 }}>
-                <Typography
-                  variant="h4"
-                  component="h2"
-                  sx={{
-                    fontWeight: 600,
-                    color: "text.primary",
-                    mb: 1,
-                  }}
-                >
-                  {t.contractSigningTitle}
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  {t.contractSigningSubtitle}
-                </Typography>
-              </Box> */}
-
             <Alert
               severity="info"
               sx={{
@@ -3125,7 +3103,7 @@ export default function VendorOnboardingFlow() {
               }}
             >
               <Typography variant="body2">
-                {t.contractsSentTo}
+                {t.contractsSentTo} {" "}
                 <Typography
                   component="span"
                   sx={{ fontWeight: 600, color: "#F57C00" }}
@@ -3133,15 +3111,15 @@ export default function VendorOnboardingFlow() {
                   jonas.mueller@example.com
                 </Typography>
                 .<br />
-                {t.pleaseSignAll}
+                {t.pleaseSignAll} {""}
                 <Typography component="span" sx={{ fontWeight: 600 }}>
-                  Non-solicitation Agreement (Abwehrverbot)
+                  Non-solicitation Agreement (Abwehrverbot) {" "}
                 </Typography>
                 {t.toProceed}
               </Typography>
             </Alert>
 
-            <Grid container spacing={3}>
+            <Grid>
               {contracts.map((contract) => (
                 <Grid item xs={12} sm={4} key={contract.title}>
                   {renderContractCard(contract)}
