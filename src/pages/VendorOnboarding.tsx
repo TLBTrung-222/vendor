@@ -49,11 +49,11 @@ import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API respons
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
-import {postcodeList} from "../utils/PostalcodeList.ts";
+import { postcodeList } from "../utils/PostalcodeList.ts";
 import { usePusher } from "../contexts/PusherContext.tsx";
 import NotiItem from "./NotiItem/NotiItem.tsx";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import CheckIcon from '@mui/icons-material/Check';
+import CheckIcon from "@mui/icons-material/Check";
 
 interface Country {
   country_id: number;
@@ -381,6 +381,58 @@ export default function VendorOnboardingFlow() {
 
   useEffect(() => {
     if (message) {
+      setVendorDocuments((prev) =>
+        prev.map((doc) =>
+          doc.document_id === message?.detail.document_id
+            ? {
+                ...doc,
+                description: message?.detail.description,
+                updated_by: {
+                  ...doc.updated_by,
+                  first_name: message?.detail.updated_by.first_name,
+                  last_name: message?.detail.updated_by.last_name,
+                },
+                updated_at: message?.detail.updated_by.created_at,
+                document_status: {
+                  ...doc.document_status,
+                  title: message?.detail.is_rejected ? "Denied" : "Approved",
+                },
+              }
+            : doc
+        )
+      );
+      if (message?.detail.document_id) {
+        setVendorDocuments((prev) =>
+          prev.map((doc) =>
+            doc.document_id === message?.detail.document_id
+              ? {
+                  ...doc,
+                  description: message?.detail.description,
+                  updated_by: {
+                    ...doc.updated_by,
+                    first_name: message?.detail.updated_by.first_name,
+                    last_name: message?.detail.updated_by.last_name,
+                  },
+                  updated_at: message?.detail.updated_by.created_at,
+                  document_status: {
+                    ...doc.document_status,
+                    title: message?.detail.is_rejected ? "Denied" : "Approved",
+                  },
+                }
+              : doc
+          )
+        );
+      } else {
+        setOnboardingStatus(message?.detail.description);
+        setPmName(
+          message?.detail.updated_by.first_name +
+            " " +
+            message?.detail.updated_by.last_name
+        );
+        setUpdateDate(
+          new Date(message?.detail.updated_by.created_at).toLocaleDateString()
+        );
+      }
       playNoti();
       const newMessageItem = {
         key: Math.random(),
@@ -677,7 +729,7 @@ export default function VendorOnboardingFlow() {
 
     return (
       <Card
-        key={type_id}
+        key={message?.detail ? message.detail.document_id : type_id}
         variant="outlined"
         sx={{
           bgcolor: styles.bgcolor,
@@ -1071,10 +1123,9 @@ export default function VendorOnboardingFlow() {
     };
 
     fetchVendorContracts();
-  }, [vendorId])
+  }, [vendorId]);
 
   console.log(contracts);
-  
 
   // Handle dropdown closing
   useEffect(() => {
@@ -1306,7 +1357,7 @@ export default function VendorOnboardingFlow() {
     };
 
     fetchVendorIdByEmail();
-  }, [countries]);  
+  }, [countries]);
 
   // Update legal form ID when legal form changes
   useEffect(() => {
@@ -1583,7 +1634,7 @@ export default function VendorOnboardingFlow() {
             ...prev,
             contact_user: {
               ...prev.contact_user,
-              ...userResult.data, 
+              ...userResult.data,
             },
           }));
         }
@@ -1600,8 +1651,8 @@ export default function VendorOnboardingFlow() {
     } finally {
       setIsSubmitting(false);
     }
-  };  
-  
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return (
@@ -1615,15 +1666,15 @@ export default function VendorOnboardingFlow() {
       ":" +
       date.getMinutes().toString().padStart(2, "0")
     );
-  }
+  };
 
   const renderContractCard = (contract: (typeof contracts)[0]) => {
     // Calculate progress value
     let progressValue = 25;
-    
+
     const { title, events, created_at } = contract;
-    const isVendorSigned = events[0]?.event_type==="SigningSuccess";
-    const isCompleted = events[0]?.event_type==="Completed";
+    const isVendorSigned = events[0]?.event_type === "SigningSuccess";
+    const isCompleted = events[0]?.event_type === "Completed";
     const isViewed = events[0]?.event_type === "Viewed";
 
     if (isViewed) progressValue = 50;
@@ -1631,8 +1682,20 @@ export default function VendorOnboardingFlow() {
     if (isCompleted) progressValue = 100;
 
     const sentDate = formatDate(created_at);
-    const viewDate = progressValue >= 50 ? formatDate(events.find((event:any) => event.event_type === "Viewed")?.created_at || "") : "";
-    const signDate = progressValue >= 75 ? formatDate(events.find((event:any) => event.event_type === "SigningSuccess")?.created_at || "") : "";
+    const viewDate =
+      progressValue >= 50
+        ? formatDate(
+            events.find((event: any) => event.event_type === "Viewed")
+              ?.created_at || ""
+          )
+        : "";
+    const signDate =
+      progressValue >= 75
+        ? formatDate(
+            events.find((event: any) => event.event_type === "SigningSuccess")
+              ?.created_at || ""
+          )
+        : "";
 
     return (
       <Card variant="outlined" sx={{ borderRadius: 4, height: "100%" }}>
@@ -1659,7 +1722,9 @@ export default function VendorOnboardingFlow() {
           >
             <StatusIcon>
               <MailOutlineIcon sx={{ color: "#F57C00", fontSize: "1.25rem" }} />
-              <Typography variant="caption">{t.sent} at {sentDate}</Typography>
+              <Typography variant="caption">
+                {t.sent} at {sentDate}
+              </Typography>
             </StatusIcon>
 
             <StatusIcon>
@@ -1669,7 +1734,11 @@ export default function VendorOnboardingFlow() {
                   fontSize: "1.25rem",
                 }}
               />
-              <Typography variant="caption">{progressValue >= 50 ? `${t.viewed} at ${viewDate}` : `${t.viewed}`}</Typography>
+              <Typography variant="caption">
+                {progressValue >= 50
+                  ? `${t.viewed} at ${viewDate}`
+                  : `${t.viewed}`}
+              </Typography>
             </StatusIcon>
 
             <StatusIcon>
@@ -1679,7 +1748,11 @@ export default function VendorOnboardingFlow() {
                   fontSize: "1.25rem",
                 }}
               />
-              <Typography variant="caption">{progressValue >= 50 ? `Vendor Signed at ${signDate}` : `Vendor Signed`}</Typography>
+              <Typography variant="caption">
+                {progressValue >= 50
+                  ? `Vendor Signed at ${signDate}`
+                  : `Vendor Signed`}
+              </Typography>
             </StatusIcon>
 
             <StatusIcon>
@@ -1697,10 +1770,14 @@ export default function VendorOnboardingFlow() {
             variant="body2"
             sx={{
               fontWeight: 500,
-              color: (isVendorSigned || isCompleted) ? "#F57C00" : "#ffc107",
+              color: isVendorSigned || isCompleted ? "#F57C00" : "#ffc107",
             }}
           >
-            {isViewed ? "Waiting for Vendor Signature" : isVendorSigned ? "Waiting for Gesys Signature" : "Completed"}
+            {isViewed
+              ? "Waiting for Vendor Signature"
+              : isVendorSigned
+              ? "Waiting for Gesys Signature"
+              : "Completed"}
           </Typography>
         </CardContent>
       </Card>
@@ -1708,12 +1785,22 @@ export default function VendorOnboardingFlow() {
   };
 
   useEffect(() => {
-    const tmp = postcodeList.map((item, index) => {
-      let code: string = item.code.toString().padStart(5, "0");
-      let label: string = item.code.toString().padStart(5, "0") + " - " + item.state + " - " + item.district;
-      return { code: code!, label: label! }
-  }).filter((item, index, self) =>  index === self.findIndex((t)=> t.code === item.code && t.label === item.label)
-  )
+    const tmp = postcodeList
+      .map((item, index) => {
+        let code: string = item.code.toString().padStart(5, "0");
+        let label: string =
+          item.code.toString().padStart(5, "0") +
+          " - " +
+          item.state +
+          " - " +
+          item.district;
+        return { code: code!, label: label! };
+      })
+      .filter(
+        (item, index, self) =>
+          index ===
+          self.findIndex((t) => t.code === item.code && t.label === item.label)
+      );
     setPostalCodes(tmp);
   }, []);
 
@@ -1723,7 +1810,9 @@ export default function VendorOnboardingFlow() {
   });
 
   const handleCancel = () => {
-    setOnboardingStatus(vendorDetails?.onboarding_transaction?.stage_1?.status_description || "");
+    setOnboardingStatus(
+      vendorDetails?.onboarding_transaction?.stage_1?.status_description || ""
+    );
     setPmName(vendorDetails?.onboarding_transaction?.stage_1?.pm_name || "");
     setUpdateDate(
       new Date(
@@ -1747,7 +1836,7 @@ export default function VendorOnboardingFlow() {
         gesys_gewerk_id: gewerk.gewerk_id,
       })) || []
     );
-    
+
     setRegion(
       vendorDetails?.cover_region === "NationalWide"
         ? "3"
@@ -1761,9 +1850,7 @@ export default function VendorOnboardingFlow() {
         radius: item.radius,
       })) || []
     );
-    setSelectedRegions(
-      vendorDetails?.federal_state_ids || []
-    );
+    setSelectedRegions(vendorDetails?.federal_state_ids || []);
     setFirstName(vendorDetails?.contact_user?.first_name || "");
     setLastName(vendorDetails?.contact_user?.last_name || "");
     setPhone(vendorDetails?.contact_user?.phone_number || "");
@@ -1773,58 +1860,74 @@ export default function VendorOnboardingFlow() {
       setSelectedPosition(position.title || "");
     }
     setIsEditing(false);
-  }
+  };
 
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
-    <Modal
-      open={isOpenModal}
-      onClose={() => setIsOpenModal(false)}
-      aria-labelledby="modal-modal-title"
-      aria-describedby="modal-modal-description"
-    >
-      <Box sx={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 400,
-        bgcolor: 'background.paper',
-        border: '2px solid #000',
-        boxShadow: 24,
-        p: 4}}
+      <Modal
+        open={isOpenModal}
+        onClose={() => setIsOpenModal(false)}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
       >
-        <Typography id="modal-modal-title" variant="h6" component="h2">
-          Your information is not saved!
-        </Typography>
-        <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-          Are you sure you want to move to the following step? Your changes will not be saved.
-        </Typography>
-        <Box sx={{
-          display: 'flex',
-          gap: 2,
-          justifyContent: 'flex-end',
-        }}>
-          <Button
-            variant="outlined"
-            onClick={() => setIsOpenModal(false)}
-            sx={{ mt: 2, borderColor: "#F57C00", color: "#F57C00", borderRadius: 4 }}
-          >
-            Close
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => {updateStep(2)
-              handleCancel()
-            setIsOpenModal(false)
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            bgcolor: "background.paper",
+            border: "2px solid #000",
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            Your information is not saved!
+          </Typography>
+          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+            Are you sure you want to move to the following step? Your changes
+            will not be saved.
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              justifyContent: "flex-end",
             }}
-            sx={{ mt: 2, backgroundColor: "#F57C00", color: "#fff", borderRadius: 4 }}
           >
-            Continue
-          </Button>
+            <Button
+              variant="outlined"
+              onClick={() => setIsOpenModal(false)}
+              sx={{
+                mt: 2,
+                borderColor: "#F57C00",
+                color: "#F57C00",
+                borderRadius: 4,
+              }}
+            >
+              Close
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                updateStep(2);
+                handleCancel();
+                setIsOpenModal(false);
+              }}
+              sx={{
+                mt: 2,
+                backgroundColor: "#F57C00",
+                color: "#fff",
+                borderRadius: 4,
+              }}
+            >
+              Continue
+            </Button>
+          </Box>
         </Box>
-      </Box>
-    </Modal>
+      </Modal>
       <Box
         sx={{
           height: "20%",
@@ -1858,40 +1961,40 @@ export default function VendorOnboardingFlow() {
           {/* Right side - language selector and logout button */}
           <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
             <IconButton onClick={handleClick}>
-        <Badge badgeContent={notiItems.length} color="error">
-          <NotificationsIcon sx={{ fontSize: 20, color: "#000" }} />
-        </Badge>
-      </IconButton>
+              <Badge badgeContent={notiItems.length} color="error">
+                <NotificationsIcon sx={{ fontSize: 20, color: "#000" }} />
+              </Badge>
+            </IconButton>
 
-      <Popover
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-        PaperProps={{
-          sx: { width: "fit-content" },
-          className: "noti-dropdown",
-        }}
-      >
-        <Box>
-          {notiItems.length === 0 ? (
-            <MenuItem disabled>No new notifications</MenuItem>
-          ) : (
-            notiItems.map((item: any) => (
-              <MenuItem key={item.key} onClick={handleClose}>
-                {item.label}
-              </MenuItem>
-            ))
-          )}
-        </Box>
-      </Popover>
+            <Popover
+              open={open}
+              anchorEl={anchorEl}
+              onClose={handleClose}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right",
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+              }}
+              PaperProps={{
+                sx: { width: "fit-content" },
+                className: "noti-dropdown",
+              }}
+            >
+              <Box>
+                {notiItems.length === 0 ? (
+                  <MenuItem disabled>No new notifications</MenuItem>
+                ) : (
+                  notiItems.map((item: any) => (
+                    <MenuItem key={item.key} onClick={handleClose}>
+                      {item.label}
+                    </MenuItem>
+                  ))
+                )}
+              </Box>
+            </Popover>
             <FormControl size="small" sx={{ width: 120 }}>
               <Select
                 value={language}
@@ -1992,10 +2095,14 @@ export default function VendorOnboardingFlow() {
                 onClick={() => {
                   if (isEditing) {
                     setIsOpenModal(true);
-                } else {
-                  updateStep(2);
-                }}}
-                disabled={vendorDetails?.country_name === undefined || vendorDetails?.country_name === null}
+                  } else {
+                    updateStep(2);
+                  }
+                }}
+                disabled={
+                  vendorDetails?.country_name === undefined ||
+                  vendorDetails?.country_name === null
+                }
               />
               <Tab
                 sx={{
@@ -2004,56 +2111,67 @@ export default function VendorOnboardingFlow() {
                 label={t.step3}
                 value="3"
                 onClick={() => updateStep(3)}
-                disabled={!getDocumentStatus() || vendorDetails?.country_name === undefined || vendorDetails?.country_name === null}
+                disabled={
+                  !getDocumentStatus() ||
+                  vendorDetails?.country_name === undefined ||
+                  vendorDetails?.country_name === null
+                }
               />
             </TabList>
           </Box>
           {step === 1 && (
-            <Box sx={{display: "flex", gap: 1}}>
-            {(vendorDetails?.country_name !== undefined || vendorDetails?.country_name !== null) && isEditing && (
-            <Button
-              variant="outlined"
-              onClick={() => {
-                handleCancel();
-                setIsEditing(false);
-              }}
-              sx={{
-                borderRadius: 4,
-                borderColor: "#F57C00",
-                color: "#F57C00",
-                "&:hover": {
-                  backgroundColor: "#FFF3E0",
-                  borderColor: "#EF6C00",
-                },
-              }}
-            >
-              Cancel
-            </Button>
-            )}
-            <Button
-              variant="contained"
-              onClick={()=> {
-                if (isEditing) {
-                  handleFormSubmit();
-                } else {
-                  updateStep(2);
-              }}}
-              disabled={isSubmitting}
-              sx={{
-                borderRadius: 4,
-                backgroundColor: "#F57C00",
-                "&:hover": {
-                  backgroundColor: "#EF6C00",
-                },
-                color: "#fff",
-              }}
-            >
-              {isSubmitting ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                (vendorDetails?.country_name === undefined || vendorDetails?.country_name === null) || isEditing === false ? "Continue" : "Update"
-              )}
-            </Button>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              {(vendorDetails?.country_name !== undefined ||
+                vendorDetails?.country_name !== null) &&
+                isEditing && (
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      handleCancel();
+                      setIsEditing(false);
+                    }}
+                    sx={{
+                      borderRadius: 4,
+                      borderColor: "#F57C00",
+                      color: "#F57C00",
+                      "&:hover": {
+                        backgroundColor: "#FFF3E0",
+                        borderColor: "#EF6C00",
+                      },
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (isEditing) {
+                    handleFormSubmit();
+                  } else {
+                    updateStep(2);
+                  }
+                }}
+                disabled={isSubmitting}
+                sx={{
+                  borderRadius: 4,
+                  backgroundColor: "#F57C00",
+                  "&:hover": {
+                    backgroundColor: "#EF6C00",
+                  },
+                  color: "#fff",
+                }}
+              >
+                {isSubmitting ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : vendorDetails?.country_name === undefined ||
+                  vendorDetails?.country_name === null ||
+                  isEditing === false ? (
+                  "Continue"
+                ) : (
+                  "Update"
+                )}
+              </Button>
             </Box>
           )}
           {step === 2 && (
@@ -2125,7 +2243,9 @@ export default function VendorOnboardingFlow() {
                     label={t.country + "**"}
                     onChange={handleCountryChange}
                     sx={{ borderRadius: 4 }}
-                    disabled={loadingCountries || vendorDetails?.country_name !== null}
+                    disabled={
+                      loadingCountries || vendorDetails?.country_name !== null
+                    }
                   >
                     <MenuItem value="">
                       <em>{t.country} *</em>
@@ -2256,7 +2376,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={taxId}
-                  onChange={(e) => {setTaxId(e.target.value)
+                  onChange={(e) => {
+                    setTaxId(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2277,7 +2398,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={street}
-                  onChange={(e) => {setStreet(e.target.value)
+                  onChange={(e) => {
+                    setStreet(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2298,7 +2420,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={houseNumber}
-                  onChange={(e) => {setHouseNumber(e.target.value)
+                  onChange={(e) => {
+                    setHouseNumber(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2312,12 +2435,17 @@ export default function VendorOnboardingFlow() {
               <Grid item xs={6}>
                 <TextField
                   fullWidth
-                  label={<Box id="house-label" sx={{ display: "flex", gap: 0.5 }}>
+                  label={
+                    <Box id="house-label" sx={{ display: "flex", gap: 0.5 }}>
                       {t.apartmentNr}
-                      {country === "Poland" && <Typography color="error.main">*</Typography>}
-                    </Box>}
+                      {country === "Poland" && (
+                        <Typography color="error.main">*</Typography>
+                      )}
+                    </Box>
+                  }
                   value={apartmentNumber}
-                  onChange={(e) => {setApartmentNumber(e.target.value)
+                  onChange={(e) => {
+                    setApartmentNumber(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2338,7 +2466,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={zipCode}
-                  onChange={(e) => {setZipCode(e.target.value)
+                  onChange={(e) => {
+                    setZipCode(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2359,7 +2488,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={city}
-                  onChange={(e) => {setCity(e.target.value)
+                  onChange={(e) => {
+                    setCity(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2379,7 +2509,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={website}
-                  onChange={(e) => {setWebsite(e.target.value)
+                  onChange={(e) => {
+                    setWebsite(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2434,11 +2565,10 @@ export default function VendorOnboardingFlow() {
                             labelId={`trade-label-${i}`}
                             value={item.trade}
                             label={t.selectTrade + "**"}
-                            onChange={(e) =>
-                              {updateTrade(i, "trade", e.target.value)
-                                setIsEditing(true);
-                              }
-                            }
+                            onChange={(e) => {
+                              updateTrade(i, "trade", e.target.value);
+                              setIsEditing(true);
+                            }}
                             sx={{ borderRadius: 4 }}
                             disabled={!!item.gesys_gewerk_id || loadingTrades}
                           >
@@ -2481,11 +2611,10 @@ export default function VendorOnboardingFlow() {
                             </Box>
                           }
                           value={item.count}
-                          onChange={(e) =>
-                            {updateTrade(i, "count", e.target.value)
-                              setIsEditing(true);
-                            }
-                          }
+                          onChange={(e) => {
+                            updateTrade(i, "count", e.target.value);
+                            setIsEditing(true);
+                          }}
                           sx={{
                             "& .MuiOutlinedInput-root": { borderRadius: 4 },
                           }}
@@ -2887,7 +3016,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={firstName}
-                  onChange={(e) => {setFirstName(e.target.value)
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2911,7 +3041,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={lastName}
-                  onChange={(e) => {setLastName(e.target.value)
+                  onChange={(e) => {
+                    setLastName(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2955,7 +3086,8 @@ export default function VendorOnboardingFlow() {
                     </Box>
                   }
                   value={phone}
-                  onChange={(e) => {setPhone(e.target.value)
+                  onChange={(e) => {
+                    setPhone(e.target.value);
                     setIsEditing(true);
                   }}
                   sx={{
@@ -2987,7 +3119,8 @@ export default function VendorOnboardingFlow() {
                         <Typography color="error.main">*</Typography>
                       </Box>
                     }
-                    onChange={(e) => {setSelectedPosition(e.target.value)
+                    onChange={(e) => {
+                      setSelectedPosition(e.target.value);
                       setIsEditing(true);
                     }}
                     sx={{ borderRadius: 4 }}
@@ -3102,21 +3235,27 @@ export default function VendorOnboardingFlow() {
                 border: "1px solid #FFE0B2",
               }}
             >
-              <Typography variant="body2">
-                {t.contractsSentTo} {" "}
-                <Typography
-                  component="span"
-                  sx={{ fontWeight: 600, color: "#F57C00" }}
-                >
-                  jonas.mueller@example.com
+              {contracts.length === 0 ? (
+                <Typography variant="body2">
+                  Waiting for contracts to be sent. Please check back later.
                 </Typography>
-                .<br />
-                {t.pleaseSignAll} {""}
-                <Typography component="span" sx={{ fontWeight: 600 }}>
-                  Non-solicitation Agreement (Abwehrverbot) {" "}
+              ) : (
+                <Typography variant="body2">
+                  {t.contractsSentTo}{" "}
+                  <Typography
+                    component="span"
+                    sx={{ fontWeight: 600, color: "#F57C00" }}
+                  >
+                    jonas.mueller@example.com
+                  </Typography>
+                  .<br />
+                  {t.pleaseSignAll} {""}
+                  <Typography component="span" sx={{ fontWeight: 600 }}>
+                    Non-solicitation Agreement (Abwehrverbot){" "}
+                  </Typography>
+                  {t.toProceed}
                 </Typography>
-                {t.toProceed}
-              </Typography>
+              )}
             </Alert>
 
             <Grid>
