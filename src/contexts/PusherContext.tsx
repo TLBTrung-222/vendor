@@ -68,7 +68,6 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
     const userChannel = pusher.subscribe("PRIVATE-MONTAGO");
 
     if (vendorId) {
-      console.log(vendorId);
       userChannel.bind(`vendor-${vendorId}`, (data: any) => {
         setMessage(data);
         console.log("Received message:", data);
