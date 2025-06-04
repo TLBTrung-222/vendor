@@ -1339,7 +1339,10 @@ export default function VendorOnboardingFlow() {
 
             try {
                 // Get the email of the logged-in user
-                const userEmail = localStorage.getItem("userEmail");
+                const user = localStorage.getItem("user");
+                const userEmail = user
+                    ? JSON.parse(user).email
+                    : localStorage.getItem("userEmail");
 
                 if (!userEmail) {
                     throw new Error("User email not found");
