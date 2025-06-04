@@ -112,7 +112,7 @@ export default function SignIn() {
     try {
       // Call the login API endpoint
       const response = await fetch(
-        "https://alpha.be.atlas.galvanek-bau.de/gesys/auth/login",
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
         {
           method: "POST",
           headers: {
@@ -178,7 +178,7 @@ export default function SignIn() {
     try {
       // Call the reset password API endpoint
       const response = await fetch(
-        "https://alpha.be.atlas.galvanek-bau.de/gesys/users/reset-password?email=" +
+        `${import.meta.env.VITE_API_BASE_URL}/users/reset-password?email=` +
           resetEmail,
         {
           method: "PUT",
