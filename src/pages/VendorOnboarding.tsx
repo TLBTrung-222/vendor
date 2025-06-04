@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -54,6 +54,7 @@ import { usePusher } from "../contexts/PusherContext.tsx";
 import NotiItem from "./NotiItem/NotiItem.tsx";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import CheckIcon from "@mui/icons-material/Check";
+import Pusher from "pusher-js";
 
 interface Country {
   country_id: number;
@@ -375,33 +376,52 @@ export default function VendorOnboardingFlow() {
   const [isLoadingVendorId, setIsLoadingVendorId] = useState(false);
   const [vendorIdError, setVendorIdError] = useState<string | null>(null);
 
+  const pusherRef = useRef<Pusher | null>(null);
+
+
   /* -------------------------------------------------------------------------- */
   /*                                For screen 2                                */
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
+    if (contracts.length === 0) return;
+    if (!pusherRef.current) {
+      pusherRef.current = new Pusher(import.meta.env.VITE_REACT_APP_PUSHER_KEY!, {
+        cluster: import.meta.env.VITE_REACT_APP_PUSHER_CLUSTER!,
+        // authEndpoint: process.env.REACT_APP_HAY2U_ENDPOINT + "/auth/pusher",
+      });
+    }
+
+    const pusher = pusherRef.current;
+    const userChannel = pusher.subscribe("PRIVATE-MONTAGO");
+
+    userChannel.bind(
+      `vendor-${vendorId}-contract-${contracts[0].contract_id}`,
+      (data: any) => {
+        console.log(data);
+        setContracts((prevContracts) =>
+          prevContracts.map((contract) =>
+            contract.contract_id === data.contract_id
+              ? {
+                  ...contract,
+                  events: [
+                    {
+                      ...data
+                    },
+                    ...contract.events,
+                  ],
+                }
+              : contract
+          )
+        );
+      }
+    );
+  }, [contracts]);
+
+  useEffect(() => {
     if (message) {
-      setVendorDocuments((prev) =>
-        prev.map((doc) =>
-          doc.document_id === message?.detail.document_id
-            ? {
-                ...doc,
-                description: message?.detail.description,
-                updated_by: {
-                  ...doc.updated_by,
-                  first_name: message?.detail.updated_by.first_name,
-                  last_name: message?.detail.updated_by.last_name,
-                },
-                updated_at: message?.detail.updated_by.created_at,
-                document_status: {
-                  ...doc.document_status,
-                  title: message?.detail.is_rejected ? "Denied" : "Approved",
-                },
-              }
-            : doc
-        )
-      );
-      if (message?.detail.document_id) {
+  console.log(message);
+      if (message?.detail?.document_id) {
         setVendorDocuments((prev) =>
           prev.map((doc) =>
             doc.document_id === message?.detail.document_id
@@ -423,14 +443,14 @@ export default function VendorOnboardingFlow() {
           )
         );
       } else {
-        setOnboardingStatus(message?.detail.description);
+        setOnboardingStatus(message?.detail?.description);
         setPmName(
-          message?.detail.updated_by.first_name +
+          message?.detail?.updated_by?.first_name +
             " " +
-            message?.detail.updated_by.last_name
+            message?.detail?.updated_by?.last_name
         );
         setUpdateDate(
-          new Date(message?.detail.updated_by.created_at).toLocaleDateString()
+          new Date(message?.detail?.updated_by?.created_at).toLocaleDateString()
         );
       }
       playNoti();
@@ -441,6 +461,8 @@ export default function VendorOnboardingFlow() {
       setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
   }, [message]);
+
+  
 
   useEffect(() => {
     if (!vendorId) return;
@@ -1125,8 +1147,6 @@ export default function VendorOnboardingFlow() {
     fetchVendorContracts();
   }, [vendorId]);
 
-  console.log(contracts);
-
   // Handle dropdown closing
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1679,7 +1699,7 @@ export default function VendorOnboardingFlow() {
 
     if (isViewed) progressValue = 50;
     if (isVendorSigned) progressValue = 75;
-    if (isCompleted) progressValue = 100;
+    if (isCompleted) progressValue = 100;    
 
     const sentDate = formatDate(created_at);
     const viewDate =
@@ -1696,6 +1716,10 @@ export default function VendorOnboardingFlow() {
               ?.created_at || ""
           )
         : "";
+    const completedDate =
+      progressValue === 100 ? formatDate(
+        events.find((event: any) => event.event_type === "Completed").created_at || ""
+      ) : "";
 
     return (
       <Card variant="outlined" sx={{ borderRadius: 4, height: "100%" }}>
@@ -1723,7 +1747,7 @@ export default function VendorOnboardingFlow() {
             <StatusIcon>
               <MailOutlineIcon sx={{ color: "#F57C00", fontSize: "1.25rem" }} />
               <Typography variant="caption">
-                {t.sent} at {sentDate}
+                Received at {sentDate}
               </Typography>
             </StatusIcon>
 
@@ -1749,7 +1773,7 @@ export default function VendorOnboardingFlow() {
                 }}
               />
               <Typography variant="caption">
-                {progressValue >= 50
+                {progressValue >= 75
                   ? `Vendor Signed at ${signDate}`
                   : `Vendor Signed`}
               </Typography>
@@ -1762,7 +1786,9 @@ export default function VendorOnboardingFlow() {
                   fontSize: "1.25rem",
                 }}
               />
-              <Typography variant="caption">Completed</Typography>
+              <Typography variant="caption">{progressValue == 100
+                  ? `Completed at ${completedDate}`
+                  : `Completed`}</Typography>
             </StatusIcon>
           </Box>
 
@@ -2122,7 +2148,7 @@ export default function VendorOnboardingFlow() {
           {step === 1 && (
             <Box sx={{ display: "flex", gap: 1 }}>
               {(vendorDetails?.country_name !== undefined ||
-                vendorDetails?.country_name !== null) &&
+                vendorDetails?.country_name !== null) ||
                 isEditing && (
                   <Button
                     variant="outlined"
