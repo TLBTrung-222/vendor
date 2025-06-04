@@ -243,7 +243,7 @@ const translations = {
 };
 
 // API endpoints
-const API_BASE_URL = "https://alpha.be.atlas.galvanek-bau.de/gesys";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
