@@ -78,6 +78,23 @@ export default function SignIn() {
   const { login } = React.useContext(AuthContext);
   const navigate = useNavigate();
 
+  const decodeToken = (token: string) => {
+      var base64Url = token.split(".")[1];
+      var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      var jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split("")
+          .map(function (c) {
+            return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join("")
+      );
+  
+      return JSON.parse(jsonPayload);
+    };
+  
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -111,12 +128,16 @@ export default function SignIn() {
       const result = await response.json();
 
       if (result.status === "success") {
+        const decoded = decodeToken(result.data.access_token);
+
         // Store tokens in localStorage
         localStorage.setItem("accessToken", result.data.access_token);
         localStorage.setItem("refreshToken", result.data.refresh_token);
 
         // Store the user's email for use in the vendor onboarding flow
         localStorage.setItem("userEmail", email);
+        localStorage.setItem("user", JSON.stringify(decoded.user));
+
 
         // Notify auth context if needed
         if (login) {
