@@ -317,7 +317,7 @@ export default function VendorOnboardingFlow() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [vendorEmail, setVendorEmail] = useState("");
-  const [region, setRegion] = useState<string | null>(null);
+  const [region, setRegion] = useState("");
   const [postalCode, setPostalCode] = useState<
     { code: string; radius: number }[]
   >([]);
@@ -1623,8 +1623,7 @@ export default function VendorOnboardingFlow() {
         ...vendorResult.data,
       }));
 
-      const user = localStorage.getItem("user");
-      const userEmail = user ? JSON.parse(user).email : localStorage.getItem("userEmail");
+      const userEmail = localStorage.getItem("userEmail");
       const accessToken = localStorage.getItem("accessToken");
 
       if (userEmail && accessToken) {
@@ -2701,11 +2700,11 @@ export default function VendorOnboardingFlow() {
                   borderRadius={2}
                   sx={{ p: 2 }}
                 >
-                  {region !== null && (<TabContext value={region}>
+                  <TabContext value={region}>
                     <TabList
                       onChange={(
                         _event: React.SyntheticEvent,
-                        value: any
+                        value: string
                       ) => {
                         setRegion(value);
                         setIsEditing(true);
@@ -3021,8 +3020,7 @@ export default function VendorOnboardingFlow() {
                     <TabPanel value="3">
                       Your services reach the whole country
                     </TabPanel>
-                  </TabContext>)}
-                  
+                  </TabContext>
                 </Box>
               </Grid>
 
