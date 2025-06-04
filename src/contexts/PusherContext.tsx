@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, use, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Pusher from "pusher-js";
 import notificationBell from "../assets/mp3/notification-sound.mp3";
@@ -14,41 +14,39 @@ const PusherContext = createContext<PusherContextType | undefined>(undefined);
 export const PusherProvider = ({ children }: { children: ReactNode }) => {
   const [message, setMessage] = useState(null);
   const [vendorId, setVendorId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const email = localStorage.getItem("userEmail");
+    setUserEmail(email);
+  }, []);
+
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {
+      if (!userEmail) {
+        setVendorId(null);
+        return;
+      }
       try {
-        const userEmail = localStorage.getItem("userEmail");
-
-        if (!userEmail) {
-          throw new Error("User email not found");
-        }
-
-        // Now, get the vendor ID using the user's email
         const response = await fetch(
           `https://alpha.be.atlas.galvanek-bau.de/gesys/vendors/contact-email?email=${encodeURIComponent(
             userEmail
           )}`
         );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const result = await response.json();
-
-        if (result.data) {
-          if (result.data.vendor_id) {
-            setVendorId(result.data.vendor_id);
-          }
+        if (result.data && result.data.vendor_id) {
+          setVendorId(result.data.vendor_id);
+        } else {
+          setVendorId(null);
         }
       } catch (error) {
+        setVendorId(null);
         console.error("Error fetching vendor ID:", error);
       }
     };
-    if (!vendorId) {
-      fetchVendorIdByEmail();
-    }
-  }, [vendorId]);
+    fetchVendorIdByEmail();
+  }, [userEmail]);  
 
   // Create a reference to the Pusher instance
   const pusherRef = useRef<Pusher | null>(null);
