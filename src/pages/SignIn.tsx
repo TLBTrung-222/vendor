@@ -135,7 +135,6 @@ export default function SignIn() {
         localStorage.setItem("refreshToken", result.data.refresh_token);
 
         // Store the user's email for use in the vendor onboarding flow
-        localStorage.setItem("userEmail", email);
         localStorage.setItem("user", JSON.stringify(decoded.user));
 
 
