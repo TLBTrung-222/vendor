@@ -72,7 +72,6 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
     if (vendorId) {
       userChannel.bind(`vendor-${vendorId}`, (data: any) => {
         setMessage(data);
-        console.log("Received message:", data);
       });
     }
 
