@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import {
   Box,
   Typography,
@@ -378,7 +378,6 @@ export default function VendorOnboardingFlow() {
 
   const pusherRef = useRef<Pusher | null>(null);
 
-
   /* -------------------------------------------------------------------------- */
   /*                                For screen 2                                */
   /* -------------------------------------------------------------------------- */
@@ -386,10 +385,13 @@ export default function VendorOnboardingFlow() {
   useEffect(() => {
     if (contracts.length === 0) return;
     if (!pusherRef.current) {
-      pusherRef.current = new Pusher(import.meta.env.VITE_REACT_APP_PUSHER_KEY!, {
-        cluster: import.meta.env.VITE_REACT_APP_PUSHER_CLUSTER!,
-        // authEndpoint: process.env.REACT_APP_HAY2U_ENDPOINT + "/auth/pusher",
-      });
+      pusherRef.current = new Pusher(
+        import.meta.env.VITE_REACT_APP_PUSHER_KEY!,
+        {
+          cluster: import.meta.env.VITE_REACT_APP_PUSHER_CLUSTER!,
+          // authEndpoint: process.env.REACT_APP_HAY2U_ENDPOINT + "/auth/pusher",
+        }
+      );
     }
 
     const pusher = pusherRef.current;
@@ -406,7 +408,7 @@ export default function VendorOnboardingFlow() {
                   ...contract,
                   events: [
                     {
-                      ...data
+                      ...data,
                     },
                     ...contract.events,
                   ],
@@ -420,8 +422,17 @@ export default function VendorOnboardingFlow() {
 
   useEffect(() => {
     if (message) {
-    console.log(message);
-      if (message?.detail?.document_id) {
+      console.log(message);
+      if (message?.contract_data) {
+        setContracts([
+          ...contracts,
+          {
+            ...message.contract_data,
+            events: []
+          }
+        ])
+      }
+      else if (message?.detail?.document_id) {
         setVendorDocuments((prev) =>
           prev.map((doc) =>
             doc.document_id === message?.detail.document_id
@@ -461,8 +472,6 @@ export default function VendorOnboardingFlow() {
       setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
   }, [message]);
-
-  
 
   useEffect(() => {
     if (!vendorId) return;
@@ -1223,7 +1232,9 @@ export default function VendorOnboardingFlow() {
       try {
         // Get the email of the logged-in user
         const user = localStorage.getItem("user");
-        const userEmail = user ? JSON.parse(user).email : localStorage.getItem("userEmail");
+        const userEmail = user
+          ? JSON.parse(user).email
+          : localStorage.getItem("userEmail");
 
         if (!userEmail) {
           throw new Error("User email not found");
@@ -1572,6 +1583,49 @@ export default function VendorOnboardingFlow() {
           employee_number: Number.parseInt(t.count) || 0,
         }));
 
+        const user = localStorage.getItem("user");
+        const userEmail = user
+          ? JSON.parse(user).email
+          : localStorage.getItem("userEmail");
+      const accessToken = localStorage.getItem("accessToken");
+
+      if (userEmail && accessToken) {
+        // Prepare the request body for user update with email included in the payload
+        const userRequestBody = {
+          email: userEmail,
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phone || "",
+          representative_position_id: selectedPositionId || null,
+        };
+
+        // Make the user update API call with authorization header
+        const userResponse = await fetch(`${API_BASE_URL}/users/update`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(userRequestBody),
+        });
+
+        if (!userResponse.ok) {
+          console.error("Error updating user:", await userResponse.text());
+          // Don't throw error here, as we've already updated the vendor successfully
+        } else {
+          const userResult = await userResponse.json();
+          setVendorDetails((prev: any) => ({
+            ...prev,
+            contact_user: {
+              ...prev.contact_user,
+              ...userResult.data,
+            },
+          }));
+        }
+      } else {
+        console.error("User email or access token not found in localStorage");
+      }
+
       // Prepare the request body using state variables with the new format
       const vendorRequestBody = {
         company_name: companyName,
@@ -1619,49 +1673,9 @@ export default function VendorOnboardingFlow() {
 
       const vendorResult = await vendorResponse.json();
       setVendorDetails((prev: any) => ({
-        ...prev,  
+        ...prev,
         ...vendorResult.data,
       }));
-
-      const userEmail = localStorage.getItem("userEmail") || JSON.parse(localStorage.getItem("user") || "{}").email;
-      const accessToken = localStorage.getItem("accessToken");
-
-      if (userEmail && accessToken) {
-        // Prepare the request body for user update with email included in the payload
-        const userRequestBody = {
-          email: userEmail,
-          first_name: firstName,
-          last_name: lastName,
-          phone_number: phone || "",
-          representative_position_id: selectedPositionId || null,
-        };
-
-        // Make the user update API call with authorization header
-        const userResponse = await fetch(`${API_BASE_URL}/users/update`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(userRequestBody),
-        });
-
-        if (!userResponse.ok) {
-          console.error("Error updating user:", await userResponse.text());
-          // Don't throw error here, as we've already updated the vendor successfully
-        } else {
-          const userResult = await userResponse.json();
-          setVendorDetails((prev: any) => ({
-            ...prev,
-            contact_user: {
-              ...prev.contact_user,
-              ...userResult.data,
-            },
-          }));
-        }
-      } else {
-        console.error("User email or access token not found in localStorage");
-      }
 
       // Proceed to next step
       updateStep(2);
@@ -1700,7 +1714,7 @@ export default function VendorOnboardingFlow() {
 
     if (isViewed) progressValue = 50;
     if (isVendorSigned) progressValue = 75;
-    if (isCompleted) progressValue = 100;    
+    if (isCompleted) progressValue = 100;
 
     const sentDate = formatDate(created_at);
     const viewDate =
@@ -1718,9 +1732,12 @@ export default function VendorOnboardingFlow() {
           )
         : "";
     const completedDate =
-      progressValue === 100 ? formatDate(
-        events.find((event: any) => event.event_type === "Completed").created_at || ""
-      ) : "";
+      progressValue === 100
+        ? formatDate(
+            events.find((event: any) => event.event_type === "Completed")
+              .created_at || ""
+          )
+        : "";
 
     return (
       <Card variant="outlined" sx={{ borderRadius: 4, height: "100%" }}>
@@ -1747,9 +1764,7 @@ export default function VendorOnboardingFlow() {
           >
             <StatusIcon>
               <MailOutlineIcon sx={{ color: "#F57C00", fontSize: "1.25rem" }} />
-              <Typography variant="caption">
-                Received at {sentDate}
-              </Typography>
+              <Typography variant="caption">Received at {sentDate}</Typography>
             </StatusIcon>
 
             <StatusIcon>
@@ -1787,9 +1802,11 @@ export default function VendorOnboardingFlow() {
                   fontSize: "1.25rem",
                 }}
               />
-              <Typography variant="caption">{progressValue == 100
+              <Typography variant="caption">
+                {progressValue == 100
                   ? `Completed at ${completedDate}`
-                  : `Completed`}</Typography>
+                  : `Completed`}
+              </Typography>
             </StatusIcon>
           </Box>
 
@@ -1800,11 +1817,10 @@ export default function VendorOnboardingFlow() {
               color: isVendorSigned || isCompleted ? "#F57C00" : "#ffc107",
             }}
           >
-            {isViewed
-              ? "Waiting for Vendor Signature"
-              : isVendorSigned
+            {isVendorSigned
               ? "Waiting for Gesys Signature"
-              : "Completed"}
+              : isCompleted 
+              ? "Completed" : "Waiting for Vendor Signature"}
           </Typography>
         </CardContent>
       </Card>
@@ -1888,6 +1904,9 @@ export default function VendorOnboardingFlow() {
     }
     setIsEditing(false);
   };
+
+  console.log(contracts);
+  
 
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
@@ -2148,9 +2167,9 @@ export default function VendorOnboardingFlow() {
           </Box>
           {step === 1 && (
             <Box sx={{ display: "flex", gap: 1 }}>
-              {(vendorDetails?.country_name !== undefined ||
-                vendorDetails?.country_name !== null) ||
-                isEditing && (
+              {vendorDetails?.country_name !== undefined ||
+                vendorDetails?.country_name !== null ||
+                (isEditing && (
                   <Button
                     variant="outlined"
                     onClick={() => {
@@ -2169,7 +2188,7 @@ export default function VendorOnboardingFlow() {
                   >
                     Cancel
                   </Button>
-                )}
+                ))}
               <Button
                 variant="contained"
                 onClick={() => {
@@ -3195,16 +3214,6 @@ export default function VendorOnboardingFlow() {
         {/* Step 2: Document Upload */}
         <TabPanel value="2">
           <Box>
-            {/* <Box sx={{ textAlign: "center", mb: 3 }}>
-                <Typography
-                  variant="h5"
-                  component="h1"
-                  sx={{ fontWeight: 600, color: "text.primary" }}
-                >
-                  {t.uploadDocumentsTitle}
-                </Typography>
-              </Box> */}
-
             {loadingDocuments ? (
               <Box
                 sx={{
@@ -3252,29 +3261,48 @@ export default function VendorOnboardingFlow() {
         {/* Step 3: Contract Signature */}
         <TabPanel value="3">
           <Box>
-            <Alert
-              severity="info"
-              sx={{
-                mb: 4,
-                borderRadius: 4,
-                backgroundColor: "#FFF3E0",
-                color: "text.primary",
-                border: "1px solid #FFE0B2",
-              }}
-            >
-              {contracts.length === 0 ? (
-                <Typography variant="body2">
-                  Waiting for contracts to be sent. Please check back later.
-                </Typography>
-              ) : (
-                <Typography variant="body2">
-                  {message ? message.message : "Your contracts have been sent to your email. Please check your email."}
-                </Typography>
-              )}
-            </Alert>
+            {contracts.length > 0 && contracts.every(
+              (contract) => contract.events && contract.events[0]?.event_type === "Completed"
+            ) ? (
+              <Alert
+                severity="success"
+                sx={{
+                  mb: 4,
+                  borderRadius: 4,
+                  color: "text.primary",
+                }}
+              >
+                All contracts have been successfully signed and completed. Ready for onboarding.
+              </Alert>
+            ) : (
+              <Alert
+                severity="info"
+                sx={{
+                  mb: 4,
+                  borderRadius: 4,
+                  backgroundColor: "#FFF3E0",
+                  color: "text.primary",
+                  border: "1px solid #FFE0B2",
+                }}
+              >
+                {message ? (
+                  message.message
+                ) : contracts.length === 0 ? (
+                  <Typography variant="body2">
+                    Waiting for contracts to be sent. Please check back later.
+                  </Typography>
+                ) : (
+                  <Typography variant="body2">
+                    Please review and sign the contracts below to complete your
+                    onboarding process.
+                  </Typography>
+                )}
+              </Alert>
+            )}
+            
 
             <Grid>
-              {contracts.map((contract) => (
+              {contracts?.map((contract) => (
                 <Grid item xs={12} sm={4} key={contract.title}>
                   {renderContractCard(contract)}
                 </Grid>
