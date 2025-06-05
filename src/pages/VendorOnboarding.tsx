@@ -1760,7 +1760,9 @@ export default function VendorOnboardingFlow() {
                 ...vendorResult.data,
             }));
 
-            const userEmail = localStorage.getItem("userEmail");
+            const userEmail =
+                localStorage.getItem("userEmail") ||
+                JSON.parse(localStorage.getItem("user") || "{}").email;
             const accessToken = localStorage.getItem("accessToken");
 
             if (userEmail && accessToken) {
@@ -3800,26 +3802,9 @@ export default function VendorOnboardingFlow() {
                                 </Typography>
                             ) : (
                                 <Typography variant="body2">
-                                    {t.contractsSentTo}{" "}
-                                    <Typography
-                                        component="span"
-                                        sx={{
-                                            fontWeight: 600,
-                                            color: "#F57C00",
-                                        }}
-                                    >
-                                        jonas.mueller@example.com
-                                    </Typography>
-                                    .<br />
-                                    {t.pleaseSignAll} {""}
-                                    <Typography
-                                        component="span"
-                                        sx={{ fontWeight: 600 }}
-                                    >
-                                        Non-solicitation Agreement
-                                        (Abwehrverbot){" "}
-                                    </Typography>
-                                    {t.toProceed}
+                                    {message
+                                        ? message.message
+                                        : "Your contracts have been sent to your email. Please check your email."}
                                 </Typography>
                             )}
                         </Alert>

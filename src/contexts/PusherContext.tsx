@@ -50,7 +50,7 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
     if (!vendorId) {
       fetchVendorIdByEmail();
     }
-  }, [vendorId]);  
+  }, [vendorId]);    
 
   // Create a reference to the Pusher instance
   const pusherRef = useRef<Pusher | null>(null);
