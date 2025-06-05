@@ -420,7 +420,7 @@ export default function VendorOnboardingFlow() {
 
   useEffect(() => {
     if (message) {
-  console.log(message);
+    console.log(message);
       if (message?.detail?.document_id) {
         setVendorDocuments((prev) =>
           prev.map((doc) =>
@@ -1619,11 +1619,11 @@ export default function VendorOnboardingFlow() {
 
       const vendorResult = await vendorResponse.json();
       setVendorDetails((prev: any) => ({
-        ...prev,
+        ...prev,  
         ...vendorResult.data,
       }));
 
-      const userEmail = localStorage.getItem("userEmail");
+      const userEmail = localStorage.getItem("userEmail") || JSON.parse(localStorage.getItem("user") || "{}").email;
       const accessToken = localStorage.getItem("accessToken");
 
       if (userEmail && accessToken) {
@@ -3268,19 +3268,7 @@ export default function VendorOnboardingFlow() {
                 </Typography>
               ) : (
                 <Typography variant="body2">
-                  {t.contractsSentTo}{" "}
-                  <Typography
-                    component="span"
-                    sx={{ fontWeight: 600, color: "#F57C00" }}
-                  >
-                    jonas.mueller@example.com
-                  </Typography>
-                  .<br />
-                  {t.pleaseSignAll} {""}
-                  <Typography component="span" sx={{ fontWeight: 600 }}>
-                    Non-solicitation Agreement (Abwehrverbot){" "}
-                  </Typography>
-                  {t.toProceed}
+                  {message ? message.message : "Your contracts have been sent to your email. Please check your email."}
                 </Typography>
               )}
             </Alert>
