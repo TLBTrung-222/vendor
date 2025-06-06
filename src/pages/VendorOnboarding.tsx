@@ -400,7 +400,6 @@ export default function VendorOnboardingFlow() {
     userChannel.bind(
       `vendor-${vendorId}-contract-${contracts[0].contract_id}`,
       (data: any) => {
-        console.log(data);
         setContracts((prevContracts) =>
           prevContracts.map((contract) =>
             contract.contract_id === data.contract_id
@@ -422,7 +421,6 @@ export default function VendorOnboardingFlow() {
 
   useEffect(() => {
     if (message) {
-      console.log(message);
       if (message?.contract_data) {
         setContracts([
           ...contracts,
@@ -1001,9 +999,6 @@ export default function VendorOnboardingFlow() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const result = await response.json();
-      //console.log("Upload successful:", result);
-
       // Refresh the documents list with the new combined API
       const docResponse = await fetch(
         `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
@@ -1571,7 +1566,7 @@ export default function VendorOnboardingFlow() {
     // Check if any trade has a null, undefined, or empty count
     const hasEmptyTradeCount = trades.some(
       (trade) =>
-        trade.count === null || trade.count === undefined || trade.count === ""
+        trade.count === null || trade.count === undefined || trade.count === "" || trade.count === "0"
     );
 
     // Example usage in validation
@@ -1887,10 +1882,7 @@ export default function VendorOnboardingFlow() {
       setSelectedPosition(position.title || "");
     }
     setIsEditing(false);
-  };
-
-  console.log(contracts);
-  
+  };  
 
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
@@ -2151,9 +2143,7 @@ export default function VendorOnboardingFlow() {
           </Box>
           {step === 1 && (
             <Box sx={{ display: "flex", gap: 1 }}>
-              {vendorDetails?.country_name !== undefined ||
-                vendorDetails?.country_name !== null ||
-                (isEditing && (
+              {(vendorDetails?.country_name !== null && isEditing) ? (
                   <Button
                     variant="outlined"
                     onClick={() => {
@@ -2172,7 +2162,7 @@ export default function VendorOnboardingFlow() {
                   >
                     Cancel
                   </Button>
-                ))}
+                ) : null}
               <Button
                 variant="contained"
                 onClick={() => {
@@ -2194,9 +2184,9 @@ export default function VendorOnboardingFlow() {
               >
                 {isSubmitting ? (
                   <CircularProgress size={24} color="inherit" />
-                ) : vendorDetails?.country_name === undefined ||
-                  vendorDetails?.country_name === null ||
-                  isEditing === false ? (
+                ) : 
+                  (vendorDetails?.country_name === null ||
+                  !isEditing) ? (
                   "Continue"
                 ) : (
                   "Update"
