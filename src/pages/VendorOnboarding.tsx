@@ -402,7 +402,6 @@ export default function VendorOnboardingFlow() {
         userChannel.bind(
             `vendor-${vendorId}-contract-${contracts[0].contract_id}`,
             (data: any) => {
-                console.log(data);
                 setContracts((prevContracts) =>
                     prevContracts.map((contract) =>
                         contract.contract_id === data.contract_id
@@ -424,7 +423,6 @@ export default function VendorOnboardingFlow() {
 
     useEffect(() => {
         if (message) {
-            console.log(message);
             if (message?.contract_data) {
                 setContracts([
                     ...contracts,
@@ -1112,9 +1110,6 @@ export default function VendorOnboardingFlow() {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            const result = await response.json();
-            //console.log("Upload successful:", result);
-
             // Refresh the documents list with the new combined API
             const docResponse = await fetch(
                 `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
@@ -1708,7 +1703,8 @@ export default function VendorOnboardingFlow() {
             (trade) =>
                 trade.count === null ||
                 trade.count === undefined ||
-                trade.count === ""
+                trade.count === "" ||
+                trade.count === "0"
         );
 
         // Example usage in validation
@@ -2059,8 +2055,6 @@ export default function VendorOnboardingFlow() {
         setIsEditing(false);
     };
 
-    console.log(contracts);
-
     return (
         <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
             <Modal
@@ -2341,28 +2335,27 @@ export default function VendorOnboardingFlow() {
                     </Box>
                     {step === 1 && (
                         <Box sx={{ display: "flex", gap: 1 }}>
-                            {vendorDetails?.country_name !== undefined ||
-                                vendorDetails?.country_name !== null ||
-                                (isEditing && (
-                                    <Button
-                                        variant="outlined"
-                                        onClick={() => {
-                                            handleCancel();
-                                            setIsEditing(false);
-                                        }}
-                                        sx={{
-                                            borderRadius: 4,
-                                            borderColor: "#F57C00",
-                                            color: "#F57C00",
-                                            "&:hover": {
-                                                backgroundColor: "#FFF3E0",
-                                                borderColor: "#EF6C00",
-                                            },
-                                        }}
-                                    >
-                                        Cancel
-                                    </Button>
-                                ))}
+                            {vendorDetails?.country_name !== null &&
+                            isEditing ? (
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => {
+                                        handleCancel();
+                                        setIsEditing(false);
+                                    }}
+                                    sx={{
+                                        borderRadius: 4,
+                                        borderColor: "#F57C00",
+                                        color: "#F57C00",
+                                        "&:hover": {
+                                            backgroundColor: "#FFF3E0",
+                                            borderColor: "#EF6C00",
+                                        },
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                            ) : null}
                             <Button
                                 variant="contained"
                                 onClick={() => {
@@ -2387,9 +2380,8 @@ export default function VendorOnboardingFlow() {
                                         size={24}
                                         color="inherit"
                                     />
-                                ) : vendorDetails?.country_name === undefined ||
-                                  vendorDetails?.country_name === null ||
-                                  isEditing === false ? (
+                                ) : vendorDetails?.country_name === null ||
+                                  !isEditing ? (
                                     "Continue"
                                 ) : (
                                     "Update"
