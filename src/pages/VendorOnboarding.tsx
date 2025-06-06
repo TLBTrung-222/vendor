@@ -839,6 +839,7 @@ export default function VendorOnboardingFlow() {
                   "&:hover": {
                     color: url ? "primary.main" : "text.secondary",
                   },
+
                 }}
                 onClick={() => url && window.open(url, "_blank")}
               >
@@ -908,9 +909,16 @@ export default function VendorOnboardingFlow() {
                     textAlign: "left",
                     color: "#424242",
                     borderColor: "#e0e0e0",
+                    maxWidth: "304px",
                   }}
                 >
-                  {selectedFile ? selectedFile.name : "Select PDF File"}
+                  <Typography variant="body1" sx={{ 
+                    maxWidth: "100%",
+                    textOverflow: "ellipsis",
+                    overflow: "hidden",
+                    textWrap: "nowrap", }}>
+                    
+                  {selectedFile ? selectedFile.name : "Select PDF File"}</Typography>
                 </Button>
               </label>
 
@@ -1705,36 +1713,28 @@ export default function VendorOnboardingFlow() {
 
   const renderContractCard = (contract: (typeof contracts)[0]) => {
     // Calculate progress value
-    let progressValue = 25;
+    let progressValue = 33;
 
     const { title, events, created_at } = contract;
-    const isVendorSigned = events[0]?.event_type === "SigningSuccess";
-    const isCompleted = events[0]?.event_type === "Completed";
+
+    const isCompleted = events[0]?.event_type === "Completed" || events[0]?.event_type === "SigningSuccess";
     const isViewed = events[0]?.event_type === "Viewed";
 
-    if (isViewed) progressValue = 50;
-    if (isVendorSigned) progressValue = 75;
+    if (isViewed) progressValue = 66;
     if (isCompleted) progressValue = 100;
 
     const sentDate = formatDate(created_at);
     const viewDate =
-      progressValue >= 50
+      progressValue >= 66
         ? formatDate(
             events.find((event: any) => event.event_type === "Viewed")
-              ?.created_at || ""
-          )
-        : "";
-    const signDate =
-      progressValue >= 75
-        ? formatDate(
-            events.find((event: any) => event.event_type === "SigningSuccess")
               ?.created_at || ""
           )
         : "";
     const completedDate =
       progressValue === 100
         ? formatDate(
-            events.find((event: any) => event.event_type === "Completed")
+            events.find((event: any) => event.event_type === "Completed" || event.event_type === "SigningSuccess")
               .created_at || ""
           )
         : "";
@@ -1770,28 +1770,14 @@ export default function VendorOnboardingFlow() {
             <StatusIcon>
               <VisibilityIcon
                 sx={{
-                  color: progressValue >= 50 ? "#F57C00" : "#e0e0e0",
+                  color: progressValue >= 66 ? "#F57C00" : "#e0e0e0",
                   fontSize: "1.25rem",
                 }}
               />
               <Typography variant="caption">
-                {progressValue >= 50
+                {progressValue >= 66
                   ? `${t.viewed} at ${viewDate}`
                   : `${t.viewed}`}
-              </Typography>
-            </StatusIcon>
-
-            <StatusIcon>
-              <EditIcon
-                sx={{
-                  color: progressValue >= 75 ? "#F57C00" : "#e0e0e0",
-                  fontSize: "1.25rem",
-                }}
-              />
-              <Typography variant="caption">
-                {progressValue >= 75
-                  ? `Vendor Signed at ${signDate}`
-                  : `Vendor Signed`}
               </Typography>
             </StatusIcon>
 
@@ -1814,12 +1800,10 @@ export default function VendorOnboardingFlow() {
             variant="body2"
             sx={{
               fontWeight: 500,
-              color: isVendorSigned || isCompleted ? "#F57C00" : "#ffc107",
+              color: isCompleted ? "#F57C00" : "#ffc107",
             }}
           >
-            {isVendorSigned
-              ? "Waiting for Gesys Signature"
-              : isCompleted 
+            {isCompleted 
               ? "Completed" : "Waiting for Vendor Signature"}
           </Typography>
         </CardContent>
@@ -3285,9 +3269,7 @@ export default function VendorOnboardingFlow() {
                   border: "1px solid #FFE0B2",
                 }}
               >
-                {message ? (
-                  message.message
-                ) : contracts.length === 0 ? (
+                {contracts.length === 0 ? (
                   <Typography variant="body2">
                     Waiting for contracts to be sent. Please check back later.
                   </Typography>
