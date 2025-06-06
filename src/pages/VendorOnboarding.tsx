@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import {
     Box,
     Typography,
@@ -425,7 +425,15 @@ export default function VendorOnboardingFlow() {
     useEffect(() => {
         if (message) {
             console.log(message);
-            if (message?.detail?.document_id) {
+            if (message?.contract_data) {
+                setContracts([
+                    ...contracts,
+                    {
+                        ...message.contract_data,
+                        events: [],
+                    },
+                ]);
+            } else if (message?.detail?.document_id) {
                 setVendorDocuments((prev) =>
                     prev.map((doc) =>
                         doc.document_id === message?.detail.document_id
@@ -995,11 +1003,22 @@ export default function VendorOnboardingFlow() {
                                         textAlign: "left",
                                         color: "#424242",
                                         borderColor: "#e0e0e0",
+                                        maxWidth: "304px",
                                     }}
                                 >
-                                    {selectedFile
-                                        ? selectedFile.name
-                                        : "Select PDF File"}
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            maxWidth: "100%",
+                                            textOverflow: "ellipsis",
+                                            overflow: "hidden",
+                                            textWrap: "nowrap",
+                                        }}
+                                    >
+                                        {selectedFile
+                                            ? selectedFile.name
+                                            : "Select PDF File"}
+                                    </Typography>
                                 </Button>
                             </label>
 
@@ -1709,6 +1728,57 @@ export default function VendorOnboardingFlow() {
                     employee_number: Number.parseInt(t.count) || 0,
                 }));
 
+            const user = localStorage.getItem("user");
+            const userEmail = user
+                ? JSON.parse(user).email
+                : localStorage.getItem("userEmail");
+            const accessToken = localStorage.getItem("accessToken");
+
+            if (userEmail && accessToken) {
+                // Prepare the request body for user update with email included in the payload
+                const userRequestBody = {
+                    email: userEmail,
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone_number: phone || "",
+                    representative_position_id: selectedPositionId || null,
+                };
+
+                // Make the user update API call with authorization header
+                const userResponse = await fetch(
+                    `${API_BASE_URL}/users/update`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                        body: JSON.stringify(userRequestBody),
+                    }
+                );
+
+                if (!userResponse.ok) {
+                    console.error(
+                        "Error updating user:",
+                        await userResponse.text()
+                    );
+                    // Don't throw error here, as we've already updated the vendor successfully
+                } else {
+                    const userResult = await userResponse.json();
+                    setVendorDetails((prev: any) => ({
+                        ...prev,
+                        contact_user: {
+                            ...prev.contact_user,
+                            ...userResult.data,
+                        },
+                    }));
+                }
+            } else {
+                console.error(
+                    "User email or access token not found in localStorage"
+                );
+            }
+
             // Prepare the request body using state variables with the new format
             const vendorRequestBody = {
                 company_name: companyName,
@@ -1760,56 +1830,6 @@ export default function VendorOnboardingFlow() {
                 ...vendorResult.data,
             }));
 
-            const userEmail =
-                localStorage.getItem("userEmail") ||
-                JSON.parse(localStorage.getItem("user") || "{}").email;
-            const accessToken = localStorage.getItem("accessToken");
-
-            if (userEmail && accessToken) {
-                // Prepare the request body for user update with email included in the payload
-                const userRequestBody = {
-                    email: userEmail,
-                    first_name: firstName,
-                    last_name: lastName,
-                    phone_number: phone || "",
-                    representative_position_id: selectedPositionId || null,
-                };
-
-                // Make the user update API call with authorization header
-                const userResponse = await fetch(
-                    `${API_BASE_URL}/users/update`,
-                    {
-                        method: "PUT",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${accessToken}`,
-                        },
-                        body: JSON.stringify(userRequestBody),
-                    }
-                );
-
-                if (!userResponse.ok) {
-                    console.error(
-                        "Error updating user:",
-                        await userResponse.text()
-                    );
-                    // Don't throw error here, as we've already updated the vendor successfully
-                } else {
-                    const userResult = await userResponse.json();
-                    setVendorDetails((prev: any) => ({
-                        ...prev,
-                        contact_user: {
-                            ...prev.contact_user,
-                            ...userResult.data,
-                        },
-                    }));
-                }
-            } else {
-                console.error(
-                    "User email or access token not found in localStorage"
-                );
-            }
-
             // Proceed to next step
             updateStep(2);
             setIsInfoUpdated(true);
@@ -1838,38 +1858,33 @@ export default function VendorOnboardingFlow() {
 
     const renderContractCard = (contract: (typeof contracts)[0]) => {
         // Calculate progress value
-        let progressValue = 25;
+        let progressValue = 33;
 
         const { title, events, created_at } = contract;
-        const isVendorSigned = events[0]?.event_type === "SigningSuccess";
-        const isCompleted = events[0]?.event_type === "Completed";
+
+        const isCompleted =
+            events[0]?.event_type === "Completed" ||
+            events[0]?.event_type === "SigningSuccess";
         const isViewed = events[0]?.event_type === "Viewed";
 
-        if (isViewed) progressValue = 50;
-        if (isVendorSigned) progressValue = 75;
+        if (isViewed) progressValue = 66;
         if (isCompleted) progressValue = 100;
 
         const sentDate = formatDate(created_at);
         const viewDate =
-            progressValue >= 50
+            progressValue >= 66
                 ? formatDate(
                       events.find((event: any) => event.event_type === "Viewed")
                           ?.created_at || ""
-                  )
-                : "";
-        const signDate =
-            progressValue >= 75
-                ? formatDate(
-                      events.find(
-                          (event: any) => event.event_type === "SigningSuccess"
-                      )?.created_at || ""
                   )
                 : "";
         const completedDate =
             progressValue === 100
                 ? formatDate(
                       events.find(
-                          (event: any) => event.event_type === "Completed"
+                          (event: any) =>
+                              event.event_type === "Completed" ||
+                              event.event_type === "SigningSuccess"
                       ).created_at || ""
                   )
                 : "";
@@ -1914,33 +1929,16 @@ export default function VendorOnboardingFlow() {
                             <VisibilityIcon
                                 sx={{
                                     color:
-                                        progressValue >= 50
+                                        progressValue >= 66
                                             ? "#F57C00"
                                             : "#e0e0e0",
                                     fontSize: "1.25rem",
                                 }}
                             />
                             <Typography variant="caption">
-                                {progressValue >= 50
+                                {progressValue >= 66
                                     ? `${t.viewed} at ${viewDate}`
                                     : `${t.viewed}`}
-                            </Typography>
-                        </StatusIcon>
-
-                        <StatusIcon>
-                            <EditIcon
-                                sx={{
-                                    color:
-                                        progressValue >= 75
-                                            ? "#F57C00"
-                                            : "#e0e0e0",
-                                    fontSize: "1.25rem",
-                                }}
-                            />
-                            <Typography variant="caption">
-                                {progressValue >= 75
-                                    ? `Vendor Signed at ${signDate}`
-                                    : `Vendor Signed`}
                             </Typography>
                         </StatusIcon>
 
@@ -1966,17 +1964,12 @@ export default function VendorOnboardingFlow() {
                         variant="body2"
                         sx={{
                             fontWeight: 500,
-                            color:
-                                isVendorSigned || isCompleted
-                                    ? "#F57C00"
-                                    : "#ffc107",
+                            color: isCompleted ? "#F57C00" : "#ffc107",
                         }}
                     >
-                        {isViewed
-                            ? "Waiting for Vendor Signature"
-                            : isVendorSigned
-                            ? "Waiting for Gesys Signature"
-                            : "Completed"}
+                        {isCompleted
+                            ? "Completed"
+                            : "Waiting for Vendor Signature"}
                     </Typography>
                 </CardContent>
             </Card>
@@ -2065,6 +2058,8 @@ export default function VendorOnboardingFlow() {
         }
         setIsEditing(false);
     };
+
+    console.log(contracts);
 
     return (
         <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
@@ -3723,16 +3718,6 @@ export default function VendorOnboardingFlow() {
                 {/* Step 2: Document Upload */}
                 <TabPanel value="2">
                     <Box>
-                        {/* <Box sx={{ textAlign: "center", mb: 3 }}>
-                <Typography
-                  variant="h5"
-                  component="h1"
-                  sx={{ fontWeight: 600, color: "text.primary" }}
-                >
-                  {t.uploadDocumentsTitle}
-                </Typography>
-              </Box> */}
-
                         {loadingDocuments ? (
                             <Box
                                 sx={{
@@ -3785,32 +3770,51 @@ export default function VendorOnboardingFlow() {
                 {/* Step 3: Contract Signature */}
                 <TabPanel value="3">
                     <Box>
-                        <Alert
-                            severity="info"
-                            sx={{
-                                mb: 4,
-                                borderRadius: 4,
-                                backgroundColor: "#FFF3E0",
-                                color: "text.primary",
-                                border: "1px solid #FFE0B2",
-                            }}
-                        >
-                            {contracts.length === 0 ? (
-                                <Typography variant="body2">
-                                    Waiting for contracts to be sent. Please
-                                    check back later.
-                                </Typography>
-                            ) : (
-                                <Typography variant="body2">
-                                    {message
-                                        ? message.message
-                                        : "Your contracts have been sent to your email. Please check your email."}
-                                </Typography>
-                            )}
-                        </Alert>
+                        {contracts.length > 0 &&
+                        contracts.every(
+                            (contract) =>
+                                contract.events &&
+                                contract.events[0]?.event_type === "Completed"
+                        ) ? (
+                            <Alert
+                                severity="success"
+                                sx={{
+                                    mb: 4,
+                                    borderRadius: 4,
+                                    color: "text.primary",
+                                }}
+                            >
+                                All contracts have been successfully signed and
+                                completed. Ready for onboarding.
+                            </Alert>
+                        ) : (
+                            <Alert
+                                severity="info"
+                                sx={{
+                                    mb: 4,
+                                    borderRadius: 4,
+                                    backgroundColor: "#FFF3E0",
+                                    color: "text.primary",
+                                    border: "1px solid #FFE0B2",
+                                }}
+                            >
+                                {contracts.length === 0 ? (
+                                    <Typography variant="body2">
+                                        Waiting for contracts to be sent. Please
+                                        check back later.
+                                    </Typography>
+                                ) : (
+                                    <Typography variant="body2">
+                                        Please review and sign the contracts
+                                        below to complete your onboarding
+                                        process.
+                                    </Typography>
+                                )}
+                            </Alert>
+                        )}
 
                         <Grid>
-                            {contracts.map((contract) => (
+                            {contracts?.map((contract) => (
                                 <Grid item xs={12} sm={4} key={contract.title}>
                                     {renderContractCard(contract)}
                                 </Grid>
