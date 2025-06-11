@@ -38,7 +38,6 @@ import AddIcon from "@mui/icons-material/Add";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useContext } from "react";
@@ -418,7 +417,7 @@ export default function VendorOnboardingFlow() {
       }
     );
   }, [contracts]);
-
+  
   useEffect(() => {
     if (message) {
       if (message?.contract_data) {
@@ -429,6 +428,7 @@ export default function VendorOnboardingFlow() {
             events: []
           }
         ])
+        updateStep(3); 
       }
       else if (message?.detail?.document_id) {
         setVendorDocuments((prev) =>
@@ -1586,10 +1586,10 @@ export default function VendorOnboardingFlow() {
           employee_number: Number.parseInt(t.count) || 0,
         }));
 
-        const user = localStorage.getItem("user");
-        const userEmail = user
-          ? JSON.parse(user).email
-          : localStorage.getItem("userEmail");
+      const user = localStorage.getItem("user");
+      const userEmail = user
+        ? JSON.parse(user).email
+        : localStorage.getItem("userEmail");
       const accessToken = localStorage.getItem("accessToken");
 
       if (userEmail && accessToken) {
@@ -2923,8 +2923,7 @@ export default function VendorOnboardingFlow() {
                     </TabPanel>
                     <TabPanel value="2">
                       <Typography sx={{ mb: 2 }}>
-                        If you operate in specific postal code areas, switch to
-                        the Postcode tab.
+                        If you operate in specific postal code areas, switch to the Postcode tab.
                       </Typography>
                       <Box sx={{ maxHeight: 200, overflowY: "auto" }}>
                         {federalStates.map((state) => (
