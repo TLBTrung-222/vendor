@@ -3329,7 +3329,7 @@ export default function VendorOnboardingFlow() {
           fontSize: "0.875rem",
         }}
       >
-        <Typography variant="body2">Version: {import.meta.env.REACT_APP_VERSION_TAG}</Typography>
+        <Typography variant="body2">Version: {import.meta.env.VITE_REACT_APP_VERSION_TAG}</Typography>
       </Box>
     </Box>
   );
