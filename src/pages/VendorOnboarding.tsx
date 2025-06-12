@@ -398,7 +398,7 @@ export default function VendorOnboardingFlow() {
 
     userChannel.bind(
       `vendor-${vendorId}-contract-${contracts[0].contract_id}`,
-      (data: any) => {
+      (data: any) => {        
         setContracts((prevContracts) =>
           prevContracts.map((contract) =>
             contract.contract_id === data.contract_id
@@ -431,6 +431,8 @@ export default function VendorOnboardingFlow() {
         updateStep(3); 
       }
       else if (message?.detail?.document_id) {
+        console.log(message?.detail);
+        
         setVendorDocuments((prev) =>
           prev.map((doc) =>
             doc.document_id === message?.detail.document_id
