@@ -3316,6 +3316,16 @@ export default function VendorOnboardingFlow() {
           </Box>
         </TabPanel>
       </TabContext>
+      <Box
+        sx={{
+          mt: 4,
+          textAlign: "center",
+          color: "text.secondary",
+          fontSize: "0.875rem",
+        }}
+      >
+        <Typography variant="body2">Version: {import.meta.env.VITE_REACT_APP_VERSION_TAG}</Typography>
+      </Box>
     </Box>
   );
 }
