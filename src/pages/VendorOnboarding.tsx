@@ -454,6 +454,7 @@ export default function VendorOnboardingFlow() {
           )
         );
       } else {
+        updateStep(1);
         setOnboardingStatus(message?.detail?.description);
         setPmName(
           message?.detail?.updated_by?.first_name +
@@ -471,7 +472,9 @@ export default function VendorOnboardingFlow() {
       };
       setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
-  }, [message]);
+  }, [message]);  
+
+  console.log(onboardingStatus);  
 
   useEffect(() => {
     if (!vendorId) return;
@@ -1685,6 +1688,8 @@ export default function VendorOnboardingFlow() {
       // Proceed to next step
       updateStep(2);
       setIsInfoUpdated(true);
+      setIsEditing(false);
+      setOnboardingStatus("");
     } catch (error) {
       console.error("Error updating vendor information:", error);
       alert("Failed to update vendor information. Please try again.");
@@ -1891,8 +1896,8 @@ export default function VendorOnboardingFlow() {
       <Modal
         open={isOpenModal}
         onClose={() => setIsOpenModal(false)}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
       >
         <Box
           sx={{
@@ -2119,13 +2124,15 @@ export default function VendorOnboardingFlow() {
                 onClick={() => {
                   if (isEditing) {
                     setIsOpenModal(true);
+                    updateStep(step);
                   } else {
                     updateStep(2);
                   }
                 }}
                 disabled={
                   vendorDetails?.country_name === undefined ||
-                  vendorDetails?.country_name === null
+                  vendorDetails?.country_name === null ||
+                  onboardingStatus !== ""
                 }
               />
               <Tab
@@ -2174,7 +2181,9 @@ export default function VendorOnboardingFlow() {
                     updateStep(2);
                   }
                 }}
-                disabled={isSubmitting}
+                disabled={isSubmitting || 
+                  !isEditing
+                }
                 sx={{
                   borderRadius: 4,
                   backgroundColor: "#F57C00",
@@ -2187,10 +2196,7 @@ export default function VendorOnboardingFlow() {
                 {isSubmitting ? (
                   <CircularProgress size={24} color="inherit" />
                 ) : 
-                  (vendorDetails?.country_name === null ||
-                  !isEditing) ? (
-                  "Continue"
-                ) : (
+                   (
                   "Update"
                 )}
               </Button>
