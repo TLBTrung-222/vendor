@@ -242,7 +242,7 @@ const translations = {
 };
 
 // API endpoints
-const API_BASE_URL = "https://alpha.be.atlas.galvanek-bau.de/gesys";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
@@ -3329,7 +3329,7 @@ export default function VendorOnboardingFlow() {
           fontSize: "0.875rem",
         }}
       >
-        <Typography variant="body2">Version: {import.meta.env.REACT_APP_VERSION_TAG}</Typography>
+        <Typography variant="body2">Version: {}</Typography>
       </Box>
     </Box>
   );
