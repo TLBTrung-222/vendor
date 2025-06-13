@@ -3251,7 +3251,9 @@ export default function VendorOnboardingFlow() {
                   color: "text.primary",
                 }}
               >
-                All contracts have been successfully signed and completed. Ready for onboarding.
+                All contracts have been successfully signed and completed. 
+                <br />
+                Ready for onboarding: Please check the email and follow the instructions for the next step.
               </Alert>
             ) : (
               <Alert
