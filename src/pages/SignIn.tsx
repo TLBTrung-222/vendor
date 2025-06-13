@@ -115,7 +115,7 @@ export default function SignIn() {
         try {
             // Call the login API endpoint
             const response = await fetch(
-                "https://alpha.be.atlas.galvanek-bau.de/gesys/auth/login-vendor",
+                `${import.meta.env.VITE_API_BASE_URL}/auth/login-vendor`,
                 {
                     method: "POST",
                     headers: {
