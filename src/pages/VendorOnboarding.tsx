@@ -1424,7 +1424,6 @@ export default function VendorOnboardingFlow() {
     translations[language as keyof typeof translations] || translations.EN;
 
   const next = () => updateStep(step + 1);
-  const back = () => updateStep(step - 1);
 
   // Handle trade deletion
   const handleDeleteTrade = (index: number) => {
@@ -3286,32 +3285,6 @@ export default function VendorOnboardingFlow() {
                 </Grid>
               ))}
             </Grid>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                mt: 4,
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={back}
-                sx={{
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 4,
-                  borderColor: "#e0e0e0",
-                  color: "#616161",
-                  "&:hover": {
-                    borderColor: "#bdbdbd",
-                    backgroundColor: "#f5f5f5",
-                  },
-                }}
-              >
-                {t.back}
-              </Button>
-            </Box>
           </Box>
         </TabPanel>
       </TabContext>
