@@ -242,7 +242,7 @@ const translations = {
 };
 
 // API endpoints
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL;
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
@@ -398,7 +398,7 @@ export default function VendorOnboardingFlow() {
 
     userChannel.bind(
       `vendor-${vendorId}-contract-${contracts[0].contract_id}`,
-      (data: any) => {
+      (data: any) => {        
         setContracts((prevContracts) =>
           prevContracts.map((contract) =>
             contract.contract_id === data.contract_id
@@ -417,7 +417,7 @@ export default function VendorOnboardingFlow() {
       }
     );
   }, [contracts]);
-
+  
   useEffect(() => {
     if (message) {
       if (message?.contract_data) {
@@ -425,13 +425,12 @@ export default function VendorOnboardingFlow() {
           ...contracts,
           {
             ...message.contract_data,
-            events: [],
-          },
-        ]);
-        updateStep(3);
-      } else if (message?.detail?.document_id) {
-        console.log(message?.detail);
-
+            events: []
+          }
+        ])
+        updateStep(3); 
+      }
+      else if (message?.detail?.document_id) {        
         setVendorDocuments((prev) =>
           prev.map((doc) =>
             doc.document_id === message?.detail.document_id
@@ -452,7 +451,9 @@ export default function VendorOnboardingFlow() {
               : doc
           )
         );
-      } else {
+      } else if (message?.detail?.description) {
+        console.log(message?.detail?.description);
+        updateStep(1);
         setOnboardingStatus(message?.detail?.description);
         setPmName(
           message?.detail?.updated_by?.first_name +
@@ -470,7 +471,9 @@ export default function VendorOnboardingFlow() {
       };
       setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
-  }, [message]);
+  }, [message]);  
+
+  console.log(onboardingStatus);  
 
   useEffect(() => {
     if (!vendorId) return;
@@ -838,6 +841,7 @@ export default function VendorOnboardingFlow() {
                   "&:hover": {
                     color: url ? "primary.main" : "text.secondary",
                   },
+
                 }}
                 onClick={() => url && window.open(url, "_blank")}
               >
@@ -910,17 +914,13 @@ export default function VendorOnboardingFlow() {
                     maxWidth: "304px",
                   }}
                 >
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      maxWidth: "100%",
-                      textOverflow: "ellipsis",
-                      overflow: "hidden",
-                      textWrap: "nowrap",
-                    }}
-                  >
-                    {selectedFile ? selectedFile.name : "Select PDF File"}
-                  </Typography>
+                  <Typography variant="body1" sx={{ 
+                    maxWidth: "100%",
+                    textOverflow: "ellipsis",
+                    overflow: "hidden",
+                    textWrap: "nowrap", }}>
+                    
+                  {selectedFile ? selectedFile.name : "Select PDF File"}</Typography>
                 </Button>
               </label>
 
@@ -1424,7 +1424,6 @@ export default function VendorOnboardingFlow() {
     translations[language as keyof typeof translations] || translations.EN;
 
   const next = () => updateStep(step + 1);
-  const back = () => updateStep(step - 1);
 
   // Handle trade deletion
   const handleDeleteTrade = (index: number) => {
@@ -1570,10 +1569,7 @@ export default function VendorOnboardingFlow() {
     // Check if any trade has a null, undefined, or empty count
     const hasEmptyTradeCount = trades.some(
       (trade) =>
-        trade.count === null ||
-        trade.count === undefined ||
-        trade.count === "" ||
-        trade.count === "0"
+        trade.count === null || trade.count === undefined || trade.count === "" || trade.count === "0"
     );
 
     // Example usage in validation
@@ -1690,6 +1686,8 @@ export default function VendorOnboardingFlow() {
       // Proceed to next step
       updateStep(2);
       setIsInfoUpdated(true);
+      setIsEditing(false);
+      setOnboardingStatus("");
     } catch (error) {
       console.error("Error updating vendor information:", error);
       alert("Failed to update vendor information. Please try again.");
@@ -1719,9 +1717,7 @@ export default function VendorOnboardingFlow() {
 
     const { title, events, created_at } = contract;
 
-    const isCompleted =
-      events[0]?.event_type === "Completed" ||
-      events[0]?.event_type === "SigningSuccess";
+    const isCompleted = events[0]?.event_type === "Completed" || events[0]?.event_type === "SigningSuccess";
     const isViewed = events[0]?.event_type === "Viewed";
 
     if (isViewed) progressValue = 66;
@@ -1738,11 +1734,8 @@ export default function VendorOnboardingFlow() {
     const completedDate =
       progressValue === 100
         ? formatDate(
-            events.find(
-              (event: any) =>
-                event.event_type === "Completed" ||
-                event.event_type === "SigningSuccess"
-            ).created_at || ""
+            events.find((event: any) => event.event_type === "Completed" || event.event_type === "SigningSuccess")
+              .created_at || ""
           )
         : "";
 
@@ -1810,7 +1803,8 @@ export default function VendorOnboardingFlow() {
               color: isCompleted ? "#F57C00" : "#ffc107",
             }}
           >
-            {isCompleted ? "Completed" : "Waiting for Vendor Signature"}
+            {isCompleted 
+              ? "Completed" : "Waiting for Vendor Signature"}
           </Typography>
         </CardContent>
       </Card>
@@ -1893,15 +1887,15 @@ export default function VendorOnboardingFlow() {
       setSelectedPosition(position.title || "");
     }
     setIsEditing(false);
-  };
+  };  
 
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
       <Modal
         open={isOpenModal}
         onClose={() => setIsOpenModal(false)}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
       >
         <Box
           sx={{
@@ -2128,13 +2122,15 @@ export default function VendorOnboardingFlow() {
                 onClick={() => {
                   if (isEditing) {
                     setIsOpenModal(true);
+                    updateStep(step);
                   } else {
                     updateStep(2);
                   }
                 }}
                 disabled={
                   vendorDetails?.country_name === undefined ||
-                  vendorDetails?.country_name === null
+                  vendorDetails?.country_name === null ||
+                  onboardingStatus !== ""
                 }
               />
               <Tab
@@ -2154,26 +2150,26 @@ export default function VendorOnboardingFlow() {
           </Box>
           {step === 1 && (
             <Box sx={{ display: "flex", gap: 1 }}>
-              {vendorDetails?.country_name !== null && isEditing ? (
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    handleCancel();
-                    setIsEditing(false);
-                  }}
-                  sx={{
-                    borderRadius: 4,
-                    borderColor: "#F57C00",
-                    color: "#F57C00",
-                    "&:hover": {
-                      backgroundColor: "#FFF3E0",
-                      borderColor: "#EF6C00",
-                    },
-                  }}
-                >
-                  Cancel
-                </Button>
-              ) : null}
+              {(vendorDetails?.country_name !== null && isEditing) ? (
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      handleCancel();
+                      setIsEditing(false);
+                    }}
+                    sx={{
+                      borderRadius: 4,
+                      borderColor: "#F57C00",
+                      color: "#F57C00",
+                      "&:hover": {
+                        backgroundColor: "#FFF3E0",
+                        borderColor: "#EF6C00",
+                      },
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                ) : null}
               <Button
                 variant="contained"
                 onClick={() => {
@@ -2183,7 +2179,9 @@ export default function VendorOnboardingFlow() {
                     updateStep(2);
                   }
                 }}
-                disabled={isSubmitting}
+                disabled={isSubmitting || 
+                  !isEditing
+                }
                 sx={{
                   borderRadius: 4,
                   backgroundColor: "#F57C00",
@@ -2195,9 +2193,8 @@ export default function VendorOnboardingFlow() {
               >
                 {isSubmitting ? (
                   <CircularProgress size={24} color="inherit" />
-                ) : vendorDetails?.country_name === null || !isEditing ? (
-                  "Continue"
-                ) : (
+                ) : 
+                   (
                   "Update"
                 )}
               </Button>
@@ -2932,8 +2929,7 @@ export default function VendorOnboardingFlow() {
                     </TabPanel>
                     <TabPanel value="2">
                       <Typography sx={{ mb: 2 }}>
-                        If you operate in specific postal code areas, switch to
-                        the Postcode tab.
+                        If you operate in specific postal code areas, switch to the Postcode tab.
                       </Typography>
                       <Box sx={{ maxHeight: 200, overflowY: "auto" }}>
                         {federalStates.map((state) => (
@@ -3244,11 +3240,8 @@ export default function VendorOnboardingFlow() {
         {/* Step 3: Contract Signature */}
         <TabPanel value="3">
           <Box>
-            {contracts.length > 0 &&
-            contracts.every(
-              (contract) =>
-                contract.events &&
-                contract.events[0]?.event_type === "Completed"
+            {contracts.length > 0 && contracts.every(
+              (contract) => contract.events && contract.events[0]?.event_type === "Completed"
             ) ? (
               <Alert
                 severity="success"
@@ -3258,8 +3251,7 @@ export default function VendorOnboardingFlow() {
                   color: "text.primary",
                 }}
               >
-                All contracts have been successfully signed and completed. Ready
-                for onboarding.
+                All contracts have been successfully signed and completed. Ready for onboarding.
               </Alert>
             ) : (
               <Alert
@@ -3284,6 +3276,7 @@ export default function VendorOnboardingFlow() {
                 )}
               </Alert>
             )}
+            
 
             <Grid>
               {contracts?.map((contract) => (
@@ -3292,32 +3285,6 @@ export default function VendorOnboardingFlow() {
                 </Grid>
               ))}
             </Grid>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                mt: 4,
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={back}
-                sx={{
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 4,
-                  borderColor: "#e0e0e0",
-                  color: "#616161",
-                  "&:hover": {
-                    borderColor: "#bdbdbd",
-                    backgroundColor: "#f5f5f5",
-                  },
-                }}
-              >
-                {t.back}
-              </Button>
-            </Box>
           </Box>
         </TabPanel>
       </TabContext>

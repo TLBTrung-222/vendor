@@ -15,7 +15,6 @@ import { styled } from "@mui/material/styles";
 import ColorModeSelect from "../utils/ColorModeSelect";
 import { AuthContext } from "../App";
 import { useNavigate } from "react-router-dom";
-import validates from "../utils/Validates";
 
 // Styled components remain the same...
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -80,20 +79,21 @@ export default function SignIn() {
   const navigate = useNavigate();
 
   const decodeToken = (token: string) => {
-    var base64Url = token.split(".")[1];
-    var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    var jsonPayload = decodeURIComponent(
-      window
-        .atob(base64)
-        .split("")
-        .map(function (c) {
-          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-        })
-        .join("")
-    );
-
-    return JSON.parse(jsonPayload);
-  };
+      var base64Url = token.split(".")[1];
+      var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      var jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split("")
+          .map(function (c) {
+            return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join("")
+      );
+  
+      return JSON.parse(jsonPayload);
+    };
+  
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -112,7 +112,7 @@ export default function SignIn() {
     try {
       // Call the login API endpoint
       const response = await fetch(
-        "https://alpha.be.atlas.galvanek-bau.de/gesys/auth/login",
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login-vendor`,
         {
           method: "POST",
           headers: {
@@ -136,6 +136,7 @@ export default function SignIn() {
 
         // Store the user's email for use in the vendor onboarding flow
         localStorage.setItem("user", JSON.stringify(decoded.user));
+
 
         // Notify auth context if needed
         if (login) {
@@ -176,7 +177,7 @@ export default function SignIn() {
     try {
       // Call the reset password API endpoint
       const response = await fetch(
-        "https://alpha.be.atlas.galvanek-bau.de/gesys/users/reset-password?email=" +
+        `${import.meta.env.VITE_API_BASE_URL}/users/reset-password?email=` +
           resetEmail,
         {
           method: "PUT",
@@ -213,7 +214,7 @@ export default function SignIn() {
 
     let isValid = true;
 
-    if (!email.value || !validates.validateEmail(email.value)) {
+    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
       setEmailError(true);
       setEmailErrorMessage("Please enter a valid email address.");
       isValid = false;
@@ -222,7 +223,7 @@ export default function SignIn() {
       setEmailErrorMessage("");
     }
 
-    if (!password.value || !validates.validatePassword(password.value)) {
+    if (!password.value || password.value.length < 6) {
       setPasswordError(true);
       setPasswordErrorMessage("Password must be at least 6 characters long.");
       isValid = false;
@@ -295,7 +296,7 @@ export default function SignIn() {
                   variant="contained"
                   disabled={submitting}
                 >
-                  {submitting ? "Resetting password..." : "Reset password"}
+                  {submitting ? "Resetting password..." :"Reset password"}
                 </Button>
               </Box>
             </Card>
