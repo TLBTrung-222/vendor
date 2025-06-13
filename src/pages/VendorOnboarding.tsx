@@ -430,9 +430,7 @@ export default function VendorOnboardingFlow() {
         ])
         updateStep(3); 
       }
-      else if (message?.detail?.document_id) {
-        console.log(message?.detail);
-        
+      else if (message?.detail?.document_id) {        
         setVendorDocuments((prev) =>
           prev.map((doc) =>
             doc.document_id === message?.detail.document_id
@@ -453,7 +451,8 @@ export default function VendorOnboardingFlow() {
               : doc
           )
         );
-      } else {
+      } else if (message?.detail?.description) {
+        console.log(message?.detail?.description);
         updateStep(1);
         setOnboardingStatus(message?.detail?.description);
         setPmName(
