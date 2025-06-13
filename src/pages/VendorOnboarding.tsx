@@ -38,7 +38,6 @@ import AddIcon from "@mui/icons-material/Add";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useContext } from "react";
@@ -431,6 +430,7 @@ export default function VendorOnboardingFlow() {
                         events: [],
                     },
                 ]);
+                updateStep(3);
             } else if (message?.detail?.document_id) {
                 setVendorDocuments((prev) =>
                     prev.map((doc) =>
@@ -457,7 +457,9 @@ export default function VendorOnboardingFlow() {
                             : doc
                     )
                 );
-            } else {
+            } else if (message?.detail?.description) {
+                console.log(message?.detail?.description);
+                updateStep(1);
                 setOnboardingStatus(message?.detail?.description);
                 setPmName(
                     message?.detail?.updated_by?.first_name +
@@ -478,6 +480,8 @@ export default function VendorOnboardingFlow() {
             setNotiItems((prev: any) => [newMessageItem, ...prev!]);
         }
     }, [message]);
+
+    console.log(onboardingStatus);
 
     useEffect(() => {
         if (!vendorId) return;
@@ -1555,7 +1559,6 @@ export default function VendorOnboardingFlow() {
         translations[language as keyof typeof translations] || translations.EN;
 
     const next = () => updateStep(step + 1);
-    const back = () => updateStep(step - 1);
 
     // Handle trade deletion
     const handleDeleteTrade = (index: number) => {
@@ -1829,6 +1832,8 @@ export default function VendorOnboardingFlow() {
             // Proceed to next step
             updateStep(2);
             setIsInfoUpdated(true);
+            setIsEditing(false);
+            setOnboardingStatus("");
         } catch (error) {
             console.error("Error updating vendor information:", error);
             alert("Failed to update vendor information. Please try again.");
@@ -2060,8 +2065,8 @@ export default function VendorOnboardingFlow() {
             <Modal
                 open={isOpenModal}
                 onClose={() => setIsOpenModal(false)}
-                aria-labelledby="modal-modal-title"
-                aria-describedby="modal-modal-description"
+                aria-labelledby="modal-title"
+                aria-describedby="modal-description"
             >
                 <Box
                     sx={{
@@ -2309,13 +2314,15 @@ export default function VendorOnboardingFlow() {
                                 onClick={() => {
                                     if (isEditing) {
                                         setIsOpenModal(true);
+                                        updateStep(step);
                                     } else {
                                         updateStep(2);
                                     }
                                 }}
                                 disabled={
                                     vendorDetails?.country_name === undefined ||
-                                    vendorDetails?.country_name === null
+                                    vendorDetails?.country_name === null ||
+                                    onboardingStatus !== ""
                                 }
                             />
                             <Tab
@@ -2365,7 +2372,7 @@ export default function VendorOnboardingFlow() {
                                         updateStep(2);
                                     }
                                 }}
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || !isEditing}
                                 sx={{
                                     borderRadius: 4,
                                     backgroundColor: "#F57C00",
@@ -2380,9 +2387,6 @@ export default function VendorOnboardingFlow() {
                                         size={24}
                                         color="inherit"
                                     />
-                                ) : vendorDetails?.country_name === null ||
-                                  !isEditing ? (
-                                    "Continue"
                                 ) : (
                                     "Update"
                                 )}
@@ -3777,7 +3781,10 @@ export default function VendorOnboardingFlow() {
                                 }}
                             >
                                 All contracts have been successfully signed and
-                                completed. Ready for onboarding.
+                                completed.
+                                <br />
+                                Ready for onboarding: Please check the email and
+                                follow the instructions for the next step.
                             </Alert>
                         ) : (
                             <Alert
@@ -3812,35 +3819,21 @@ export default function VendorOnboardingFlow() {
                                 </Grid>
                             ))}
                         </Grid>
-
-                        <Box
-                            sx={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                mt: 4,
-                            }}
-                        >
-                            <Button
-                                variant="outlined"
-                                onClick={back}
-                                sx={{
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: 4,
-                                    borderColor: "#e0e0e0",
-                                    color: "#616161",
-                                    "&:hover": {
-                                        borderColor: "#bdbdbd",
-                                        backgroundColor: "#f5f5f5",
-                                    },
-                                }}
-                            >
-                                {t.back}
-                            </Button>
-                        </Box>
                     </Box>
                 </TabPanel>
             </TabContext>
+            <Box
+                sx={{
+                    mt: 4,
+                    textAlign: "center",
+                    color: "text.secondary",
+                    fontSize: "0.875rem",
+                }}
+            >
+                <Typography variant="body2">
+                    Version: {import.meta.env.VITE_REACT_APP_VERSION_TAG}
+                </Typography>
+            </Box>
         </Box>
     );
 }
