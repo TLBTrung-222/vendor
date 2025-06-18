@@ -45,13 +45,14 @@ function AppWithRouting() {
   };
 
   useEffect(() => {
-    const accessToken = getCookie(COOKIE_ACCESS_TOKEN);
-    const refreshToken = getCookie(COOKIE_REFRESH_TOKEN);
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get("access")
+    const refreshToken = urlParams.get("refresh");
 
     if (accessToken) {
       const decoded = decodeToken(accessToken);
       localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem("refreshToken", refreshToken || "");
       localStorage.setItem("userEmail", decoded.user.email);      
       localStorage.setItem(
         "vendorOnboardingStep",
