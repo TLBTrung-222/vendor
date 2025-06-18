@@ -1,0 +1,94 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  DOCKER_HOST: "tcp://docker:2375/"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+
+.ref:
+  only:
+    - tags
+  rule_latest:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-release$/'
+  # rule_alpha:
+  #   - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-alpha-\d+$/'
+  rule_beta:
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-beta-\d+$/'
+
+.build_push_ecr: &build_push_ecr
+  before_script:
+    - apk add --no-cache curl jq python3 py3-pip
+    - pip install awscli
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set region $AWS_DEFAULT_REGION
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY
+
+.deploy_ec2: &deploy_ec2
+  before_script:
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval "$(ssh-agent -s)"
+    - ssh-add ~/.ssh/id_rsa
+
+# alpha_build_and_push_ecr:
+#   stage: build
+#   image: docker:20.10.16
+#   services:
+#     - docker:20.10.16-dind
+#   <<: *build_push_ecr
+#   variables:
+#     ENV_FILE: .env.alpha
+#   script:
+#     - docker build --build-arg ENV_FILE=$ENV_FILE -t $ECR_REPOSITORY/$ALPHA_ECR_NAME:${CI_COMMIT_TAG} .
+#     - docker push $ECR_REPOSITORY/$ALPHA_ECR_NAME:${CI_COMMIT_TAG}
+#   rules: !reference [.ref, rule_alpha]
+
+# alpha_deploy_ec2:
+#   stage: deploy
+#   image: docker:20.10.16
+#   services:
+#     - docker:20.10.16-dind
+#   <<: *deploy_ec2
+#   variables:
+#     SSH_PRIVATE_KEY: $ALPHA_SSH_PRIVATE_KEY
+#   script:
+#     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER@$ALPHA_EC2_INSTANCE_IP "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY"
+#     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER@$ALPHA_EC2_INSTANCE_IP "docker stop vendor || true && docker rm vendor || true"
+#     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER@$ALPHA_EC2_INSTANCE_IP "docker pull $ECR_REPOSITORY/$ALPHA_ECR_NAME:${CI_COMMIT_TAG}"
+#     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER@$ALPHA_EC2_INSTANCE_IP "docker run -d -p 3000:3000 --name vendor $ECR_REPOSITORY/$ALPHA_ECR_NAME:${CI_COMMIT_TAG}"
+#   rules: !reference [.ref, rule_alpha]
+
+beta_build_and_push_ecr:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  <<: *build_push_ecr
+  variables:
+    ENV_FILE: .env.beta
+  script:
+    - echo "" >> $ENV_FILE
+    - echo "VITE_REACT_APP_VERSION_TAG=${CI_COMMIT_TAG}" >> $ENV_FILE
+    - docker build --build-arg ENV_FILE=$ENV_FILE -t $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG} .
+    - docker push $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}
+  rules: !reference [.ref, rule_beta]
+
+beta_deploy_ec2:
+  stage: deploy
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  <<: *deploy_ec2
+  variables:
+    SSH_PRIVATE_KEY: $BETA_SSH_PRIVATE_KEY
+  script:
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY"
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "docker stop vendor || true && docker rm vendor || true"
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "docker pull $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}"
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "docker run -d -p 3000:3000 --name vendor $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}"
+  rules: !reference [.ref, rule_beta]

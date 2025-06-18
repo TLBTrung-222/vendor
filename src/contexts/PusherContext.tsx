@@ -26,7 +26,7 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
 
         // Now, get the vendor ID using the user's email
         const response = await fetch(
-          `https://alpha.be.atlas.galvanek-bau.de/gesys/vendors/contact-email?email=${encodeURIComponent(
+          `https://be.atlas.galvanek-bau.de/gesys/vendors/contact-email?email=${encodeURIComponent(
             userEmail
           )}`
         );
