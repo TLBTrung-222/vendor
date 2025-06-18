@@ -240,7 +240,7 @@ const translations = {
 };
 
 // API endpoints
-const API_BASE_URL = "https://alpha.be.atlas.galvanek-bau.de/gesys";
+const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL;
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
@@ -390,7 +390,7 @@ export default function VendorOnboardingFlow() {
 
     userChannel.bind(
       `vendor-${vendorId}-contract-${contracts[0].contract_id}`,
-      (data: any) => {
+      (data: any) => {        
         setContracts((prevContracts) =>
           prevContracts.map((contract) =>
             contract.contract_id === data.contract_id
@@ -409,7 +409,7 @@ export default function VendorOnboardingFlow() {
       }
     );
   }, [contracts]);
-
+  
   useEffect(() => {
     if (message) {
       if (message?.contract_data) {
@@ -445,6 +445,9 @@ export default function VendorOnboardingFlow() {
       } else if (message?.detail?.description) {
         console.log(message?.detail?.description);
         updateStep(1);
+      } else if (message?.detail?.description) {
+        console.log(message?.detail?.description);
+        updateStep(1);
         setOnboardingStatus(message?.detail?.description);
         setPmName(
           message?.detail?.updated_by?.first_name +
@@ -462,7 +465,9 @@ export default function VendorOnboardingFlow() {
       };
       setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
-  }, [message]);
+  }, [message]);  
+
+  console.log(onboardingStatus);  
 
   useEffect(() => {
     if (!vendorId) return;
@@ -1662,6 +1667,8 @@ export default function VendorOnboardingFlow() {
       setIsInfoUpdated(true);
       setIsEditing(false);
       setOnboardingStatus("");
+      setIsEditing(false);
+      setOnboardingStatus("");
     } catch (error) {
       console.error("Error updating vendor information:", error);
       alert("Failed to update vendor information. Please try again.");
@@ -2117,6 +2124,7 @@ export default function VendorOnboardingFlow() {
                 onClick={() => {
                   if (isEditing) {
                     setIsOpenModal(true);
+                    updateStep(step);
                     updateStep(step);
                   } else {
                     updateStep(2);
@@ -2921,8 +2929,7 @@ export default function VendorOnboardingFlow() {
                     </TabPanel>
                     <TabPanel value="2">
                       <Typography sx={{ mb: 2 }}>
-                        If you operate in specific postal code areas, switch to
-                        the Postcode tab.
+                        If you operate in specific postal code areas, switch to the Postcode tab.
                       </Typography>
                       <Box sx={{ maxHeight: 200, overflowY: "auto" }}>
                         {federalStates.map((state) => (
