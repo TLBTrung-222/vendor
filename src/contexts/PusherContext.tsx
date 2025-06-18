@@ -18,8 +18,7 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {
       try {
-        const user = localStorage.getItem("user");
-        const userEmail = user ? JSON.parse(user).email : localStorage.getItem("userEmail");
+        const userEmail = localStorage.getItem("userEmail");
 
         if (!userEmail) {
           throw new Error("User email not found");
