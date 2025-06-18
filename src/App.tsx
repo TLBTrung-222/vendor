@@ -54,6 +54,7 @@ function AppWithRouting() {
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken || "");
       localStorage.setItem("userEmail", decoded.user.email);      
+      
       localStorage.setItem(
         "vendorOnboardingStep",
         decoded.user.vendorOnboardingStep || "1"
