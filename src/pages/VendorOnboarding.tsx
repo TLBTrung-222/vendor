@@ -1896,7 +1896,7 @@ export default function VendorOnboardingFlow() {
       });
       localStorage.setItem("accessToken", result.data.access_token);
       localStorage.setItem("refreshToken", result.data.refresh_token);
-      window.location.href = "http://localhost:3000/vendor"
+      window.location.href = "https://montago.automate-solutions.net/"
     } catch (error) {
       console.error("Error redirecting", error);
     }
