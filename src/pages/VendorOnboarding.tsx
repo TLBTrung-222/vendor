@@ -1881,23 +1881,21 @@ export default function VendorOnboardingFlow() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const result = await response.json();
-      console.log(result);
       const cookies = new Cookies();
-      cookies.set("atk", result.access_token, {
+      cookies.set("atk", result.data.access_token, {
         path: "/",
         maxAge: 60 * 60 * 24,
         //secure: true,
         sameSite: "strict",
       });
-      cookies.set("rtk", result.refresh_token, {
+      cookies.set("rtk", result.data.refresh_token, {
         path: "/",
         maxAge: 60 * 60 * 24,
         //secure: true,
         sameSite: "strict",
       });
-      localStorage.setItem("accessToken", result.access_token);
-      localStorage.setItem("refreshToken", result.refresh_token);
-      localStorage.setItem("uif", vendorDetails)
+      localStorage.setItem("accessToken", result.data.access_token);
+      localStorage.setItem("refreshToken", result.data.refresh_token);
       window.location.href = "http://localhost:3000/vendor"
     } catch (error) {
       console.error("Error redirecting", error);
