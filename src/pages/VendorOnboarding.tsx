@@ -1903,7 +1903,7 @@ export default function VendorOnboardingFlow() {
       });
       localStorage.setItem("accessToken", result.data.access_token);
       localStorage.setItem("refreshToken", result.data.refresh_token);
-      window.location.href = "https://montago.automate-solutions.net/redirect?access=" + result.data.access_token + "&refresh=" + result.data.refresh_token;
+      window.location.href = "https://atlas.galvanek-bau.de/redirect?access=" + result.data.access_token + "&refresh=" + result.data.refresh_token;
     } catch (error) {
       console.error("Error redirecting", error);
     }
