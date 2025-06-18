@@ -60,6 +60,7 @@ function AppWithRouting() {
       );
 
       setIsAuthenticated(true);
+      navigate("/");
     }
   }, [navigate]);
 
