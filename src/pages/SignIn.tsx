@@ -75,7 +75,6 @@ export default function SignIn() {
   const [resetPasswordError, setResetPasswordError] = React.useState("");
   const [isResetPasswordError, setIsResetPasswordError] = React.useState(true);
 
-  const { login } = React.useContext(AuthContext);
   const navigate = useNavigate();
 
   const decodeToken = (token: string) => {
@@ -136,12 +135,6 @@ export default function SignIn() {
 
         // Store the user's email for use in the vendor onboarding flow
         localStorage.setItem("user", JSON.stringify(decoded.user));
-
-
-        // Notify auth context if needed
-        if (login) {
-          await login(email, password);
-        }
 
         // Redirect to the onboarding page
         navigate("/");
