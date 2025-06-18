@@ -1,81 +1,88 @@
+// App.tsx
 import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
+  useNavigate,
 } from "react-router-dom";
 import VendorOnboardingFlow from "./pages/VendorOnboarding.tsx";
-import SignIn from "./pages/SignIn.tsx";
 import ThemeProvider from "./theme-provider.tsx";
 import { useState, useEffect, createContext } from "react";
 import { PusherProvider } from "./contexts/PusherContext.tsx";
 import { UserProvider } from "./contexts/UserContext.tsx";
+import { Cookies } from "react-cookie";
 
-// Create an auth context
-export const AuthContext = createContext<{
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-}>({
+const COOKIE_ACCESS_TOKEN = "atk";
+const COOKIE_REFRESH_TOKEN = "rtk";
+
+const cookies = new Cookies();
+const getCookie = (name: string): string => cookies.get(name) || "";
+
+// Auth Context
+export const AuthContext = createContext<{ isAuthenticated: boolean }>({
   isAuthenticated: false,
-  login: async () => false,
-  logout: () => {},
 });
 
-export default function App() {
+// Move all logic into this child component
+function AppWithRouting() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
-  // Check if user is already authenticated based on tokens in localStorage
-  useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (accessToken) {
-      setIsAuthenticated(true);
+  const decodeToken = (token: string) => {
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return {};
     }
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    // Authentication is now handled in the SignIn component directly
-    // This is just for state management in the app
-    setIsAuthenticated(true);
-    return true;
   };
 
-  const logout = () => {
-    // Remove tokens from localStorage
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("vendorOnboardingStep");
+  useEffect(() => {
+    const accessToken = getCookie(COOKIE_ACCESS_TOKEN);
+    const refreshToken = getCookie(COOKIE_REFRESH_TOKEN);
 
-    setIsAuthenticated(false);
-  };
+    if (accessToken) {
+      const decoded = decodeToken(accessToken);
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem("userEmail", decoded.user.email);      
+      localStorage.setItem(
+        "vendorOnboardingStep",
+        decoded.user.vendorOnboardingStep || "1"
+      );
+
+      setIsAuthenticated(true);
+      navigate("/");
+    }
+  }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated }}>
       <ThemeProvider>
         <UserProvider>
           <PusherProvider>
-            <Router>
-              <Routes>
-                <Route
-                  path="/signin"
-                  element={isAuthenticated ? <Navigate to="/" /> : <SignIn />}
-                />
-                <Route
-                  path="/"
-                  element={
-                    isAuthenticated ? (
-                      <VendorOnboardingFlow />
-                    ) : (
-                      <Navigate to="/signin" />
-                    )
-                  }
-                />
-              </Routes>
-            </Router>
+            <Routes>
+              <Route path="/" element={<VendorOnboardingFlow />} />
+            </Routes>
           </PusherProvider>
         </UserProvider>
       </ThemeProvider>
     </AuthContext.Provider>
+  );
+}
+
+// Top-level component — now correctly wraps everything in <Router>
+export default function App() {
+  return (
+    <Router>
+      <AppWithRouting />
+    </Router>
   );
 }
