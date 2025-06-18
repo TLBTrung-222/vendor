@@ -15,7 +15,6 @@ import { styled } from "@mui/material/styles";
 import ColorModeSelect from "../utils/ColorModeSelect";
 import { AuthContext } from "../App";
 import { useNavigate } from "react-router-dom";
-import validates from "../utils/Validates";
 
 // Styled components remain the same...
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -77,7 +76,6 @@ export default function SignIn() {
     const [isResetPasswordError, setIsResetPasswordError] =
         React.useState(true);
 
-    const { login } = React.useContext(AuthContext);
     const navigate = useNavigate();
 
     const decodeToken = (token: string) => {
@@ -139,11 +137,6 @@ export default function SignIn() {
 
                 // Store the user's email for use in the vendor onboarding flow
                 localStorage.setItem("user", JSON.stringify(decoded.user));
-
-                // Notify auth context if needed
-                if (login) {
-                    await login(email, password);
-                }
 
                 // Redirect to the onboarding page
                 navigate("/");
@@ -223,7 +216,7 @@ export default function SignIn() {
 
         let isValid = true;
 
-        if (!email.value || !validates.validateEmail(email.value)) {
+        if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
             setEmailError(true);
             setEmailErrorMessage("Please enter a valid email address.");
             isValid = false;
@@ -232,7 +225,7 @@ export default function SignIn() {
             setEmailErrorMessage("");
         }
 
-        if (!password.value || !validates.validatePassword(password.value)) {
+        if (!password.value || password.value.length < 6) {
             setPasswordError(true);
             setPasswordErrorMessage(
                 "Password must be at least 6 characters long."

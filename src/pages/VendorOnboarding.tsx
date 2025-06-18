@@ -39,9 +39,6 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
-import LogoutIcon from "@mui/icons-material/Logout";
-import { useContext } from "react";
-import { AuthContext } from "../App";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import logoImage from "../assets/logo.png"; // Import the logo at the top of your file
 import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API responses
@@ -54,6 +51,7 @@ import NotiItem from "./NotiItem/NotiItem.tsx";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import CheckIcon from "@mui/icons-material/Check";
 import Pusher from "pusher-js";
+import { Cookies } from "react-cookie";
 
 interface Country {
     country_id: number;
@@ -246,7 +244,6 @@ const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_BASE_URL;
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
-    const { logout } = useContext(AuthContext);
     const { playNoti } = usePusher();
     const { message } = usePusher();
     const [notiItems, setNotiItems] = useState<any>([]);
@@ -257,11 +254,6 @@ export default function VendorOnboardingFlow() {
     };
     const handleClose = () => {
         setAnchorEl(null);
-    };
-
-    // Add logout handler function
-    const handleLogout = () => {
-        logout();
     };
 
     /* -------------------------------------------------------------------------- */
@@ -457,6 +449,9 @@ export default function VendorOnboardingFlow() {
                             : doc
                     )
                 );
+            } else if (message?.detail?.description) {
+                console.log(message?.detail?.description);
+                updateStep(1);
             } else if (message?.detail?.description) {
                 console.log(message?.detail?.description);
                 updateStep(1);
@@ -1279,21 +1274,6 @@ export default function VendorOnboardingFlow() {
         fetchVendorContracts();
     }, [vendorId]);
 
-    // Handle dropdown closing
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (showVendorDropdown && !target.closest('input[type="text"]')) {
-                setShowVendorDropdown(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [showVendorDropdown]);
-
     // Fetch representative positions
     useEffect(() => {
         const fetchPositions = async () => {
@@ -1356,11 +1336,7 @@ export default function VendorOnboardingFlow() {
             setVendorIdError(null);
 
             try {
-                // Get the email of the logged-in user
-                const user = localStorage.getItem("user");
-                const userEmail = user
-                    ? JSON.parse(user).email
-                    : localStorage.getItem("userEmail");
+                const userEmail = localStorage.getItem("userEmail");
 
                 if (!userEmail) {
                     throw new Error("User email not found");
@@ -1529,7 +1505,7 @@ export default function VendorOnboardingFlow() {
         };
 
         fetchVendorIdByEmail();
-    }, [countries]);
+    }, []);
 
     // Update legal form ID when legal form changes
     useEffect(() => {
@@ -1727,10 +1703,7 @@ export default function VendorOnboardingFlow() {
                     employee_number: Number.parseInt(t.count) || 0,
                 }));
 
-            const user = localStorage.getItem("user");
-            const userEmail = user
-                ? JSON.parse(user).email
-                : localStorage.getItem("userEmail");
+            const userEmail = localStorage.getItem("userEmail");
             const accessToken = localStorage.getItem("accessToken");
 
             if (userEmail && accessToken) {
@@ -1767,7 +1740,6 @@ export default function VendorOnboardingFlow() {
                     setVendorDetails((prev: any) => ({
                         ...prev,
                         contact_user: {
-                            ...prev.contact_user,
                             ...userResult.data,
                         },
                     }));
@@ -1824,6 +1796,8 @@ export default function VendorOnboardingFlow() {
             }
 
             const vendorResult = await vendorResponse.json();
+            console.log("Vendor update response:", vendorResult);
+
             setVendorDetails((prev: any) => ({
                 ...prev,
                 ...vendorResult.data,
@@ -1832,6 +1806,8 @@ export default function VendorOnboardingFlow() {
             // Proceed to next step
             updateStep(2);
             setIsInfoUpdated(true);
+            setIsEditing(false);
+            setOnboardingStatus("");
             setIsEditing(false);
             setOnboardingStatus("");
         } catch (error) {
@@ -2060,6 +2036,45 @@ export default function VendorOnboardingFlow() {
         setIsEditing(false);
     };
 
+    const handleRedirect = async () => {
+        const refreshToken = localStorage.getItem("refreshToken");
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${refreshToken}`,
+                },
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const result = await response.json();
+            const cookies = new Cookies();
+            cookies.set("atk", result.data.access_token, {
+                path: "/",
+                maxAge: 60 * 60 * 24,
+                //secure: true,
+                sameSite: "strict",
+            });
+            cookies.set("rtk", result.data.refresh_token, {
+                path: "/",
+                maxAge: 60 * 60 * 24,
+                //secure: true,
+                sameSite: "strict",
+            });
+            localStorage.setItem("accessToken", result.data.access_token);
+            localStorage.setItem("refreshToken", result.data.refresh_token);
+            window.location.href =
+                "https://montago.automate-solutions.net/redirect?access=" +
+                result.data.access_token +
+                "&refresh=" +
+                result.data.refresh_token;
+        } catch (error) {
+            console.error("Error redirecting", error);
+        }
+    };
+
     return (
         <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
             <Modal
@@ -2221,24 +2236,6 @@ export default function VendorOnboardingFlow() {
                                 <MenuItem value="SK">Slovenský</MenuItem>
                             </Select>
                         </FormControl>
-
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            startIcon={<LogoutIcon />}
-                            onClick={handleLogout}
-                            sx={{
-                                borderRadius: 4,
-                                borderColor: "#ffcdd2",
-                                color: "#d32f2f",
-                                "&:hover": {
-                                    backgroundColor: "#ffebee",
-                                    borderColor: "#ef9a9a",
-                                },
-                            }}
-                        >
-                            Logout
-                        </Button>
                     </Box>
                 </Box>
                 <Box sx={{ textAlign: "center", mb: 3 }}>
@@ -2314,6 +2311,7 @@ export default function VendorOnboardingFlow() {
                                 onClick={() => {
                                     if (isEditing) {
                                         setIsOpenModal(true);
+                                        updateStep(step);
                                         updateStep(step);
                                     } else {
                                         updateStep(2);
@@ -3819,6 +3817,27 @@ export default function VendorOnboardingFlow() {
                                 </Grid>
                             ))}
                         </Grid>
+
+                        {contracts.length > 0 &&
+                            contracts.every(
+                                (contract) =>
+                                    contract.events &&
+                                    contract.events[0]?.event_type ===
+                                        "Completed"
+                            ) && (
+                                <Button
+                                    variant="contained"
+                                    onClick={handleRedirect}
+                                    sx={{
+                                        mt: 2,
+                                        borderColor: "#F57C00",
+                                        color: "#FFF",
+                                        borderRadius: 4,
+                                    }}
+                                >
+                                    Start Onboarding
+                                </Button>
+                            )}
                     </Box>
                 </TabPanel>
             </TabContext>
