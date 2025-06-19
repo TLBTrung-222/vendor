@@ -2065,7 +2065,7 @@ export default function VendorOnboardingFlow() {
       localStorage.setItem("accessToken", result.data.access_token);
       localStorage.setItem("refreshToken", result.data.refresh_token);
       updateStep(1);
-      window.location.href = `${import.meta.env.REDIRECT_URL}/redirect?access=` + result.data.access_token + "&refresh=" + result.data.refresh_token;
+      window.location.href = `https://atlas.galvanek-bau.de/redirect?access=` + result.data.access_token + "&refresh=" + result.data.refresh_token;
     } catch (error) {
       console.error("Error redirecting", error);
     }
