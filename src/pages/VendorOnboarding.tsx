@@ -243,7 +243,8 @@ const translations = {
 
 // API endpoints
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const VITE_REACT_APP_REDIRECT_URL = import.meta.env.VITE_REACT_APP_REDIRECT_URL || "http://localhost:3000";
+const VITE_REACT_APP_REDIRECT_URL =
+  import.meta.env.VITE_REACT_APP_REDIRECT_URL || "http://localhost:3000";
 
 // Modify the component state
 export default function VendorOnboardingFlow() {
@@ -411,7 +412,54 @@ export default function VendorOnboardingFlow() {
         );
       }
     );
+
+    if (
+      contracts.every((item: any) => item.events[0]?.event_type === "Completed")
+    ) {
+      updateStep(1);
+      handleRedirect();
+    }
   }, [contracts]);
+
+  const handleRedirect = async () => {
+    const refreshToken = localStorage.getItem("refreshToken");
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${refreshToken}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const result = await response.json();
+      const cookies = new Cookies();
+      cookies.set("atk", result.data.access_token, {
+        path: "/",
+        maxAge: 60 * 60 * 24,
+        //secure: true,
+        sameSite: "strict",
+      });
+      cookies.set("rtk", result.data.refresh_token, {
+        path: "/",
+        maxAge: 60 * 60 * 24,
+        //secure: true,
+        sameSite: "strict",
+      });
+      localStorage.setItem("accessToken", result.data.access_token);
+      localStorage.setItem("refreshToken", result.data.refresh_token);
+      updateStep(1);
+      window.location.href =
+        `${VITE_REACT_APP_REDIRECT_URL}/redirect?access=` +
+        result.data.access_token +
+        "&refresh=" +
+        result.data.refresh_token;
+    } catch (error) {
+      console.error("Error redirecting", error);
+    }
+  };
 
   useEffect(() => {
     if (message) {
@@ -470,8 +518,6 @@ export default function VendorOnboardingFlow() {
       setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
   }, [message]);
-
-  console.log(onboardingStatus);
 
   useEffect(() => {
     if (!vendorId) return;
@@ -1891,58 +1937,6 @@ export default function VendorOnboardingFlow() {
     }
     setIsEditing(false);
   };
-
-  const handleRedirect = async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${refreshToken}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const result = await response.json();
-      const cookies = new Cookies();
-      cookies.set("atk", result.data.access_token, {
-        path: "/",
-        maxAge: 60 * 60 * 24,
-        //secure: true,
-        sameSite: "strict",
-      });
-      cookies.set("rtk", result.data.refresh_token, {
-        path: "/",
-        maxAge: 60 * 60 * 24,
-        //secure: true,
-        sameSite: "strict",
-      });
-      localStorage.setItem("accessToken", result.data.access_token);
-      localStorage.setItem("refreshToken", result.data.refresh_token);
-      updateStep(1);
-      window.location.href =
-        `${VITE_REACT_APP_REDIRECT_URL}/redirect?access=` +
-        result.data.access_token +
-        "&refresh=" +
-        result.data.refresh_token;
-    } catch (error) {
-      console.error("Error redirecting", error);
-    }
-  };
-
-  useEffect(() => {
-    if (
-      contracts.length > 0 &&
-      contracts.every(
-        (contract) =>
-          contract.events && contract.events[0]?.event_type === "Completed"
-      )
-    ) {
-      handleRedirect();
-    }
-  }, [contracts]);
 
   return (
     <Box sx={{ maxWidth: 1000, margin: "0 auto", p: 2 }}>
@@ -3370,6 +3364,17 @@ export default function VendorOnboardingFlow() {
               ))}
             </Grid>
           </Box>
+          {contracts.every(
+            (item: any) => item.events[0]?.event_type === "Completed"
+          ) && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleRedirect}
+            >
+              Start Onboarding
+            </Button>
+          )}
         </TabPanel>
       </TabContext>
       <Box
