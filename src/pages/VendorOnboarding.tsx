@@ -30,6 +30,7 @@ import {
   IconButton,
   Popover,
   Modal,
+  Link,
 } from "@mui/material";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
@@ -45,6 +46,7 @@ import HelpIcon from "@mui/icons-material/HelpOutline"; // Types for API respons
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { postcodeList } from "../utils/PostalcodeList.ts";
 import { usePusher } from "../contexts/PusherContext.tsx";
 import NotiItem from "./NotiItem/NotiItem.tsx";
@@ -418,6 +420,7 @@ export default function VendorOnboardingFlow() {
           {
             ...message.contract_data,
             events: [],
+            zoho_sign_url: message.contract_data.zoho_sign_url || "",
           },
         ]);
         updateStep(3);
@@ -1654,9 +1657,7 @@ export default function VendorOnboardingFlow() {
         throw new Error(`HTTP error! Status: ${vendorResponse.status}`);
       }
 
-      const vendorResult = await vendorResponse.json();
-      console.log("Vendor update response:", vendorResult);
-      
+      const vendorResult = await vendorResponse.json();      
       setVendorDetails((prev: any) => ({
         ...prev,
         ...vendorResult.data,
@@ -1728,9 +1729,27 @@ export default function VendorOnboardingFlow() {
     return (
       <Card variant="outlined" sx={{ borderRadius: 4, height: "100%" }}>
         <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-            {title}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {title}
+            </Typography>
+            <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 500,
+              color: isCompleted ? "#F57C00" : "#ffc107",
+            }}
+          >
+            {isCompleted ? "Completed" : "Waiting for Vendor Signature"}
           </Typography>
+          </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             {t.signatureProgress}
           </Typography>
@@ -1751,6 +1770,11 @@ export default function VendorOnboardingFlow() {
             <StatusIcon>
               <MailOutlineIcon sx={{ color: "#F57C00", fontSize: "1.25rem" }} />
               <Typography variant="caption">Received at {sentDate}</Typography>
+              <Link 
+              href={contract.zoho_sign_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >Click to Sign <OpenInNewIcon sx={{ color: "#F57C00", fontSize: "0.75rem" }} /></Link>
             </StatusIcon>
 
             <StatusIcon>
@@ -1782,15 +1806,7 @@ export default function VendorOnboardingFlow() {
             </StatusIcon>
           </Box>
 
-          <Typography
-            variant="body2"
-            sx={{
-              fontWeight: 500,
-              color: isCompleted ? "#F57C00" : "#ffc107",
-            }}
-          >
-            {isCompleted ? "Completed" : "Waiting for Vendor Signature"}
-          </Typography>
+          
         </CardContent>
       </Card>
     );
@@ -1903,6 +1919,7 @@ export default function VendorOnboardingFlow() {
       });
       localStorage.setItem("accessToken", result.data.access_token);
       localStorage.setItem("refreshToken", result.data.refresh_token);
+      updateStep(1);
       window.location.href = "https://atlas.galvanek-bau.de/redirect?access=" + result.data.access_token + "&refresh=" + result.data.refresh_token;
     } catch (error) {
       console.error("Error redirecting", error);
