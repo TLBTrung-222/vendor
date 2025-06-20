@@ -11,6 +11,7 @@ import { useState, useEffect, createContext } from "react";
 import { PusherProvider } from "./contexts/PusherContext.tsx";
 import { UserProvider } from "./contexts/UserContext.tsx";
 import { Cookies } from "react-cookie";
+import "./i18n";
 
 const COOKIE_ACCESS_TOKEN = "atk";
 const COOKIE_REFRESH_TOKEN = "rtk";
