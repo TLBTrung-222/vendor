@@ -87,7 +87,7 @@ beta_deploy_ec2:
   variables:
     SSH_PRIVATE_KEY: $BETA_SSH_PRIVATE_KEY
   script:
-    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "aws ecr get-login-password --region $BETA_AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY"
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY"
     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "docker stop vendor || true && docker rm vendor || true"
     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "docker pull $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}"
     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "docker run -d -p 3000:3000 --name vendor $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}"
