@@ -9,13 +9,13 @@ variables:
 
 .ref:
   only:
-    - tags
-  rule_latest:
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-release$/'
+      - tags
+  rule_production:
+      - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
   # rule_alpha:
-  #   - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-alpha-\d+$/'
+  #     - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-alpha-\d+$/'
   rule_beta:
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-beta-\d+$/'
+      - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-beta-\d+$/'
 
 .build_push_ecr: &build_push_ecr
   before_script:
@@ -92,3 +92,33 @@ beta_deploy_ec2:
     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "docker pull $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}"
     - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_BETA@$BETA_EC2_INSTANCE_IP "docker run -d -p 3000:3000 --name vendor $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}"
   rules: !reference [.ref, rule_beta]
+
+prod_build_and_push_ecr:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  <<: *build_push_ecr
+  variables:
+    ENV_FILE: .env.beta
+  script:
+    - echo "" >> $ENV_FILE
+    - echo "VITE_REACT_APP_VERSION_TAG=${CI_COMMIT_TAG}" >> $ENV_FILE
+    - docker build --build-arg ENV_FILE=$ENV_FILE -t $ECR_REPOSITORY/$PROD_ECR_NAME:${CI_COMMIT_TAG} .
+    - docker push $ECR_REPOSITORY/$PROD_ECR_NAME:${CI_COMMIT_TAG}
+  rules: !reference [.ref, rule_production]
+
+prod_deploy_ec2:
+  stage: deploy
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  <<: *deploy_ec2
+  variables:
+    SSH_PRIVATE_KEY: $PROD_SSH_PRIVATE_KEY
+  script:
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_PROD@$PROD_EC2_INSTANCE_IP "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY"
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_PROD@$PROD_EC2_INSTANCE_IP "docker stop vendor || true && docker rm vendor || true"
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_PROD@$PROD_EC2_INSTANCE_IP "docker pull $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}"
+    - ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $EC2_USER_PROD@$PROD_EC2_INSTANCE_IP "docker run -d -p 3000:3000 --name vendor $ECR_REPOSITORY/$BETA_ECR_NAME:${CI_COMMIT_TAG}"
+  rules: !reference [.ref, rule_production]
