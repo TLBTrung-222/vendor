@@ -532,7 +532,9 @@ export default function VendorOnboardingFlow() {
                     className="tooltip"
                   >
                     <Box sx={{ display: "flex", gap: 1 }} className="issued-by">
-                      <Typography variant="subtitle2">{t('IssuedBy')}: </Typography>
+                      <Typography variant="subtitle2">
+                        {t("IssuedBy")}:{" "}
+                      </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
                     <Box
@@ -540,7 +542,7 @@ export default function VendorOnboardingFlow() {
                       className="how-to-obtain"
                     >
                       <Typography variant="subtitle2">
-                        {t('HowToObtain')}:{" "}
+                        {t("HowToObtain")}:{" "}
                       </Typography>
                       <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
@@ -548,7 +550,9 @@ export default function VendorOnboardingFlow() {
                       sx={{ display: "flex", gap: 1 }}
                       className="appearance"
                     >
-                      <Typography variant="subtitle2">{t('Appearance')}: </Typography>
+                      <Typography variant="subtitle2">
+                        {t("Appearance")}:{" "}
+                      </Typography>
                       <Typography variant="body2">{appearance}</Typography>
                     </Box>
                   </Box>
@@ -587,7 +591,9 @@ export default function VendorOnboardingFlow() {
                     className="tooltip"
                   >
                     <Box sx={{ display: "flex", gap: 1 }} className="issued-by">
-                      <Typography variant="subtitle2">{t('IssuedBy')}: </Typography>
+                      <Typography variant="subtitle2">
+                        {t("IssuedBy")}:{" "}
+                      </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
                     <Box
@@ -595,7 +601,7 @@ export default function VendorOnboardingFlow() {
                       className="how-to-obtain"
                     >
                       <Typography variant="subtitle2">
-                        {t('HowToObtain')}:{" "}
+                        {t("HowToObtain")}:{" "}
                       </Typography>
                       <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
@@ -603,7 +609,9 @@ export default function VendorOnboardingFlow() {
                       sx={{ display: "flex", gap: 1 }}
                       className="appearance"
                     >
-                      <Typography variant="subtitle2">{t('Appearance')}: </Typography>
+                      <Typography variant="subtitle2">
+                        {t("Appearance")}:{" "}
+                      </Typography>
                       <Typography variant="body2">{appearance}</Typography>
                     </Box>
                   </Box>
@@ -641,7 +649,9 @@ export default function VendorOnboardingFlow() {
                     className="tooltip"
                   >
                     <Box sx={{ display: "flex", gap: 1 }} className="issued-by">
-                      <Typography variant="subtitle2">{t('IssuedBy')}: </Typography>
+                      <Typography variant="subtitle2">
+                        {t("IssuedBy")}:{" "}
+                      </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
                     <Box
@@ -649,7 +659,7 @@ export default function VendorOnboardingFlow() {
                       className="how-to-obtain"
                     >
                       <Typography variant="subtitle2">
-                        {t('HowToObtain')}:{" "}
+                        {t("HowToObtain")}:{" "}
                       </Typography>
                       <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
@@ -657,7 +667,9 @@ export default function VendorOnboardingFlow() {
                       sx={{ display: "flex", gap: 1 }}
                       className="appearance"
                     >
-                      <Typography variant="subtitle2">{t('Appearance')}: </Typography>
+                      <Typography variant="subtitle2">
+                        {t("Appearance")}:{" "}
+                      </Typography>
                       <Typography variant="body2">{appearance}</Typography>
                     </Box>
                   </Box>
@@ -695,7 +707,9 @@ export default function VendorOnboardingFlow() {
                     className="tooltip"
                   >
                     <Box sx={{ display: "flex", gap: 1 }} className="issued-by">
-                      <Typography variant="subtitle2">{t('IssuedBy')}: </Typography>
+                      <Typography variant="subtitle2">
+                        {t("IssuedBy")}:{" "}
+                      </Typography>
                       <Typography variant="body2">{issued_by}</Typography>
                     </Box>
                     <Box
@@ -703,7 +717,7 @@ export default function VendorOnboardingFlow() {
                       className="how-to-obtain"
                     >
                       <Typography variant="subtitle2">
-                        {t('HowToObtain')}:{" "}
+                        {t("HowToObtain")}:{" "}
                       </Typography>
                       <Typography variant="body2">{how_to_obtain}</Typography>
                     </Box>
@@ -711,7 +725,9 @@ export default function VendorOnboardingFlow() {
                       sx={{ display: "flex", gap: 1 }}
                       className="appearance"
                     >
-                      <Typography variant="subtitle2">{t('Appearance')}: </Typography>
+                      <Typography variant="subtitle2">
+                        {t("Appearance")}:{" "}
+                      </Typography>
                       <Typography variant="body2">{appearance}</Typography>
                     </Box>
                   </Box>
@@ -840,14 +856,14 @@ export default function VendorOnboardingFlow() {
               {document?.description}
               <br />
               <Typography variant="caption" color="text.secondary">
-                {t('RejectedBy')}{" "}
+                {t("RejectedBy")}{" "}
                 <b>
                   {document?.updated_by.first_name +
                     " " +
                     " " +
                     document?.updated_by.last_name || "N/A"}
                 </b>{" "}
-                {t('on')}{" "}
+                {t("on")}{" "}
                 <b>
                   {new Date(document?.updated_at || "").toLocaleDateString()}
                 </b>
@@ -1203,7 +1219,9 @@ export default function VendorOnboardingFlow() {
       setVendorIdError(null);
 
       try {
-        const userEmail = localStorage.getItem("userEmail");
+        // const userEmail = localStorage?.getItem("userEmail");
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const userEmail = urlSearchParams.get("userEmail");
 
         if (!userEmail) {
           throw new Error("User email not found");
@@ -1747,13 +1765,15 @@ export default function VendorOnboardingFlow() {
           >
             <StatusIcon>
               <MailOutlineIcon sx={{ color: "#F57C00", fontSize: "1.25rem" }} />
-              <Typography variant="caption">{t('receivedAt')} {sentDate}</Typography>
+              <Typography variant="caption">
+                {t("receivedAt")} {sentDate}
+              </Typography>
               <Link
                 href={contract.zoho_sign_url}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('clickToSign')}{" "}
+                {t("clickToSign")}{" "}
                 <OpenInNewIcon sx={{ color: "#F57C00", fontSize: "0.75rem" }} />
               </Link>
             </StatusIcon>
@@ -1767,8 +1787,8 @@ export default function VendorOnboardingFlow() {
               />
               <Typography variant="caption">
                 {progressValue >= 66
-                  ? `${t('viewed')} ${t('at')} ${viewDate}`
-                  : `${t('viewed')}`}
+                  ? `${t("viewed")} ${t("at")} ${viewDate}`
+                  : `${t("viewed")}`}
               </Typography>
             </StatusIcon>
 
@@ -1891,10 +1911,10 @@ export default function VendorOnboardingFlow() {
           }}
         >
           <Typography id="modal-modal-title" variant="h6" component="h2">
-            {t('infoNotSaved')}
+            {t("infoNotSaved")}
           </Typography>
           <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-            {t('warningMessage')}
+            {t("warningMessage")}
           </Typography>
           <Box
             sx={{
@@ -1913,7 +1933,7 @@ export default function VendorOnboardingFlow() {
                 borderRadius: 4,
               }}
             >
-              {t('close')}
+              {t("close")}
             </Button>
             <Button
               variant="contained"
@@ -1929,7 +1949,7 @@ export default function VendorOnboardingFlow() {
                 borderRadius: 4,
               }}
             >
-              {t('continue')}
+              {t("continue")}
             </Button>
           </Box>
         </Box>
@@ -1991,7 +2011,7 @@ export default function VendorOnboardingFlow() {
             >
               <Box>
                 {notiItems.length === 0 ? (
-                  <MenuItem disabled>{t('noNewNotifications')}</MenuItem>
+                  <MenuItem disabled>{t("noNewNotifications")}</MenuItem>
                 ) : (
                   notiItems.map((item: any) => (
                     <MenuItem key={item.key} onClick={handleClose}>
@@ -2008,15 +2028,22 @@ export default function VendorOnboardingFlow() {
                 sx={{ borderRadius: 4 }}
               >
                 {languagesList.map((item, index) => {
-                return (
-                  <MenuItem value={item.value} key={index}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <img width="20" height="20" src={item.icon} alt="icon" />
-                      {t(item.label)}
-                    </Box>
-                  </MenuItem>
-                );
-              })}
+                  return (
+                    <MenuItem value={item.value} key={index}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <img
+                          width="20"
+                          height="20"
+                          src={item.icon}
+                          alt="icon"
+                        />
+                        {t(item.label)}
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
           </Box>
@@ -2027,7 +2054,7 @@ export default function VendorOnboardingFlow() {
             component="h1"
             sx={{ fontWeight: 600, color: "text.primary" }}
           >
-            {t('welcome')}
+            {t("welcome")}
           </Typography>
           {companyName && (
             <Typography variant="body2" color="text.secondary">
@@ -2042,7 +2069,7 @@ export default function VendorOnboardingFlow() {
             sx={{ borderRadius: 4 }}
           />
           <Typography variant="caption" color="text.secondary">
-            {t('step')} {step}/3: {t('step1')}
+            {t("step")} {step}/3: {t("step1")}
           </Typography>
         </StepperContainer>{" "}
       </Box>
@@ -2078,7 +2105,7 @@ export default function VendorOnboardingFlow() {
                 sx={{
                   textTransform: "none",
                 }}
-                label={t('step1')}
+                label={t("step1")}
                 value="1"
                 onClick={() => updateStep(1)}
               />
@@ -2086,7 +2113,7 @@ export default function VendorOnboardingFlow() {
                 sx={{
                   textTransform: "none",
                 }}
-                label={t('step2')}
+                label={t("step2")}
                 value="2"
                 onClick={() => {
                   if (isEditing) {
@@ -2107,7 +2134,7 @@ export default function VendorOnboardingFlow() {
                 sx={{
                   textTransform: "none",
                 }}
-                label={t('step3')}
+                label={t("step3")}
                 value="3"
                 onClick={() => updateStep(3)}
                 disabled={
@@ -2137,7 +2164,7 @@ export default function VendorOnboardingFlow() {
                     },
                   }}
                 >
-                  {t('cancel')}
+                  {t("cancel")}
                 </Button>
               ) : null}
               <Button
@@ -2162,7 +2189,7 @@ export default function VendorOnboardingFlow() {
                 {isSubmitting ? (
                   <CircularProgress size={24} color="inherit" />
                 ) : (
-                  t('update')
+                  t("update")
                 )}
               </Button>
             </Box>
@@ -2185,7 +2212,7 @@ export default function VendorOnboardingFlow() {
                 },
               }}
             >
-              {t('continue')}
+              {t("continue")}
             </Button>
           )}
         </Box>
@@ -2201,7 +2228,7 @@ export default function VendorOnboardingFlow() {
               border: "1px solid #FFE0B2",
             }}
           >
-            {t('infoBox')}
+            {t("infoBox")}
           </Alert>
 
           {onboardingStatus && (
@@ -2214,7 +2241,7 @@ export default function VendorOnboardingFlow() {
             >
               <Typography>{onboardingStatus} </Typography>
               <Typography variant="caption" color="text.secondary">
-                {t('RejectedBy')} <b>{pmName}</b> {t("on")} <b>{updateDate}</b>
+                {t("RejectedBy")} <b>{pmName}</b> {t("on")} <b>{updateDate}</b>
               </Typography>
             </Alert>
           )}
@@ -2227,13 +2254,13 @@ export default function VendorOnboardingFlow() {
                     id="country-label"
                     sx={{ display: "flex", gap: 0.5 }}
                   >
-                    {t('country')}
+                    {t("country")}
                     <Typography color="error.main">*</Typography>
                   </InputLabel>
                   <Select
                     labelId="country-label"
                     value={country}
-                    label={t('country') + "**"}
+                    label={t("country") + "**"}
                     onChange={handleCountryChange}
                     sx={{ borderRadius: 4 }}
                     disabled={
@@ -2241,7 +2268,7 @@ export default function VendorOnboardingFlow() {
                     }
                   >
                     <MenuItem value="">
-                      <em>{t('country')} *</em>
+                      <em>{t("country")} *</em>
                     </MenuItem>
                     {countries.map((country) => (
                       <MenuItem key={country.country_id} value={country.name}>
@@ -2259,7 +2286,7 @@ export default function VendorOnboardingFlow() {
                     >
                       <CircularProgress size={16} sx={{ mr: 1 }} />
                       <Typography variant="caption" color="text.secondary">
-                        {t('loadingCountries')}
+                        {t("loadingCountries")}
                       </Typography>
                     </Box>
                   )}
@@ -2285,7 +2312,7 @@ export default function VendorOnboardingFlow() {
                           gap: 0.5,
                         }}
                       >
-                        {t('company')}
+                        {t("company")}
                         <Typography color="error.main">*</Typography>
                       </Box>
                     }
@@ -2309,14 +2336,14 @@ export default function VendorOnboardingFlow() {
                     id="legal-form-label"
                     sx={{ display: "flex", gap: 0.5 }}
                   >
-                    {t('legalForm')}
+                    {t("legalForm")}
                     <Typography color="error.main">*</Typography>
                   </InputLabel>
                   <Select
                     labelId="legal-form-label"
                     value={legalForm}
                     required
-                    label={t('legalForm')}
+                    label={t("legalForm")}
                     onChange={(e) => {
                       setLegalForm(e.target.value);
                       const selectedForm = legalForms.find(
@@ -2333,7 +2360,7 @@ export default function VendorOnboardingFlow() {
                     disabled={loadingLegalForms || !country}
                   >
                     <MenuItem value="">
-                      <em>{t('legalForm')}</em>
+                      <em>{t("legalForm")}</em>
                     </MenuItem>
                     {legalForms.map((form) => (
                       <MenuItem key={form.legal_form_id} value={form.title}>
@@ -2351,7 +2378,7 @@ export default function VendorOnboardingFlow() {
                     >
                       <CircularProgress size={16} sx={{ mr: 1 }} />
                       <Typography variant="caption" color="text.secondary">
-                        {t('loadingLegalForms')}
+                        {t("loadingLegalForms")}
                       </Typography>
                     </Box>
                   )}
@@ -2370,7 +2397,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="tax-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('taxId')}
+                      {t("taxId")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -2392,7 +2419,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="street-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('street')}
+                      {t("street")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -2414,7 +2441,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="house-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('houseNr')}
+                      {t("houseNr")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -2436,7 +2463,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="house-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('apartmentNr')}
+                      {t("apartmentNr")}
                       {country === "Poland" && (
                         <Typography color="error.main">*</Typography>
                       )}
@@ -2460,7 +2487,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="zip-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('zip')}
+                      {t("zip")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -2482,7 +2509,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="city-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('city')}
+                      {t("city")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -2504,7 +2531,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="website-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('website')}
+                      {t("website")}
                     </Box>
                   }
                   value={website}
@@ -2523,7 +2550,7 @@ export default function VendorOnboardingFlow() {
               {/* Employees per Trade section */}
               <Grid item xs={12}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
-                  {t('tradeTitle')}
+                  {t("tradeTitle")}
                 </Typography>
                 {loadingVendorDetails ? (
                   <Box
@@ -2535,7 +2562,7 @@ export default function VendorOnboardingFlow() {
                   >
                     <CircularProgress size={20} sx={{ mr: 1 }} />
                     <Typography variant="body2">
-                      {t('loadingTrades')}
+                      {t("loadingTrades")}
                     </Typography>
                   </Box>
                 ) : vendorDetailsError ? (
@@ -2560,7 +2587,7 @@ export default function VendorOnboardingFlow() {
                               gap: 0.5,
                             }}
                           >
-                            {t('selectTrade')}
+                            {t("selectTrade")}
                             <Typography color="error.main">*</Typography>
                           </InputLabel>
                           <Select
@@ -2575,7 +2602,7 @@ export default function VendorOnboardingFlow() {
                             disabled={!!item.gesys_gewerk_id || loadingTrades}
                           >
                             <MenuItem value="">
-                              <em>{t('selectTrade')}</em>
+                              <em>{t("selectTrade")}</em>
                             </MenuItem>
                             {tradeOptions
                               .filter((option) => {
@@ -2611,7 +2638,7 @@ export default function VendorOnboardingFlow() {
                                 gap: 0.5,
                               }}
                             >
-                              {t('tradeCount')}
+                              {t("tradeCount")}
                               <Typography color="error.main">*</Typography>
                             </Box>
                           }
@@ -2668,14 +2695,14 @@ export default function VendorOnboardingFlow() {
                     },
                   }}
                 >
-                  {t('addTrade')}
+                  {t("addTrade")}
                 </Button>
               </Grid>
 
               {/* Regions Covered field - Multiple Select */}
               <Grid item xs={12}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
-                  {t('regions')}
+                  {t("regions")}
                 </Typography>
                 <Box
                   border={1}
@@ -2724,7 +2751,7 @@ export default function VendorOnboardingFlow() {
                                 fontSize: 20,
                               }}
                             />
-                            {t('postcode')}
+                            {t("postcode")}
                           </span>
                         }
                         value="1"
@@ -2753,7 +2780,7 @@ export default function VendorOnboardingFlow() {
                                 fontSize: 20,
                               }}
                             />
-                            {t('states')}
+                            {t("states")}
                           </span>
                         }
                         value="2"
@@ -2783,7 +2810,7 @@ export default function VendorOnboardingFlow() {
                                 fontSize: 20,
                               }}
                             />
-                            {t('nationwide')}
+                            {t("nationwide")}
                           </span>
                         }
                         value="3"
@@ -2791,7 +2818,7 @@ export default function VendorOnboardingFlow() {
                     </TabList>
                     <TabPanel value="1">
                       <Typography sx={{ mb: 2 }}>
-                        {t('postcodeInfo')}
+                        {t("postcodeInfo")}
                       </Typography>
                       <FormControl variant="outlined" fullWidth size="small">
                         {/* <InputLabel>Enter postcode</InputLabel> */}
@@ -2816,7 +2843,7 @@ export default function VendorOnboardingFlow() {
                                   code: e.target.value,
                                 });
                               }}
-                              label={t('selectPostcode')}
+                              label={t("selectPostcode")}
                               variant="outlined"
                               InputProps={{
                                 ...params.InputProps,
@@ -2852,7 +2879,7 @@ export default function VendorOnboardingFlow() {
                                         });
                                       }}
                                     >
-                                      {t('add')}
+                                      {t("add")}
                                     </Button>
                                     {params.InputProps.endAdornment}
                                   </InputAdornment>
@@ -2908,7 +2935,7 @@ export default function VendorOnboardingFlow() {
                                 }}
                               />
                               <Typography>
-                                {t('Radius')}: {postalCode[index].radius} km
+                                {t("Radius")}: {postalCode[index].radius} km
                               </Typography>
                             </Box>
                             <Button
@@ -2922,15 +2949,13 @@ export default function VendorOnboardingFlow() {
                                 color: "red",
                               }}
                             >
-                              {t('remove')}
+                              {t("remove")}
                             </Button>
                           </Box>
                         ))}
                     </TabPanel>
                     <TabPanel value="2">
-                      <Typography sx={{ mb: 2 }}>
-                        {t('stateInfo')}
-                      </Typography>
+                      <Typography sx={{ mb: 2 }}>{t("stateInfo")}</Typography>
                       <Box
                         sx={{
                           maxHeight: 200,
@@ -2976,7 +3001,7 @@ export default function VendorOnboardingFlow() {
                               variant="caption"
                               color="text.secondary"
                             >
-                              {t('loadingRegions')}
+                              {t("loadingRegions")}
                             </Typography>
                           </Box>
                         )}
@@ -3020,9 +3045,7 @@ export default function VendorOnboardingFlow() {
                         />
                       ))}
                     </TabPanel>
-                    <TabPanel value="3">
-                      {t('nationwideInfo')}
-                    </TabPanel>
+                    <TabPanel value="3">{t("nationwideInfo")}</TabPanel>
                   </TabContext>
                 </Box>
               </Grid>
@@ -3041,7 +3064,7 @@ export default function VendorOnboardingFlow() {
                       id="first-name-label"
                       sx={{ display: "flex", gap: 0.5 }}
                     >
-                      {t('firstName')}
+                      {t("firstName")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -3066,7 +3089,7 @@ export default function VendorOnboardingFlow() {
                       id="last-name-label"
                       sx={{ display: "flex", gap: 0.5 }}
                     >
-                      {t('lastName')}
+                      {t("lastName")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -3088,7 +3111,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="email-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('email')}
+                      {t("email")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -3111,7 +3134,7 @@ export default function VendorOnboardingFlow() {
                   fullWidth
                   label={
                     <Box id="phone-label" sx={{ display: "flex", gap: 0.5 }}>
-                      {t('phone')}
+                      {t("phone")}
                       <Typography color="error.main">*</Typography>
                     </Box>
                   }
@@ -3134,7 +3157,7 @@ export default function VendorOnboardingFlow() {
                     id="position-label"
                     sx={{ display: "flex", gap: 0.5 }}
                   >
-                    {t('position')}
+                    {t("position")}
                     <Typography color="error.main">*</Typography>
                   </InputLabel>
                   <Select
@@ -3148,7 +3171,7 @@ export default function VendorOnboardingFlow() {
                           gap: 0.5,
                         }}
                       >
-                        {t('position')}
+                        {t("position")}
                         <Typography color="error.main">*</Typography>
                       </Box>
                     }
@@ -3181,7 +3204,7 @@ export default function VendorOnboardingFlow() {
                     >
                       <CircularProgress size={16} sx={{ mr: 1 }} />
                       <Typography variant="caption" color="text.secondary">
-                        {t('loadingPositions')}
+                        {t("loadingPositions")}
                       </Typography>
                     </Box>
                   )}
@@ -3212,7 +3235,7 @@ export default function VendorOnboardingFlow() {
               >
                 <CircularProgress />
                 <Typography sx={{ mt: 2 }}>
-                  {t('loadingRequiredDocuments')}
+                  {t("loadingRequiredDocuments")}
                 </Typography>
               </Box>
             ) : documentError ? (
@@ -3230,7 +3253,7 @@ export default function VendorOnboardingFlow() {
               >
                 <CircularProgress />
                 <Typography sx={{ mt: 2 }}>
-                  {t('loadingRequiredDocuments')}
+                  {t("loadingRequiredDocuments")}
                 </Typography>
               </Box>
             ) : (
@@ -3262,9 +3285,9 @@ export default function VendorOnboardingFlow() {
                   color: "text.primary",
                 }}
               >
-                {t('successMessage')}
+                {t("successMessage")}
                 <br />
-                {t('readyForOnboarding')}
+                {t("readyForOnboarding")}
               </Alert>
             ) : (
               <Alert
@@ -3279,12 +3302,10 @@ export default function VendorOnboardingFlow() {
               >
                 {contracts.length === 0 ? (
                   <Typography variant="body2">
-                    {t('waitingForContracts')}
+                    {t("waitingForContracts")}
                   </Typography>
                 ) : (
-                  <Typography variant="body2">
-                    {t('reviewMessage')}
-                  </Typography>
+                  <Typography variant="body2">{t("reviewMessage")}</Typography>
                 )}
               </Alert>
             )}
@@ -3319,7 +3340,7 @@ export default function VendorOnboardingFlow() {
         }}
       >
         <Typography variant="body2">
-          {t('version')}: {import.meta.env.VITE_REACT_APP_VERSION_TAG}
+          {t("version")}: {import.meta.env.VITE_REACT_APP_VERSION_TAG}
         </Typography>
       </Box>
     </Box>

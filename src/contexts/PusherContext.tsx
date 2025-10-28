@@ -18,7 +18,8 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {
       try {
-        const userEmail = localStorage.getItem("userEmail");
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const userEmail = urlSearchParams.get("userEmail");
 
         if (!userEmail) {
           throw new Error("User email not found");
@@ -26,9 +27,9 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
 
         // Now, get the vendor ID using the user's email
         const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/vendors/contact-email?email=${encodeURIComponent(
-            userEmail
-          )}`
+          `${
+            import.meta.env.VITE_API_BASE_URL
+          }/vendors/contact-email?email=${encodeURIComponent(userEmail)}`
         );
 
         if (!response.ok) {
@@ -49,7 +50,7 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
     if (!vendorId) {
       fetchVendorIdByEmail();
     }
-  }, [vendorId]);    
+  }, [vendorId]);
 
   // Create a reference to the Pusher instance
   const pusherRef = useRef<Pusher | null>(null);
@@ -78,7 +79,7 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
     //   userChannel.unbind_all();
     //   userChannel.unsubscribe();
     // };
-  }, [vendorId]);  
+  }, [vendorId]);
 
   const playNoti = async () => {
     try {
