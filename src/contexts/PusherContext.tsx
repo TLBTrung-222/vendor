@@ -19,7 +19,7 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
     const fetchVendorIdByEmail = async () => {
       try {
         const urlSearchParams = new URLSearchParams(window.location.search);
-        const userEmail = urlSearchParams.get("userEmail");
+        const userEmail = urlSearchParams.get("userEmail") || localStorage?.getItem("userEmail");
 
         if (!userEmail) {
           throw new Error("User email not found");

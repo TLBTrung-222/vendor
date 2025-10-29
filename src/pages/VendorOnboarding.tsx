@@ -252,7 +252,7 @@ export default function VendorOnboardingFlow() {
   >([]);
   const [newPostalCode, setNewPostalCode] = useState({
     code: "",
-    radius: 1,
+    radius: 100,
   });
   const [postalCodes, setPostalCodes] = useState<PostalCode[]>([]);
 
@@ -509,7 +509,6 @@ export default function VendorOnboardingFlow() {
     const status = document?.document_status?.title || "Not Uploaded";
     const fileName = document?.name || "";
     const url = document?.url || "";
-    const isUploading = uploadingDoc[type_id] || false;
     const showSuccess = uploadSuccess[type_id] || false;
     const selectedFile = selectedFiles[type_id];
 
@@ -888,7 +887,8 @@ export default function VendorOnboardingFlow() {
                   onChange={(e) => {
                     const files = (e.target as HTMLInputElement).files;
                     if (files && files.length > 0) {
-                      handleFileSelection(type_id, files[0]);
+                      const file = files[0];
+                      handleDocumentUpload(type_id, file);
                     }
                   }}
                 />
@@ -920,27 +920,6 @@ export default function VendorOnboardingFlow() {
                   </Typography>
                 </Button>
               </label>
-
-              <Button
-                variant="contained"
-                disabled={isUploading || !selectedFile || styles.buttonDisabled}
-                onClick={() => handleDocumentUpload(type_id)}
-                sx={{
-                  bgcolor: styles.buttonDisabled ? "#bdbdbd" : "#F57C00",
-                  color: "#fff",
-                  "&:hover": {
-                    bgcolor: styles.buttonDisabled ? "#bdbdbd" : "#EF6C00",
-                  },
-                  borderRadius: 4,
-                  //whiteSpace: "nowrap",
-                }}
-              >
-                {isUploading ? (
-                  <CircularProgress size={24} sx={{ color: "#fff" }} />
-                ) : (
-                  t("upload")
-                )}
-              </Button>
             </Box>
           )}
 
@@ -962,13 +941,11 @@ export default function VendorOnboardingFlow() {
     }));
   };
 
-  const handleDocumentUpload = async (typeId: number) => {
+  const handleDocumentUpload = async (typeId: number, file: File | null) => {
     if (!vendorId) {
       alert("Vendor ID not available. Please try again later.");
       return;
     }
-
-    const file = selectedFiles[typeId];
 
     if (!file) {
       alert("Please select a file to upload");
@@ -1117,7 +1094,7 @@ export default function VendorOnboardingFlow() {
       setLoadingTrades(true);
       setTradesError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/gewerks`);
+        const response = await fetch(`${API_BASE_URL}/scope-services/gewerk/available`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -1221,7 +1198,7 @@ export default function VendorOnboardingFlow() {
       try {
         // const userEmail = localStorage?.getItem("userEmail");
         const urlSearchParams = new URLSearchParams(window.location.search);
-        const userEmail = urlSearchParams.get("userEmail");
+        const userEmail = urlSearchParams.get("userEmail") || localStorage?.getItem("userEmail");
 
         if (!userEmail) {
           throw new Error("User email not found");
@@ -2826,13 +2803,18 @@ export default function VendorOnboardingFlow() {
                           freeSolo
                           options={postalCodes}
                           filterOptions={filterOptions}
-                          value={newPostalCode.code}
-                          onChange={(_e, newValue: any) => {
-                            setNewPostalCode({
-                              ...newPostalCode,
-                              code: newValue?.code,
-                            });
+                          value={null}
+                          onChange={(e, newValue: any) => {
+                            if (!newValue) return;
                             setIsEditing(true);
+                            setPostalCode((prev) => [
+                              ...prev,
+                              {
+                                code: newValue?.code,
+                                radius: newValue?.radius || 100,
+                              },
+                            ]);
+                            setNewPostalCode({ code: "", radius: 100 });
                           }}
                           renderInput={(params) => (
                             <TextField
@@ -2845,46 +2827,6 @@ export default function VendorOnboardingFlow() {
                               }}
                               label={t("selectPostcode")}
                               variant="outlined"
-                              InputProps={{
-                                ...params.InputProps,
-                                endAdornment: (
-                                  <InputAdornment position="end">
-                                    <Button
-                                      onClick={() => {
-                                        if (!newPostalCode.code) {
-                                          alert("Please enter a postcode");
-                                          return;
-                                        }
-                                        if (
-                                          !postalCodes.find(
-                                            (pc) =>
-                                              pc.code === newPostalCode.code
-                                          )?.code
-                                        ) {
-                                          alert(
-                                            "Please enter a valid postcode"
-                                          );
-                                          return;
-                                        }
-                                        setPostalCode((prev) => [
-                                          ...prev,
-                                          {
-                                            code: newPostalCode.code,
-                                            radius: newPostalCode.radius,
-                                          },
-                                        ]);
-                                        setNewPostalCode({
-                                          code: "",
-                                          radius: 1,
-                                        });
-                                      }}
-                                    >
-                                      {t("add")}
-                                    </Button>
-                                    {params.InputProps.endAdornment}
-                                  </InputAdornment>
-                                ),
-                              }}
                             />
                           )}
                         />
