@@ -1198,7 +1198,9 @@ export default function VendorOnboardingFlow() {
       try {
         // const userEmail = localStorage?.getItem("userEmail");
         const urlSearchParams = new URLSearchParams(window.location.search);
-        const userEmail = urlSearchParams.get("userEmail") || localStorage?.getItem("userEmail");
+        const userEmail =
+          urlSearchParams.get("userEmail") ||
+          localStorage?.getItem("userEmail");
 
         if (!userEmail) {
           throw new Error("User email not found");
@@ -2577,6 +2579,14 @@ export default function VendorOnboardingFlow() {
                             }}
                             sx={{ borderRadius: 4 }}
                             disabled={!!item.gesys_gewerk_id || loadingTrades}
+                            MenuProps={{
+                              PaperProps: {
+                                style: {
+                                  maxHeight: 300,
+                                  overflowY: "auto",
+                                },
+                              },
+                            }}
                           >
                             <MenuItem value="">
                               <em>{t("selectTrade")}</em>
