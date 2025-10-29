@@ -1094,7 +1094,7 @@ export default function VendorOnboardingFlow() {
       setLoadingTrades(true);
       setTradesError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/scope-services/gewerk/available`);
+        const response = await fetch(`${API_BASE_URL}/gewerks/assign`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
