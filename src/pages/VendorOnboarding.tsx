@@ -56,6 +56,7 @@ import Pusher from "pusher-js";
 import { Cookies } from "react-cookie";
 import { useTranslation } from "react-i18next";
 import { languagesList } from "../utils/Languages";
+import dayjs from "dayjs";
 
 interface Country {
   country_id: number;
@@ -299,7 +300,6 @@ export default function VendorOnboardingFlow() {
     null
   );
   const [positionsError, setPositionsError] = useState<string | null>(null);
-  const [showVendorDropdown, setShowVendorDropdown] = useState(false);
   const [selectedRegions, setSelectedRegions] = useState<number[]>([]);
   const [vendorId, setVendorId] = useState<number | null>(null);
   const [isLoadingVendorId, setIsLoadingVendorId] = useState(false);
@@ -501,6 +501,112 @@ export default function VendorOnboardingFlow() {
 
     fetchVendorDocuments();
   }, [vendorId, step]);
+
+  useEffect(() => {
+    const handleDocumentUploadOnEvent = async () => {
+      if (!vendorId) {
+        alert("Vendor ID not available. Please try again later.");
+        return;
+      }
+
+      // Find the first selected file entry
+      const typeId = Object.keys(selectedFiles).find(
+        (key) => selectedFiles[parseInt(key)] !== null
+      );
+      if (!typeId) {
+        // nothing to upload
+        return;
+      }
+
+      const file = selectedFiles[parseInt(typeId)];
+      if (!file) {
+        return;
+      }
+
+      const name = file.name;
+      setUploadingDoc((prev) => ({ ...prev, [typeId]: true }));
+      setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("vendor_id", vendorId.toString());
+        formData.append("type_id", typeId.toString());
+        formData.append("name", name);
+
+        const response = await fetch(
+          `${API_BASE_URL}/documents/vendors/documents`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        // Refresh the documents list
+        const docResponse = await fetch(
+          `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
+        );
+        const docResult = await docResponse.json();
+
+        if (docResponse.ok && docResult.data) {
+          const types: DocumentType[] = docResult.data.map(
+            (item: DocumentWithType) => {
+              return {
+                type_id: item.type_id,
+                title: item.title,
+                mandatory: item.document?.document_types?.mandatory ?? false,
+                category_id: item.document?.document_types?.category_id ?? 0,
+                issued_by: item?.issued_by ?? "",
+                how_to_obtain: item?.how_to_obtain ?? "",
+                appearance: item?.appearance ?? "",
+              };
+            }
+          );
+          setDocumentTypes(types);
+
+          const documents: Document[] = docResult.data
+            .filter((item: DocumentWithType) => item.document !== null)
+            .map((item: DocumentWithType) => item.document as Document);
+          setVendorDocuments(documents);
+        }
+
+        setUploadSuccess((prev) => ({ ...prev, [typeId]: true }));
+        setTimeout(() => {
+          setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
+        }, 3000);
+        setSelectedFiles((prev) => ({ ...prev, [typeId]: null }));
+      } catch (error) {
+        console.error("Error uploading document:", error);
+        alert("Failed to upload document. Please try again.");
+      } finally {
+        setUploadingDoc((prev) => ({ ...prev, [typeId]: false }));
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        console.log("Switch tab:", dayjs().format("HH:mm:ss"));
+        handleDocumentUploadOnEvent();
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      console.log("Closing tab:", dayjs().format("HH:mm:ss"));
+      handleDocumentUploadOnEvent();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [selectedFiles, vendorId]);
 
   const renderDocumentCard = (docType: DocumentType) => {
     const { type_id, title, mandatory, issued_by, how_to_obtain, appearance } =
@@ -850,6 +956,7 @@ export default function VendorOnboardingFlow() {
                 color: "#c62828",
                 padding: 0,
                 fontWeight: 500,
+                overflowWrap: "anywhere",
               }}
             >
               {document?.description}
@@ -885,11 +992,8 @@ export default function VendorOnboardingFlow() {
                   type="file"
                   accept="application/pdf"
                   onChange={(e) => {
-                    const files = (e.target as HTMLInputElement).files;
-                    if (files && files.length > 0) {
-                      const file = files[0];
-                      handleDocumentUpload(type_id, file);
-                    }
+                    const file = e.target.files ? e.target.files[0] : null;
+                    setSelectedFiles((prev) => ({ ...prev, [type_id]: file }));
                   }}
                 />
                 <Button
@@ -933,26 +1037,30 @@ export default function VendorOnboardingFlow() {
     );
   };
 
-  // Handle file selection
-  const handleFileSelection = (typeId: number, file: File | null) => {
-    setSelectedFiles((prev) => ({
-      ...prev,
-      [typeId]: file,
-    }));
-  };
-
-  const handleDocumentUpload = async (typeId: number, file: File | null) => {
+  const handleDocumentUpload = async () => {
     if (!vendorId) {
       alert("Vendor ID not available. Please try again later.");
       return;
     }
 
-    if (!file) {
+    if (!selectedFiles) {
       alert("Please select a file to upload");
       return;
     }
 
     // Use the file's name directly
+    const typeId = Object.keys(selectedFiles).find(
+      (key) => selectedFiles[parseInt(key)] !== null
+    );
+    if (!typeId) {
+      alert("Please select a file to upload");
+      return;
+    }
+    const file = selectedFiles[parseInt(typeId)];
+    if (!file) {
+      alert("Please select a file to upload");
+      return;
+    }
     const name = file.name;
 
     setUploadingDoc((prev) => ({ ...prev, [typeId]: true }));
