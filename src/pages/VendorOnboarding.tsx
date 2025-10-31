@@ -503,100 +503,16 @@ export default function VendorOnboardingFlow() {
   }, [vendorId, step]);
 
   useEffect(() => {
-    const handleDocumentUploadOnEvent = async () => {
-      if (!vendorId) {
-        alert("Vendor ID not available. Please try again later.");
-        return;
-      }
-
-      // Find the first selected file entry
-      const typeId = Object.keys(selectedFiles).find(
-        (key) => selectedFiles[parseInt(key)] !== null
-      );
-      if (!typeId) {
-        // nothing to upload
-        return;
-      }
-
-      const file = selectedFiles[parseInt(typeId)];
-      if (!file) {
-        return;
-      }
-
-      const name = file.name;
-      setUploadingDoc((prev) => ({ ...prev, [typeId]: true }));
-      setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
-
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("vendor_id", vendorId.toString());
-        formData.append("type_id", typeId.toString());
-        formData.append("name", name);
-
-        const response = await fetch(
-          `${API_BASE_URL}/documents/vendors/documents`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        // Refresh the documents list
-        const docResponse = await fetch(
-          `${API_BASE_URL}/documents/vendors/${vendorId}/documents`
-        );
-        const docResult = await docResponse.json();
-
-        if (docResponse.ok && docResult.data) {
-          const types: DocumentType[] = docResult.data.map(
-            (item: DocumentWithType) => {
-              return {
-                type_id: item.type_id,
-                title: item.title,
-                mandatory: item.document?.document_types?.mandatory ?? false,
-                category_id: item.document?.document_types?.category_id ?? 0,
-                issued_by: item?.issued_by ?? "",
-                how_to_obtain: item?.how_to_obtain ?? "",
-                appearance: item?.appearance ?? "",
-              };
-            }
-          );
-          setDocumentTypes(types);
-
-          const documents: Document[] = docResult.data
-            .filter((item: DocumentWithType) => item.document !== null)
-            .map((item: DocumentWithType) => item.document as Document);
-          setVendorDocuments(documents);
-        }
-
-        setUploadSuccess((prev) => ({ ...prev, [typeId]: true }));
-        setTimeout(() => {
-          setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
-        }, 3000);
-        setSelectedFiles((prev) => ({ ...prev, [typeId]: null }));
-      } catch (error) {
-        console.error("Error uploading document:", error);
-        alert("Failed to upload document. Please try again.");
-      } finally {
-        setUploadingDoc((prev) => ({ ...prev, [typeId]: false }));
-      }
-    };
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         console.log("Switch tab:", dayjs().format("HH:mm:ss"));
-        handleDocumentUploadOnEvent();
+        // handleDocumentUploadOnEvent();
       }
     };
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       console.log("Closing tab:", dayjs().format("HH:mm:ss"));
-      handleDocumentUploadOnEvent();
+      // handleDocumentUploadOnEvent();
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -993,7 +909,7 @@ export default function VendorOnboardingFlow() {
                   accept="application/pdf"
                   onChange={(e) => {
                     const file = e.target.files ? e.target.files[0] : null;
-                    setSelectedFiles((prev) => ({ ...prev, [type_id]: file }));
+                    handleDocumentUpload(type_id, file);
                   }}
                 />
                 <Button
@@ -1037,30 +953,18 @@ export default function VendorOnboardingFlow() {
     );
   };
 
-  const handleDocumentUpload = async () => {
+  const handleDocumentUpload = async (typeId: number, file: File | null) => {
     if (!vendorId) {
       alert("Vendor ID not available. Please try again later.");
       return;
     }
 
-    if (!selectedFiles) {
+    if (!file) {
       alert("Please select a file to upload");
       return;
     }
 
     // Use the file's name directly
-    const typeId = Object.keys(selectedFiles).find(
-      (key) => selectedFiles[parseInt(key)] !== null
-    );
-    if (!typeId) {
-      alert("Please select a file to upload");
-      return;
-    }
-    const file = selectedFiles[parseInt(typeId)];
-    if (!file) {
-      alert("Please select a file to upload");
-      return;
-    }
     const name = file.name;
 
     setUploadingDoc((prev) => ({ ...prev, [typeId]: true }));
