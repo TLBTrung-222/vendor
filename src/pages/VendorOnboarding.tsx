@@ -503,16 +503,25 @@ export default function VendorOnboardingFlow() {
   }, [vendorId, step]);
 
   useEffect(() => {
+    const consolidateEmail = async () => {
+      try {
+        await fetch(`${API_BASE_URL}/documents/vendors/consolidated-email`, {
+          method: "PUT",
+        });
+      } catch (error) {
+        console.error("Error sending consolidated email:", error);
+      }
+    };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         console.log("Switch tab:", dayjs().format("HH:mm:ss"));
-        // handleDocumentUploadOnEvent();
+        consolidateEmail();
       }
     };
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       console.log("Closing tab:", dayjs().format("HH:mm:ss"));
-      // handleDocumentUploadOnEvent();
+      consolidateEmail();
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -522,7 +531,7 @@ export default function VendorOnboardingFlow() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [selectedFiles, vendorId]);
+  }, [vendorId]);
 
   const renderDocumentCard = (docType: DocumentType) => {
     const { type_id, title, mandatory, issued_by, how_to_obtain, appearance } =
