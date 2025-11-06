@@ -57,6 +57,7 @@ import { Cookies } from "react-cookie";
 import { useTranslation } from "react-i18next";
 import { languagesList } from "../utils/Languages";
 import dayjs from "dayjs";
+import Helpers from "../utils/Helpers.tsx";
 
 interface Country {
   country_id: number;
@@ -247,7 +248,7 @@ export default function VendorOnboardingFlow() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [vendorEmail, setVendorEmail] = useState("");
-  const [region, setRegion] = useState("");
+  const [region, setRegion] = useState("1");
   const [postalCode, setPostalCode] = useState<
     { code: string; radius: number }[]
   >([]);
@@ -382,6 +383,7 @@ export default function VendorOnboardingFlow() {
         //secure: true,
         sameSite: "strict",
       });
+
       localStorage.setItem("accessToken", result.data.access_token);
       localStorage.setItem("refreshToken", result.data.refresh_token);
       updateStep(1);
@@ -429,10 +431,6 @@ export default function VendorOnboardingFlow() {
           )
         );
       } else if (message?.detail?.description) {
-        console.log(message?.detail?.description);
-        updateStep(1);
-      } else if (message?.detail?.description) {
-        console.log(message?.detail?.description);
         updateStep(1);
         setOnboardingStatus(message?.detail?.description);
         setPmName(
@@ -443,6 +441,41 @@ export default function VendorOnboardingFlow() {
         setUpdateDate(
           new Date(message?.detail?.updated_by?.created_at).toLocaleDateString()
         );
+      }
+      if (message.changes) {
+        message.changes.forEach((change: any) => {
+          if (change?.field === "trades") {
+            if (change?.added?.length > 0) {
+              setTrades((prev) => [...prev, ...change.added]);
+            }
+            if (change?.removed?.length > 0) {
+              setTrades((prev) =>
+                prev.filter(
+                  (trade) => !change.removed.includes(trade)
+                )
+              );
+            }
+            if (change?.updated?.length > 0) {
+              console.log(message.changes);
+              setTrades((prev) => {
+                const updatedTrades = [...prev];
+                change.updated.forEach((updatedTrade: any) => {
+                  const index = updatedTrades.findIndex(
+                    (trade) => trade.gesys_gewerk_id === updatedTrade.gewerk_id
+                  );
+                  if (index !== -1) {
+                    updatedTrades[index] = {
+                      ...updatedTrades[index],
+                      count: updatedTrade.new_employee_number,
+                      gesys_gewerk_id: updatedTrade.gewerk_id,
+                    };
+                  }
+                });
+                return updatedTrades;
+              });
+            }
+          }
+        });
       }
       playNoti();
       const newMessageItem = {
@@ -504,34 +537,33 @@ export default function VendorOnboardingFlow() {
 
   useEffect(() => {
     const consolidateEmail = async () => {
+      const accessToken = localStorage.getItem("accessToken");
       try {
-        await fetch(`${API_BASE_URL}/documents/vendors/consolidated-email`, {
-          method: "PUT",
-        });
+        await fetch(
+          `${API_BASE_URL}/documents/vendors/consolidated-email?${accessToken}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
       } catch (error) {
-        console.error("Error sending consolidated email:", error);
-      }
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        console.log("Switch tab:", dayjs().format("HH:mm:ss"));
-        consolidateEmail();
+        Helpers.notification.error("Error sending consolidated email");
       }
     };
 
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      console.log("Closing tab:", dayjs().format("HH:mm:ss"));
+    const handleBeforeUnload = () => {
       consolidateEmail();
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [vendorId]);
+  }, []);
 
   const renderDocumentCard = (docType: DocumentType) => {
     const { type_id, title, mandatory, issued_by, how_to_obtain, appearance } =
