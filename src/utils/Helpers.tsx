@@ -1,5 +1,6 @@
-//import { message, Modal } from "@mui/material";
+import { message, Modal } from "antd";
 import { Cookies } from "react-cookie";
+import { useNavigate } from "react-router-dom";
 
 const COOKIE_USER_INFO = "uif";
 const COOKIE_ACCESS_TOKEN = "atk";
@@ -75,26 +76,26 @@ class Helpers {
     window.location.href = url;
   };
 
-//   notification = {
-//     success: (content: string) => {
-//       message.open({
-//         type: "success",
-//         content: content,
-//       });
-//     },
-//     error: (content: string) => {
-//       message.open({
-//         type: "error",
-//         content: content,
-//       });
-//     },
-//     warning: (content: string) => {
-//       message.open({
-//         type: "warning",
-//         content: content,
-//       });
-//     },
-//   };
+  notification = {
+    success: (content: string) => {
+      message.open({
+        type: "success",
+        content: content,
+      });
+    },
+    error: (content: string) => {
+      message.open({
+        type: "error",
+        content: content,
+      });
+    },
+    warning: (content: string) => {
+      message.open({
+        type: "warning",
+        content: content,
+      });
+    },
+  };
 
   isISODateString = (str: string) => {
     const isoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z?$/;
@@ -116,25 +117,48 @@ class Helpers {
     }).format(date);
   };
 
-//   confirmModal = (
-//     content: string,
-//     fnCallback: () => void,
-//     okText?: string,
-//     t: any = (text: string) => text
-//   ) => {
-//     Modal.confirm({
-//       title: `${t("Confirm")}`,
-//       content: (
-//         <div>
-//           <p>{content}</p>
-//         </div>
-//       ),
-//       onOk: () => fnCallback(),
-//       okText: okText || "Ok",
-//       okType: okText === t("Delete") ? "danger" : "primary",
-//       cancelText: t("Cancel"),
-//     });
-//   };
+  handleSubmit = async () => {
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const email = urlSearchParams.get("email") || "";
+    const navigate = useNavigate();
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login-vendor`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            password: "Password123@",
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        const decoded = this.decodeToken(result.data.access_token);
+
+        localStorage.setItem("accessToken", result.data.access_token);
+        localStorage.setItem("refreshToken", result.data.refresh_token);
+
+        localStorage.setItem("user", JSON.stringify(decoded.user));
+
+        navigate("/");
+      } else {
+        this.notification.error(
+          result.message ||
+            "Login failed. Please check your credentials and try again."
+        );
+      }
+    } catch (error) {
+      this.notification.error(
+        "An error occurred during login. Please try again later."
+      );
+    }
+  };
 }
 
 const instance = new Helpers();
