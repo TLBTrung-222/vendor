@@ -445,38 +445,53 @@ export default function VendorOnboardingFlow() {
       if (message.changes) {
         message.changes.forEach((change: any) => {
           if (change?.field === "trades") {
-            if (change?.added?.length > 0) {
-              setTrades((prev) => [...prev, ...change.added]);
-            }
-            if (change?.removed?.length > 0) {
-              setTrades((prev) =>
-                prev.filter(
-                  (trade) => !change.removed.includes(trade)
-                )
-              );
-            }
-            if (change?.updated?.length > 0) {
-              console.log(message.changes);
-              setTrades((prev) => {
-                const updatedTrades = [...prev];
-                change.updated.forEach((updatedTrade: any) => {
+            setTrades((prev) => {
+              let updatedTrades = [...prev];
+
+              const added = change.added || [];
+              const removed = change.removed || [];
+              const updated = change.updated || [];
+
+              if (removed.length > 0) {
+                updatedTrades = updatedTrades.filter(
+                  (trade) =>
+                    !removed.some(
+                      (r: any) => r.gewerk_id === trade.gesys_gewerk_id
+                    )
+                );
+              }
+
+              if (added.length > 0) {
+                added.forEach((a: any) => {
+                  updatedTrades.push({
+                    trade: tradeOptions.find((t) => t.gesys_gewerk_id === a.gewerk_id)?.gewerk_name || "",
+                    count: a.employee_number,
+                    gesys_gewerk_id: a.gewerk_id,
+                  });
+                });
+              }
+
+              if (updated.length > 0) {
+                updated.forEach((u: any) => {
                   const index = updatedTrades.findIndex(
-                    (trade) => trade.gesys_gewerk_id === updatedTrade.gewerk_id
+                    (trade) => trade.gesys_gewerk_id === u.gewerk_id
                   );
                   if (index !== -1) {
                     updatedTrades[index] = {
                       ...updatedTrades[index],
-                      count: updatedTrade.new_employee_number,
-                      gesys_gewerk_id: updatedTrade.gewerk_id,
+                      count: u.new_employee_number,
+                      gesys_gewerk_id: u.gewerk_id,
                     };
                   }
                 });
-                return updatedTrades;
-              });
-            }
+              }
+
+              return updatedTrades;
+            });
           }
         });
       }
+
       playNoti();
       const newMessageItem = {
         key: Math.random(),
@@ -535,32 +550,40 @@ export default function VendorOnboardingFlow() {
     fetchVendorDocuments();
   }, [vendorId, step]);
 
+  const consolidateEmail = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    try {
+      await fetch(
+        `${API_BASE_URL}/documents/vendors/consolidated-email?${accessToken}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+    } catch (error) {
+      Helpers.notification.error("Error sending consolidated email");
+    }
+  };
+
   useEffect(() => {
-    const consolidateEmail = async () => {
-      const accessToken = localStorage.getItem("accessToken");
-      try {
-        await fetch(
-          `${API_BASE_URL}/documents/vendors/consolidated-email?${accessToken}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-      } catch (error) {
-        Helpers.notification.error("Error sending consolidated email");
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        consolidateEmail();
       }
     };
 
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       consolidateEmail();
     };
 
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
