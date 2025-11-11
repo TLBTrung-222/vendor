@@ -351,8 +351,8 @@ export default function VendorOnboardingFlow() {
     if (
       contracts.every((item: any) => item.events[0]?.event_type === "Completed")
     ) {
-      updateStep(1);
-      handleRedirect();
+      // updateStep(1);
+      // handleRedirect();
     }
   }, [contracts]);
 
@@ -399,13 +399,21 @@ export default function VendorOnboardingFlow() {
 
   useEffect(() => {
     if (message) {
+      console.log(message);
+      if (message?.events) {
+        setContracts([
+          {
+            ...contracts[0],
+            events: [...message.events],
+          },
+        ]);
+      }
       if (message?.contract_data) {
         setContracts([
-          ...contracts,
           {
             ...message.contract_data,
             events: [],
-            zoho_sign_url: message.contract_data.zoho_sign_url || "",
+            // url: message.contract_data.document_url || "",
           },
         ]);
         updateStep(3);
@@ -464,7 +472,10 @@ export default function VendorOnboardingFlow() {
               if (added.length > 0) {
                 added.forEach((a: any) => {
                   updatedTrades.push({
-                    trade: tradeOptions.find((t) => t.gesys_gewerk_id === a.gewerk_id)?.gewerk_name || "",
+                    trade:
+                      tradeOptions.find(
+                        (t) => t.gesys_gewerk_id === a.gewerk_id
+                      )?.gewerk_name || "",
                     count: a.employee_number,
                     gesys_gewerk_id: a.gewerk_id,
                   });
@@ -1198,11 +1209,14 @@ export default function VendorOnboardingFlow() {
         const response = await fetch(
           `${API_BASE_URL}/contracts/vendor?vendor_id=${vendorId}`
         );
+
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const result = await response.json();
         if (result.data) {
+          console.log(result.data);
+
           setContracts(result.data);
         }
       } catch (error) {
@@ -1748,6 +1762,8 @@ export default function VendorOnboardingFlow() {
     // Calculate progress value
     let progressValue = 33;
 
+    console.log(contracts);
+
     const { title, events, created_at } = contract;
 
     const isCompleted =
@@ -1824,7 +1840,7 @@ export default function VendorOnboardingFlow() {
                 {t("receivedAt")} {sentDate}
               </Typography>
               <Link
-                href={contract.zoho_sign_url}
+                href={contract.url || contract.document_url}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -3340,7 +3356,7 @@ export default function VendorOnboardingFlow() {
 
             <Grid>
               {contracts?.map((contract) => (
-                <Grid item xs={12} sm={4} key={contract.title}>
+                <Grid item xs={12} sm={4} key={contract.submission_id}>
                   {renderContractCard(contract)}
                 </Grid>
               ))}
