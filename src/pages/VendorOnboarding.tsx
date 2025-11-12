@@ -351,8 +351,8 @@ export default function VendorOnboardingFlow() {
     if (
       contracts.every((item: any) => item.events[0]?.event_type === "Completed")
     ) {
-      // updateStep(1);
-      // handleRedirect();
+      updateStep(1);
+      handleRedirect();
     }
   }, [contracts]);
 
