@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Pusher from "pusher-js";
 import notificationBell from "../assets/mp3/notification-sound.mp3";
+import Helpers from "../utils/Helpers";
 
 interface PusherContextType {
   message: any;
@@ -19,7 +20,9 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
     const fetchVendorIdByEmail = async () => {
       try {
         const urlSearchParams = new URLSearchParams(window.location.search);
-        const userEmail = urlSearchParams.get("userEmail") || localStorage?.getItem("userEmail");
+        const userEmail =
+          urlSearchParams.get("userEmail") ||
+          localStorage?.getItem("userEmail");
 
         if (!userEmail) {
           throw new Error("User email not found");
@@ -70,7 +73,13 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
     const userChannel = pusher.subscribe("PRIVATE-MONTAGO");
 
     if (vendorId) {
-      userChannel.bind(`vendor-${vendorId}`, (data: any) => {
+      const flavor =
+        Helpers.whichInstace() == "alpha"
+          ? 1
+          : Helpers.whichInstace() == "beta"
+          ? 2
+          : 3;
+      userChannel.bind(`vendor-${flavor}${vendorId}`, (data: any) => {
         setMessage(data);
       });
     }
