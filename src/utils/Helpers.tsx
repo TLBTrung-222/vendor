@@ -159,6 +159,16 @@ class Helpers {
       );
     }
   };
+
+  whichInstace = () => {
+    if (window.location.hostname == "atlas.galvanek-bau.de") {
+      return "prod";
+    }
+    if (window.location.hostname == "beta.atlas.galvanek-bau.de") {
+      return "beta";
+    }
+    return "alpha";
+  };
 }
 
 const instance = new Helpers();
