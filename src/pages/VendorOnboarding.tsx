@@ -348,6 +348,8 @@ export default function VendorOnboardingFlow() {
       }
     );
 
+    console.log(contracts);
+
     if (
       contracts.every((item: any) => item.events[0]?.event_type === "Completed")
     ) {
@@ -401,12 +403,18 @@ export default function VendorOnboardingFlow() {
     if (message) {
       console.log(message);
       if (message?.events) {
-        setContracts([
-          {
-            ...contracts[0],
-            events: [...message.events],
-          },
-        ]);
+        setContracts((prevContracts) =>
+          prevContracts.map((contract) =>
+            contract.submission_id === message.events[0].submission_id
+              ? {
+                  ...contract,
+                  events: 
+                    message.events,
+                    
+                }
+              : contract
+          )
+        );
       }
       if (message?.contract_data) {
         setContracts([
@@ -1761,8 +1769,6 @@ export default function VendorOnboardingFlow() {
   const renderContractCard = (contract: (typeof contracts)[0]) => {
     // Calculate progress value
     let progressValue = 33;
-
-    console.log(contracts);
 
     const { title, events, created_at } = contract;
 
@@ -3356,7 +3362,7 @@ export default function VendorOnboardingFlow() {
 
             <Grid>
               {contracts?.map((contract) => (
-                <Grid item xs={12} sm={4} key={contract.submission_id}>
+                <Grid item xs={12} sm={4} key={contract.submission_id} sx={{ mb: 2 }}>
                   {renderContractCard(contract)}
                 </Grid>
               ))}
