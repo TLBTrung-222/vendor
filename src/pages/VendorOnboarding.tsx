@@ -348,10 +348,13 @@ export default function VendorOnboardingFlow() {
       }
     );
 
-    console.log(contracts);
-
     if (
-      contracts.every((item: any) => item.events[0]?.event_type === "Completed")
+      contracts.every((item: any) => {
+        const events = item.events;
+        return (
+          events && events.length > 0 && events[0]?.event_type === "Completed"
+        );
+      })
     ) {
       updateStep(1);
       handleRedirect();
@@ -408,22 +411,14 @@ export default function VendorOnboardingFlow() {
             contract.submission_id === message.events[0].submission_id
               ? {
                   ...contract,
-                  events: 
-                    message.events,
-                    
+                  events: [...message.events, ...contract.events],
                 }
               : contract
           )
         );
       }
-      if (message?.contract_data) {
-        setContracts([
-          {
-            ...message.contract_data,
-            events: [],
-            // url: message.contract_data.document_url || "",
-          },
-        ]);
+      if (message?.embed_links) {
+        setContracts(message.embed_links);
         updateStep(3);
       } else if (message?.detail?.document_id) {
         setVendorDocuments((prev) =>
@@ -514,11 +509,15 @@ export default function VendorOnboardingFlow() {
       playNoti();
       const newMessageItem = {
         key: Math.random(),
-        label: <NotiItem message={message} />,
+        label: (
+          <NotiItem message={message.events ? message.events[0] : message} />
+        ),
       };
       setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
   }, [message]);
+
+  console.log(contracts);
 
   useEffect(() => {
     if (!vendorId) return;
@@ -1223,8 +1222,6 @@ export default function VendorOnboardingFlow() {
         }
         const result = await response.json();
         if (result.data) {
-          console.log(result.data);
-
           setContracts(result.data);
         }
       } catch (error) {
@@ -1316,8 +1313,6 @@ export default function VendorOnboardingFlow() {
         }
 
         const result = await response.json();
-        //console.log("Vendor data:", result);
-
         if (result.data) {
           setVendorDetails(result.data);
 
@@ -1771,16 +1766,22 @@ export default function VendorOnboardingFlow() {
     let progressValue = 33;
 
     const { title, events, created_at } = contract;
+    let isCompleted = false;
+    let isViewed = false;
 
-    const isCompleted =
-      events[0]?.event_type === "Completed" ||
-      events[0]?.event_type === "SigningSuccess";
-    const isViewed = events[0]?.event_type === "Viewed";
+    if (events && events.length > 0) {
+      isCompleted =
+        events[0]?.event_type === "Completed" ||
+        events[0]?.event_type === "SigningSuccess";
+      isViewed = events[0]?.event_type === "Viewed";
+    }
 
     if (isViewed) progressValue = 66;
     if (isCompleted) progressValue = 100;
 
-    const sentDate = formatDate(created_at);
+    const sentDate = formatDate(created_at)
+      ? formatDate(created_at)
+      : formatDate(new Date().toISOString());
     const viewDate =
       progressValue >= 66
         ? formatDate(
@@ -3362,7 +3363,13 @@ export default function VendorOnboardingFlow() {
 
             <Grid>
               {contracts?.map((contract) => (
-                <Grid item xs={12} sm={4} key={contract.submission_id} sx={{ mb: 2 }}>
+                <Grid
+                  item
+                  xs={12}
+                  sm={4}
+                  key={contract.submission_id}
+                  sx={{ mb: 2 }}
+                >
                   {renderContractCard(contract)}
                 </Grid>
               ))}
