@@ -418,7 +418,11 @@ export default function VendorOnboardingFlow() {
         );
       }
       if (message?.embed_links) {
-        setContracts(message.embed_links);
+        setContracts(
+          Array.isArray(message.embed_links)
+            ? message.embed_links.map((c: any) => ({ ...c, events: c.events ?? [] }))
+            : []
+        );
         updateStep(3);
       } else if (message?.detail?.document_id) {
         setVendorDocuments((prev) =>
