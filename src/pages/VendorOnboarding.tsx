@@ -419,9 +419,11 @@ export default function VendorOnboardingFlow() {
       }
       if (message?.embed_links) {
         setContracts(
-          Array.isArray(message.embed_links)
-            ? message.embed_links.map((c: any) => ({ ...c, events: c.events ?? [] }))
-            : []
+          message.embed_links.map((c: any) => ({
+            ...c,
+            events: c.events ?? [],
+            created_at: c.created_at ?? new Date().toISOString(),
+          }))
         );
         updateStep(3);
       } else if (message?.detail?.document_id) {
@@ -1784,8 +1786,6 @@ export default function VendorOnboardingFlow() {
     if (isCompleted) progressValue = 100;
 
     const sentDate = formatDate(created_at)
-      ? formatDate(created_at)
-      : formatDate(new Date().toISOString());
     const viewDate =
       progressValue >= 66
         ? formatDate(
