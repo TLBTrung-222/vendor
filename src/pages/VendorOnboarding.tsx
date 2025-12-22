@@ -404,7 +404,7 @@ export default function VendorOnboardingFlow() {
 
   useEffect(() => {
     if (message) {
-      console.log(message);
+      // console.log(message);
       if (message?.events) {
         setContracts((prevContracts) =>
           prevContracts.map((contract) =>
@@ -523,7 +523,7 @@ export default function VendorOnboardingFlow() {
     }
   }, [message]);
 
-  console.log(contracts);
+  // console.log(contracts);
 
   useEffect(() => {
     if (!vendorId) return;
