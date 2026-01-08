@@ -1,0 +1,17 @@
+.ContractCard {
+  border-radius: 12px;
+  border: 1px solid #d9d9d9;
+  padding: 16px;
+  .ant-btn {
+    color: #ff6933;
+    &:hover {
+      color: #ff6933 !important;
+    }
+  }
+  .action-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+}

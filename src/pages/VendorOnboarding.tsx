@@ -58,6 +58,7 @@ import { useTranslation } from "react-i18next";
 import { languagesList } from "../utils/Languages";
 import dayjs from "dayjs";
 import Helpers from "../utils/Helpers.tsx";
+import Map from "../components/Map/Map.tsx";
 
 interface Country {
   country_id: number;
@@ -257,6 +258,7 @@ export default function VendorOnboardingFlow() {
     radius: 100,
   });
   const [postalCodes, setPostalCodes] = useState<PostalCode[]>([]);
+  const [selectedPostion, setSelectedPostion] = useState<any[]>();
 
   /* -------------------------------------------------------------------------- */
   /*                             // API data states                             */
@@ -1785,7 +1787,7 @@ export default function VendorOnboardingFlow() {
     if (isViewed) progressValue = 66;
     if (isCompleted) progressValue = 100;
 
-    const sentDate = formatDate(created_at)
+    const sentDate = formatDate(created_at);
     const viewDate =
       progressValue >= 66
         ? formatDate(
@@ -1893,25 +1895,25 @@ export default function VendorOnboardingFlow() {
     );
   };
 
-  useEffect(() => {
-    const tmp = postcodeList
-      .map((item, index) => {
-        let code: string = item.code.toString().padStart(5, "0");
-        let label: string =
-          item.code.toString().padStart(5, "0") +
-          " - " +
-          item.state +
-          " - " +
-          item.district;
-        return { code: code!, label: label! };
-      })
-      .filter(
-        (item, index, self) =>
-          index ===
-          self.findIndex((t) => t.code === item.code && t.label === item.label)
-      );
-    setPostalCodes(tmp);
-  }, []);
+  // useEffect(() => {
+  //   const tmp = postcodeList
+  //     .map((item, index) => {
+  //       let code: string = item.code.toString().padStart(5, "0");
+  //       let label: string =
+  //         item.code.toString().padStart(5, "0") +
+  //         " - " +
+  //         item.state +
+  //         " - " +
+  //         item.district;
+  //       return { code: code!, label: label! };
+  //     })
+  //     .filter(
+  //       (item, index, self) =>
+  //         index ===
+  //         self.findIndex((t) => t.code === item.code && t.label === item.label)
+  //     );
+  //   setPostalCodes(tmp);
+  // }, []);
 
   const filterOptions = createFilterOptions<PostalCode>({
     stringify: (option) => `${option.label}`,
@@ -2910,8 +2912,13 @@ export default function VendorOnboardingFlow() {
                       <Typography sx={{ mb: 2 }}>
                         {t("postcodeInfo")}
                       </Typography>
+                      {/* <Map
+                        position={selectedPostion}
+                        // setPosition={setSelectedPostion}
+                        // onSelected={setSelectedLocation}
+                        // isAdding={isAdding}
+                      /> */}
                       <FormControl variant="outlined" fullWidth size="small">
-                        {/* <InputLabel>Enter postcode</InputLabel> */}
                         <Autocomplete
                           freeSolo
                           options={postalCodes}

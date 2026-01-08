@@ -13,12 +13,13 @@ const getCookie = (name: string): string => cookies.get(name) || "";
 const removeCookie = (name: string): void => cookies.remove(name);
 
 class Helpers {
-  getRefreshToken = (): string => getCookie(COOKIE_REFRESH_TOKEN);
+  getRefreshToken = (): string => localStorage.getItem("refreshToken") || "";
+  D;
 
   storeRefreshToken = (refreshToken: string): void =>
     setCookie(COOKIE_REFRESH_TOKEN, refreshToken);
 
-  getAccessToken = (): string => getCookie(COOKIE_ACCESS_TOKEN);
+  getAccessToken = (): string => localStorage.getItem("accessToken") || "";
 
   storeAccessToken = (accessToken: string): void =>
     setCookie(COOKIE_ACCESS_TOKEN, accessToken);
@@ -43,9 +44,7 @@ class Helpers {
   };
 
   isLoggedIn = (): boolean => {
-    return this.getUserInfo() == null || this.getUserInfo() === undefined
-      ? false
-      : true;
+    return localStorage.getItem("accessToken") ? true : false;
   };
 
   isAdmin = () => {
@@ -70,10 +69,6 @@ class Helpers {
     );
 
     return JSON.parse(jsonPayload);
-  };
-
-  redirect = (url: string) => {
-    window.location.href = url;
   };
 
   notification = {
