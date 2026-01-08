@@ -1,0 +1,99 @@
+:root {
+  --atlas-50: #fdf0e7;
+  --atlas-100: #fce3d5;
+  --atlas-200: #ffe1d6;
+  --atlas-300: #ffb499;
+  --atlas-400: #ff8a5c;
+  --atlas-500: #ff6933;
+  --atlas-600: #cc5429;
+  --atlas-700: #993f1f;
+  --atlas-800: #662a15;
+  --atlas-900: #341604;
+
+  --muted: #6c757d;
+  --card: #f8f6f2;
+}
+
+body {
+  font-family: "Montserrat", sans-serif;
+  margin: 0;
+  font-size: 14px;
+}
+
+* {
+  &::-webkit-scrollbar {
+    width: 5px;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #8b8b8b30;
+    border-radius: 50px;
+  }
+
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+}
+
+$breakpoint-sm: 480px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-xxl: 1536px;
+$breakpoint-xxxl: 1920px;
+
+.gesys-card {
+  border-radius: 0.75rem;
+  background-color: var(--card);
+  border: 1px solid #fce9dd;
+
+  .ant-card-body {
+    padding: 1.25rem;
+
+    .ant-statistic-content-value {
+      font-weight: 700;
+    }
+  }
+
+  .card-title {
+    font-size: 20px;
+    font-weight: 600;
+  }
+}
+
+.gesys-table {
+  background-color: var(--card) !important;
+  border-radius: 15px !important;
+  overflow: hidden;
+  border: 1px solid #fce9dd;
+
+  .ant-table-cell {
+    background-color: var(--card) !important;
+  }
+}
+
+.ant-notification-notice-wrapper {
+  border-radius: 15px !important;
+
+  .gesys-noti {
+    background-color: #fff !important;
+    padding: 15px 20px !important;
+  }
+
+  .gesys-noti-title {
+    .project-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .gewerk-name {
+      color: var(--atlas-500);
+      font-size: 13px;
+    }
+  }
+}

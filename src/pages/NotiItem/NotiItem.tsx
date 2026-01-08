@@ -33,7 +33,7 @@ const NotiItem: React.FC<INotiItem> = ({ message }) => {
 
       <Box sx={{ display: "flex", flexDirection: "column" }}>
         <Typography variant="caption" fontWeight={500} sx={{ textWrap: "break-word" }}>
-          {message.message}
+          {message?.message}
         </Typography>
         <Typography
           variant="caption"
@@ -42,7 +42,7 @@ const NotiItem: React.FC<INotiItem> = ({ message }) => {
             color: "var(--muted)",
           }}
         >
-          {message.timestamp}
+          {message?.timestamp}
         </Typography>
       </Box>
     </Box>
