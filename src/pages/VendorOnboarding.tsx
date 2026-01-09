@@ -58,7 +58,7 @@ import { useTranslation } from "react-i18next";
 import { languagesList } from "../utils/Languages";
 import dayjs from "dayjs";
 import Helpers from "../utils/Helpers.tsx";
-import Map from "../components/Map/Map.tsx";
+import Map from "../components/PostcodeMap/PostcodeMap.tsx";
 
 interface Country {
   country_id: number;

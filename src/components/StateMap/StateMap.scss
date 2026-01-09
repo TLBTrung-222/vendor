@@ -1,0 +1,52 @@
+.StateMap {
+  .state-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 999;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    max-height: 400px;
+    overflow-y: auto;
+    width: 300px;
+  }
+
+  .state-controls h3 {
+    margin: 0 0 10px 0;
+  }
+
+  .state-controls-empty {
+    color: #888;
+  }
+
+  .selected-state-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .selected-state-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .state-color-indicator {
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+
+  .remove-state-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: red;
+  }
+}
