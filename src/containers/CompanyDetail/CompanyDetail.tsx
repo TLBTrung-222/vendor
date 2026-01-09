@@ -37,6 +37,8 @@ import { postcodeList } from "../../utils/PostalcodeList";
 import { MapOutlined } from "@mui/icons-material";
 import { usePusher } from "../../contexts/PusherContext";
 import NotiItem from "../../pages/NotiItem/NotiItem";
+import PostcodeMap from "../../components/PostcodeMap/PostcodeMap";
+import StateMap from "../../components/StateMap/StateMap";
 
 interface ICompanyDetail {
   vendor: any;
@@ -82,6 +84,21 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   const [positions, setPositions] = useState<RepresentativePosition[]>([]);
 
   const { message, playNoti } = usePusher();
+
+  useEffect(() => {
+    const fetchFederalStates = async () => {
+      try {
+        const response = await vendorAPI.getStates();
+        if (response.data.data) {
+          setFederalStates(response.data.data);
+        }
+      } catch (error) {
+        Helpers.notification.error(t("failedToLoadStates"));
+      }
+    };
+
+    fetchFederalStates();
+  }, []);
 
   useEffect(() => {
     if (message) {
@@ -151,17 +168,16 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           ).toLocaleDateString(),
         }));
       }
+      playNoti();
+      const newMessageItem = {
+        key: Math.random(),
+        label: (
+          <NotiItem message={message?.events ? message.events[0] : message} />
+        ),
+      };
+      setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
-
-    playNoti();
-    const newMessageItem = {
-      key: Math.random(),
-      label: (
-        <NotiItem message={message?.events ? message.events[0] : message} />
-      ),
-    };
-    setNotiItems((prev: any) => [newMessageItem, ...prev!]);
-  }, [message?.changes, message?.detail]);
+  }, [message]);
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -241,7 +257,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       children: (
         <div className="region-content">
           If you cover entire states, switch to the States tab.
-          <AutoComplete
+          {/* <AutoComplete
             options={postcodeList.map((pc) => ({
               value: pc.code,
               label: pc.label,
@@ -297,7 +313,8 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                   Remove
                 </Button>
               </div>
-            ))}
+            ))} */}
+          <PostcodeMap />
         </div>
       ),
     },
@@ -316,6 +333,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             className="region-checkbox-group"
             style={{ maxHeight: "200px", overflowY: "auto" }}
           >
+            <StateMap />
             {federalStates.map((state) => (
               <div key={state.id} className="region-checkbox">
                 <Checkbox
@@ -326,7 +344,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                       : selectedRegions.filter((id) => id !== state.id);
                     setSelectedRegions(selectedValues);
                   }}
-                />
+                />{" "}
                 {state.german_name} ({state.english_name})
               </div>
             ))}

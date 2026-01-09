@@ -10,6 +10,7 @@ interface IContractSignature {
 
 const ContractSignature: React.FC<IContractSignature> = ({ contracts }) => {
   const { t } = useTranslation();
+
   return (
     <div className="ContractSignature">
       <div>
@@ -45,7 +46,7 @@ const ContractSignature: React.FC<IContractSignature> = ({ contracts }) => {
 
         <Row gutter={[16, 16]}>
           {contracts?.map((contract) => (
-            <Col span={24} key={contract.contract_id}>
+            <Col span={24} key={contract.submission_id}>
               <ContractCard contract={contract} />
             </Col>
           ))}

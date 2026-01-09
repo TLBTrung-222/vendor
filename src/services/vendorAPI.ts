@@ -24,4 +24,7 @@ export const vendorAPI = {
   getPositions: () => {
     return apiClient.get(`/representative_positions/representative-positions`);
   },
+  getStates: () => {
+    return apiClient.get(`/vendors/state`);
+  },
 };
