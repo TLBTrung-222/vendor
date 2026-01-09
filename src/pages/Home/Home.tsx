@@ -133,7 +133,7 @@ const Home: React.FC<IHome> = () => {
               code: item.postcode,
               radius: item.radius,
             })) || [],
-          selectedRegions: response.data.data.federal_state_ids || [],
+          selectedRegions: response.data.data.federal_state_ids,
           firstName: response.data.data.contact_user?.first_name || "",
           lastName: response.data.data.contact_user?.last_name || "",
           email: response.data.data.contact_user?.email || "",
@@ -568,7 +568,11 @@ const Home: React.FC<IHome> = () => {
           {
             key: "3",
             label: t("step3"),
-            disabled: !isStepAvailable,
+            disabled:
+              !isStepAvailable ||
+              (localStorage.getItem("onboardingStep")
+                ? Number(localStorage.getItem("onboardingStep")) < 3
+                : step < 3),
           },
         ]}
         className="onboarding-tabs"

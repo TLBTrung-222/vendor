@@ -69,7 +69,7 @@ const DocumentUpload: React.FC<IDocumentUpload> = ({
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (!vendor.vendor_id) return;
+    if (!vendor?.vendor_id) return;
 
     const fetchVendorDocuments = async () => {
       try {

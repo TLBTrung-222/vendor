@@ -1,27 +1,38 @@
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./StateMap.scss";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import stateData from "../../utils/stateDE.json";
 import { Layer } from "leaflet";
+import { vendorAPI } from "../../services/vendorAPI";
 
 const geoJsonData = stateData as any;
 
-function StateMap() {
-  const defaultPosition: [number, number] = [51.1657, 10.4515];
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+interface IStateMap {
+  selectedRegions: any[];
+  setSelectedRegions: (states: any) => void;
+  setIsEditing?: (isEditing: boolean) => void;
+}
 
-  const toggleStateSelection = (stateId: string) => {
-    setSelectedStates((prev) => {
-      if (prev.includes(stateId)) {
-        return prev.filter((id) => id !== stateId);
+const StateMap: React.FC<IStateMap> = ({
+  selectedRegions,
+  setSelectedRegions,
+  setIsEditing,
+}) => {
+  const defaultPosition: [number, number] = [51.1657, 10.4515];
+
+  const toggleStateSelection = (name: string) => {
+    setSelectedRegions((prev) => {
+      if (prev.includes(name)) {
+        return prev.filter((n) => n !== name);
       } else {
-        return [...prev, stateId];
+        return [...prev, name];
       }
     });
+    setIsEditing && setIsEditing(true);
   };
 
-  const getColor = (id: string) => {
+  const getColor = (name: string) => {
     const colors = [
       "#fa7784ff",
       "#fcb461ff",
@@ -42,16 +53,16 @@ function StateMap() {
     ];
 
     let hash = 0;
-    if (!id) return "#3388ff";
-    for (let i = 0; i < id.length; i++) {
-      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    if (!name) return "#3388ff";
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
     return colors[Math.abs(hash) % colors.length];
   };
 
   const style = (feature: any) => {
-    const isSelected = selectedStates.includes(feature.properties.id);
-    const stateColor = getColor(feature.properties.id);
+    const isSelected = selectedRegions.includes(feature.properties.name);
+    const stateColor = getColor(feature.properties.name);
 
     return {
       fillColor: stateColor,
@@ -66,9 +77,9 @@ function StateMap() {
   const onEachFeature = (feature: any, layer: Layer) => {
     layer.on({
       click: () => {
-        const id = feature.properties.id;
-        if (id) {
-          toggleStateSelection(id);
+        const name = feature.properties.name;
+        if (name) {
+          toggleStateSelection(name);
         }
       },
     });
@@ -87,14 +98,14 @@ function StateMap() {
           }`}
         />
         <GeoJSON
-          key={JSON.stringify(selectedStates)}
+          key={JSON.stringify(selectedRegions)}
           data={geoJsonData}
           style={style}
           onEachFeature={onEachFeature}
         />
       </MapContainer>
 
-      <div className="controls-section state-controls">
+      {/* <div className="controls-section state-controls">
         <h3>Selected States</h3>
 
         {selectedStates.length === 0 ? (
@@ -123,16 +134,16 @@ function StateMap() {
                     onClick={() => toggleStateSelection(id)}
                     className="remove-state-btn"
                   >
-                    ×
+                    x
                   </button>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
-}
+};
 
 export default StateMap;
