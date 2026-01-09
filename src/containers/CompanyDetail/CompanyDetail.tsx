@@ -71,19 +71,18 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   const [countries, setCountries] = useState<any[]>([]);
   const [legalForms, setLegalForms] = useState<any[]>([]);
   const [tradeOptions, setTradeOptions] = useState<any[]>([]);
-  const [newPostalCode, setNewPostalCode] = useState({
-    code: "",
-    radius: 1,
-  });
+
   const [postalCode, setPostalCode] = useState<
     { code: string; radius: number }[]
-  >([]);
+  >(companyDetailForm.postalCode || []);
   const [federalStates, setFederalStates] = useState<IFederalState[]>([]);
-  const [selectedRegions, setSelectedRegions] = useState<number[]>([]);
-  const [region, setRegion] = useState("");
+  const [selectedRegions, setSelectedRegions] = useState<any[]>([]);
+  const [region, setRegion] = useState(companyDetailForm.region || "1");
   const [positions, setPositions] = useState<RepresentativePosition[]>([]);
 
   const { message, playNoti } = usePusher();
+
+  console.log(companyDetailForm);
 
   useEffect(() => {
     const fetchFederalStates = async () => {
@@ -242,9 +241,34 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
     fetchPositions();
   }, []);
 
-  const filterOptions = (inputValue: string, option?: any) => {
-    return option?.label?.toLowerCase().startsWith(inputValue.toLowerCase());
-  };
+  const filterOptions = (inputValue: string, option: any) =>
+    option!.label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
+
+  const [newPostalCode, setNewPostalCode] = useState<{
+    code: string;
+    radius: number;
+  }>({
+    code: "",
+    radius: 20,
+  });
+
+  useEffect(() => {
+    setCompanyDetailForm({
+      ...companyDetailForm,
+      region: "1",
+      postalCode: postalCode,
+    });
+  }, [postalCode]);
+
+  useEffect(() => {
+    setCompanyDetailForm({
+      ...companyDetailForm,
+      region: "2",
+      selectedRegions: federalStates
+        .filter((state) => selectedRegions.includes(state.german_name))
+        .map((state) => state.id),
+    });
+  }, [selectedRegions]);
 
   const regions: TabsProps["items"] = [
     {
@@ -257,7 +281,12 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       children: (
         <div className="region-content">
           If you cover entire states, switch to the States tab.
-          {/* <AutoComplete
+          <PostcodeMap
+            selectedPostcode={postalCode}
+            setSelectedPostcode={setPostalCode}
+            setIsEditing={setIsEditing}
+          />
+          <AutoComplete
             options={postcodeList.map((pc) => ({
               value: pc.code,
               label: pc.label,
@@ -286,7 +315,8 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           {postalCode &&
             postalCode.map((_, index) => (
               <div key={index} className="postal-code-item">
-                {postalCode[index].code}
+                {postcodeList.find((pc) => pc.code === postalCode[index].code)
+                  ?.label || postalCode[index].code}
                 <div className="radius-slider">
                   <Slider
                     value={postalCode[index].radius}
@@ -313,8 +343,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                   Remove
                 </Button>
               </div>
-            ))} */}
-          <PostcodeMap />
+            ))}
         </div>
       ),
     },
@@ -329,15 +358,16 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
         <div className="region-content">
           If you operate in specific postal code areas, switch to the Postcode
           tab.
-          <div
-            className="region-checkbox-group"
-            style={{ maxHeight: "200px", overflowY: "auto" }}
-          >
-            <StateMap />
+          <div className="region-checkbox-group">
+            <StateMap
+              selectedRegions={selectedRegions}
+              setSelectedRegions={setSelectedRegions}
+              setIsEditing={setIsEditing}
+            />
             {federalStates.map((state) => (
               <div key={state.id} className="region-checkbox">
                 <Checkbox
-                  checked={selectedRegions.includes(state.id)}
+                  checked={selectedRegions.includes(state.german_name)}
                   onChange={(e) => {
                     const selectedValues = e.target.checked
                       ? [...selectedRegions, state.id]
@@ -349,7 +379,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
               </div>
             ))}
           </div>
-          <div className="region-tag-group">
+          {/* <div className="region-tag-group">
             {selectedRegions.map((id) => (
               <Tag
                 className="region-tag"
@@ -371,7 +401,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                 {federalStates.find((s) => s.id === id)?.english_name})
               </Tag>
             ))}
-          </div>
+          </div> */}
         </div>
       ),
     },
@@ -379,8 +409,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       key: "3",
       label: (
         <span className="region-label">
-          <GlobalOutlined />
-          Nationwide
+          <GlobalOutlined /> Nationwide
         </span>
       ),
       children: <div>Your services reach the whole country</div>,

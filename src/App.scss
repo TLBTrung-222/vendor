@@ -97,3 +97,38 @@ $breakpoint-xxxl: 1920px;
     }
   }
 }
+
+.ant-slider:hover {
+  .ant-slider-track {
+    background-color: var(--atlas-500);
+  }
+  .ant-slider-handle::after {
+    box-shadow: 0 0 0 2px var(--atlas-500);
+  }
+  .ant-slider-handle:hover::after {
+    outline: 0 0 0 2.5px var(--atlas-50);
+  }
+}
+
+.ant-slider-handle:focus::after {
+  box-shadow: 0 0 0 2px var(--atlas-500);
+  outline: 0 0 0 2.5px var(--atlas-50);
+}
+
+.ant-slider-track {
+  background-color: var(--atlas-500) !important;
+  &:hover {
+    background-color: var(--atlas-500) !important;
+  }
+}
+
+.ant-slider-handle::after {
+  box-shadow: 0 0 0 2px var(--atlas-500) !important;
+}
+
+.ant-tabs-tab-active,
+.ant-tabs-tab:hover {
+  .ant-tabs-tab-btn {
+    color: var(--atlas-500) !important;
+  }
+}

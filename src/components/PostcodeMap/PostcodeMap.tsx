@@ -34,7 +34,17 @@ interface SelectedPostcode {
   radius: number;
 }
 
-function PostcodeMap() {
+interface IPostcodeMap {
+  selectedPostcode: any;
+  setSelectedPostcode: (postcode: any) => void;
+  setIsEditing?: (isEditing: boolean) => void;
+}
+
+function PostcodeMap({
+  selectedPostcode,
+  setSelectedPostcode,
+  setIsEditing,
+}: IPostcodeMap) {
   const defaultPosition: [number, number] = [51.1657, 10.4515];
   const [position, setPosition] = useState<[number, number]>(defaultPosition);
   const [zipCode, setZipCode] = useState<string | null>(null);
@@ -50,7 +60,7 @@ function PostcodeMap() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [radiusValue, setRadiusValue] = useState(20000);
+  const [radiusValue, setRadiusValue] = useState(20);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -91,8 +101,11 @@ function PostcodeMap() {
           p.id === activePostcode.id ? { ...p, radius: newRadius } : p
         )
       );
+      setIsEditing && setIsEditing(true);
     } else if (tempPostcode) {
       setTempPostcode({ ...tempPostcode, radius: newRadius });
+      setSelectedPostcode((prev: any) => ({ ...prev, radius: newRadius }));
+      setIsEditing && setIsEditing(true);
     }
   };
 
@@ -107,7 +120,9 @@ function PostcodeMap() {
     if (existing) {
       setActivePostcodeId(existing.id);
       setTempPostcode(null);
+      setSelectedPostcode((prev: any) => [...prev, existing]);
       setIsDropdownOpen(true);
+      setIsEditing && setIsEditing(true);
       return;
     }
 
@@ -122,6 +137,8 @@ function PostcodeMap() {
 
     setSelectedPostcodes((prev) => [...prev, newPostcode]);
     setActivePostcodeId(newPostcode.id);
+    setSelectedPostcode((prev: any) => [...prev, newPostcode]);
+    setIsEditing && setIsEditing(true);
     setTempPostcode(null);
   };
 
@@ -146,6 +163,8 @@ function PostcodeMap() {
             if (existing) {
               setActivePostcodeId(existing.id);
               setTempPostcode(null);
+              setSelectedPostcode((prev: any) => [...prev, existing]);
+              setIsEditing && setIsEditing(true);
             } else {
               const match = postcodeList.find((p) => p.code === fetchedZip);
               if (match) {
@@ -157,6 +176,20 @@ function PostcodeMap() {
                   lng: lng,
                   radius: 20000,
                 });
+                setSelectedPostcode((prev: any) => [
+                  ...prev,
+                  {
+                    code: match.code,
+                    label: match.label,
+                    lat: lat,
+                    lng: lng,
+                    radius: 20,
+                  },
+                ]);
+                setIsEditing && setIsEditing(true);
+                setActivePostcodeId(null);
+              } else {
+                setTempPostcode(null);
                 setActivePostcodeId(null);
               }
             }
@@ -266,6 +299,7 @@ function PostcodeMap() {
                 click: () => {
                   setActivePostcodeId(postcode.id);
                   setTempPostcode(null);
+                  setSelectedPostcode((prev: any) => [...prev, postcode]);
                   setZipCode(postcode.code);
                 },
               }}
@@ -290,7 +324,7 @@ function PostcodeMap() {
         )}
       </MapContainer>
 
-      <div className="controls-section">
+      {/* <div className="controls-section">
         <div className="radius-slider-container">
           <div className="radius-header">
             <label className="radius-label">Radius</label>
@@ -363,6 +397,7 @@ function PostcodeMap() {
                     onClick={() => {
                       setActivePostcodeId(postcode.id);
                       setTempPostcode(null);
+                      setSelectedPostcode((prev: any) => [...prev, postcode]);
                       setIsDropdownOpen(false);
                     }}
                   >
@@ -388,7 +423,7 @@ function PostcodeMap() {
             + Add Postcode
           </button>
         </div>
-      </div>
+      </div> */}
 
       {isModalOpen && (
         <div className="modal-overlay">

@@ -3,6 +3,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+
   .radius-slider-container {
     margin-bottom: 2rem;
   }
@@ -21,12 +22,12 @@
 
   .radius-value {
     font-weight: 600;
-    color: orange;
+    color: var(--atlas-500);
   }
 
   .radius-input {
     width: 100%;
-    accent-color: orange;
+    accent-color: var(--atlas-500);
     cursor: pointer;
   }
 
@@ -157,8 +158,8 @@
   .btn-add {
     padding: 1rem 1.5rem;
     background: white;
-    color: orange;
-    border: 1px solid orange;
+    color: var(--atlas-500);
+    border: 1px solid var(--atlas-500);
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
