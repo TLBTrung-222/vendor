@@ -52,14 +52,14 @@ function App() {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userEmail");
-      localStorage.removeItem("vendorOnboardingStep");
+      localStorage.removeItem("onboardingStep");
 
       // Save new data
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken || "");
       localStorage.setItem("userEmail", decoded.user.email);
       localStorage.setItem(
-        "vendorOnboardingStep",
+        "onboardingStep",
         decoded.user.vendorOnboardingStep || "1"
       );
 
