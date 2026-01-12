@@ -82,8 +82,6 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
   const { message, playNoti } = usePusher();
 
-  console.log(companyDetailForm);
-
   useEffect(() => {
     const fetchFederalStates = async () => {
       try {
@@ -738,6 +736,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             activeKey={region}
             onChange={(key) => {
               setRegion(key);
+              setIsEditing(true);
               const selectedRegion = regions.find((item) => item.key === key);
               if (selectedRegion) {
                 setCompanyDetailForm({
