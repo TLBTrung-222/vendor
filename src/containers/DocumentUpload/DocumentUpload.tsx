@@ -62,7 +62,7 @@ const DocumentUpload: React.FC<IDocumentUpload> = ({
   updateStep,
   vendor,
   setNotiItems,
-  setIsStepAvailable
+  setIsStepAvailable,
 }) => {
   const [documentTypes, setDocumentTypes] = useState<Array<any>>([]);
   const [vendorDocuments, setVendorDocuments] = useState<Array<Document>>([]);
@@ -85,7 +85,7 @@ const DocumentUpload: React.FC<IDocumentUpload> = ({
     };
 
     fetchVendorDocuments();
-  }, []);
+  }, [vendor?.vendor_id]);
 
   return (
     <div className="DocumentUpload">

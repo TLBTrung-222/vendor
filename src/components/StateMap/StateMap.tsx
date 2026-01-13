@@ -1,10 +1,8 @@
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./StateMap.scss";
-import { useMemo, useState } from "react";
 import stateData from "../../utils/stateDE.json";
 import { Layer } from "leaflet";
-import { vendorAPI } from "../../services/vendorAPI";
 
 const geoJsonData = stateData as any;
 
@@ -32,7 +30,7 @@ const StateMap: React.FC<IStateMap> = ({
     setIsEditing && setIsEditing(true);
   };
 
-  const getColor = (name: string) => {
+  const getColor = (id: number) => {
     const colors = [
       "#fa7784ff",
       "#fcb461ff",
@@ -53,16 +51,17 @@ const StateMap: React.FC<IStateMap> = ({
     ];
 
     let hash = 0;
-    if (!name) return "#3388ff";
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    if (!id) return "#3388ff";
+    const idStr = id.toString();
+    for (let i = 0; i < idStr.length; i++) {
+      hash = idStr.charCodeAt(i) + ((hash << 5) - hash);
     }
     return colors[Math.abs(hash) % colors.length];
   };
 
   const style = (feature: any) => {
-    const isSelected = selectedRegions.includes(feature.properties.name);
-    const stateColor = getColor(feature.properties.name);
+    const isSelected = selectedRegions.includes(feature.id);
+    const stateColor = getColor(feature.id);
 
     return {
       fillColor: stateColor,
@@ -77,15 +76,15 @@ const StateMap: React.FC<IStateMap> = ({
   const onEachFeature = (feature: any, layer: Layer) => {
     layer.on({
       click: () => {
-        const name = feature.properties.name;
-        if (name) {
-          toggleStateSelection(name);
+        const id = feature.id;
+        if (id) {
+          toggleStateSelection(id);
         }
       },
     });
 
-    if (feature.properties && feature.properties.name) {
-      layer.bindPopup(feature.properties.name);
+    if (feature.id) {
+      layer.bindPopup(feature.id);
     }
   };
 

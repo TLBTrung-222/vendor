@@ -44,9 +44,9 @@ function App() {
     const accessToken = urlParams.get("access");
     const refreshToken = urlParams.get("refresh");
 
-    // ✅ Only run this logic when tokens exist in URL
     if (accessToken) {
       const decoded = decodeToken(accessToken);
+      
 
       // Clear old data ONCE
       localStorage.removeItem("accessToken");
@@ -58,10 +58,10 @@ function App() {
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken || "");
       localStorage.setItem("userEmail", decoded.user.email);
-      localStorage.setItem(
-        "onboardingStep",
-        decoded.user.vendorOnboardingStep || "1"
-      );
+      // localStorage.setItem(
+      //   "onboardingStep",
+      //   decoded.user.vendorOnboardingStep || "1"
+      // );
 
       setIsAuthenticated(true);
 

@@ -25,14 +25,6 @@ import {
   PlusCircleOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import {
-  TextField,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  CircularProgress,
-} from "@mui/material";
-import { Box, positions } from "@mui/system";
 import { postcodeList } from "../../utils/PostalcodeList";
 import { MapOutlined } from "@mui/icons-material";
 import { usePusher } from "../../contexts/PusherContext";
@@ -76,7 +68,9 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
     { code: string; radius: number }[]
   >(companyDetailForm.postalCode || []);
   const [federalStates, setFederalStates] = useState<IFederalState[]>([]);
-  const [selectedRegions, setSelectedRegions] = useState<any[]>([]);
+  const [selectedRegions, setSelectedRegions] = useState<any[]>(
+    companyDetailForm.selectedRegions || []
+  );
   const [region, setRegion] = useState(companyDetailForm.region || "1");
   const [positions, setPositions] = useState<RepresentativePosition[]>([]);
 
@@ -193,25 +187,20 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
     const fetchLegalForms = async () => {
       if (!companyDetailForm.country) return;
       try {
-        const selectedCountry = countries.find(
-          (c) => c.country_id === companyDetailForm.country
-        );
-        if (!selectedCountry) return;
-        const response = await vendorAPI.getLegalForms(
-          selectedCountry?.country_id
-        );
+        const countryId = companyDetailForm.country;
+        const response = await vendorAPI.getLegalForms(countryId);
         setLegalForms(response.data.data);
-        setCompanyDetailForm({
-          ...companyDetailForm,
+        setCompanyDetailForm((prevForm: any) => ({
+          ...prevForm,
           legalForms: response.data.data,
-        });
+        }));
       } catch (error) {
         Helpers.notification.error(t("failedToLoadLegalForms"));
       }
     };
 
     fetchLegalForms();
-  }, [companyDetailForm.country]);
+  }, [companyDetailForm.country, countries]);
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -253,20 +242,19 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   useEffect(() => {
     setCompanyDetailForm({
       ...companyDetailForm,
-      region: "1",
       postalCode: postalCode,
     });
   }, [postalCode]);
 
   useEffect(() => {
-    setCompanyDetailForm({
-      ...companyDetailForm,
-      region: "2",
+    if (!federalStates || federalStates.length === 0) return;
+    setCompanyDetailForm((prevForm: any) => ({
+      ...prevForm,
       selectedRegions: federalStates
-        .filter((state) => selectedRegions.includes(state.german_name))
+        .filter((state) => selectedRegions.includes(state.id))
         .map((state) => state.id),
-    });
-  }, [selectedRegions]);
+    }));
+  }, [selectedRegions, federalStates]);
 
   const regions: TabsProps["items"] = [
     {
@@ -279,37 +267,52 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       children: (
         <div className="region-content">
           If you cover entire states, switch to the States tab.
+          <div className="d-flex gap-2">
+            <AutoComplete
+              options={postcodeList.map((pc) => ({
+                value: pc.code,
+                label: pc.label,
+              }))}
+              filterOption={filterOptions}
+              value={newPostalCode.code}
+              onChange={(value) => {
+                setNewPostalCode({ ...newPostalCode, code: value });
+              }}
+              onSelect={(value) => {
+                const selected = postcodeList.find((pc) => pc.code === value);
+                if (!selected) return;
+
+                if (postalCode.some((pc) => pc.code === value)) {
+                  Helpers.notification.warning("Postcode already added.");
+                  return;
+                }
+
+                setPostalCode((prev) => [
+                  ...prev,
+                  { code: value, radius: 100 },
+                ]);
+
+                setNewPostalCode({ code: "", radius: 100 });
+              }}
+            >
+              <Input placeholder="Select Postal Code" />
+            </AutoComplete>
+            <Button
+              type="primary"
+              icon={<PlusCircleOutlined />}
+              onClick={() => {
+                setPostalCode((prev) => [...prev, newPostalCode]);
+                setNewPostalCode({ code: "", radius: 100 });
+              }}
+            >
+              Add Postcode{" "}
+            </Button>{" "}
+          </div>
           <PostcodeMap
             selectedPostcode={postalCode}
             setSelectedPostcode={setPostalCode}
             setIsEditing={setIsEditing}
           />
-          <AutoComplete
-            options={postcodeList.map((pc) => ({
-              value: pc.code,
-              label: pc.label,
-            }))}
-            filterOption={filterOptions}
-            value={newPostalCode.code}
-            onChange={(value) => {
-              setNewPostalCode({ ...newPostalCode, code: value });
-            }}
-            onSelect={(value) => {
-              const selected = postcodeList.find((pc) => pc.code === value);
-              if (!selected) return;
-
-              if (postalCode.some((pc) => pc.code === value)) {
-                Helpers.notification.warning("Postcode already added.");
-                return;
-              }
-
-              setPostalCode((prev) => [...prev, { code: value, radius: 100 }]);
-
-              setNewPostalCode({ code: "", radius: 100 });
-            }}
-          >
-            <Input placeholder="Select Postal Code" />
-          </AutoComplete>
           {postalCode &&
             postalCode.map((_, index) => (
               <div key={index} className="postal-code-item">
@@ -365,7 +368,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             {federalStates.map((state) => (
               <div key={state.id} className="region-checkbox">
                 <Checkbox
-                  checked={selectedRegions.includes(state.german_name)}
+                  checked={selectedRegions.includes(state.id)}
                   onChange={(e) => {
                     const selectedValues = e.target.checked
                       ? [...selectedRegions, state.id]
@@ -407,7 +410,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       key: "3",
       label: (
         <span className="region-label">
-          <GlobalOutlined /> Nationwide
+          <GlobalOutlined /> {t("nationwide")}
         </span>
       ),
       children: <div>Your services reach the whole country</div>,
@@ -733,11 +736,11 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           </div>
           <Tabs
             items={regions}
-            activeKey={region}
+            activeKey={companyDetailForm.region}
             onChange={(key) => {
               setRegion(key);
               setIsEditing(true);
-              const selectedRegion = regions.find((item) => item.key === key);
+              const selectedRegion = regions.find((item) => item.key == key);
               if (selectedRegion) {
                 setCompanyDetailForm({
                   ...companyDetailForm,

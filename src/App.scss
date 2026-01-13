@@ -132,3 +132,29 @@ $breakpoint-xxxl: 1920px;
     color: var(--atlas-500) !important;
   }
 }
+
+.ant-btn {
+  &-primary {
+    background-color: var(--atlas-500);
+    border-color: var(--atlas-500);
+
+    &:hover {
+      background-color: var(--atlas-600) !important;
+      border-color: var(--atlas-600) !important;
+    }
+  }
+}
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--atlas-500);
+  border-color: var(--atlas-500);
+}
+
+.ant-checkbox-checked:not(.ant-checkbox-disabled) .ant-checkbox-inner {
+  background-color: var(--atlas-500) !important;
+  border-color: var(--atlas-500);
+}
+
+.ant-checkbox:not(.ant-checkbox-disabled):hover .ant-checkbox-inner {
+  border-color: var(--atlas-500);
+}
