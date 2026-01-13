@@ -19,6 +19,7 @@ import {
 import { vendorAPI } from "../../services/vendorAPI";
 import Helpers from "../../utils/Helpers";
 import {
+  BulbFilled,
   DeleteOutlined,
   EnvironmentOutlined,
   GlobalOutlined,
@@ -267,12 +268,19 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       children: (
         <div className="region-content">
           If you cover entire states, switch to the States tab.
+          <div className="info-box mb-1">
+            <BulbFilled color="yellow" /> You can add{" "}
+            <b>multiple postal codes</b> to define your coverage areas. Each
+            gets its own radius!
+          </div>
           <div className="d-flex gap-2">
             <AutoComplete
-              options={postcodeList.map((pc) => ({
-                value: pc.code,
-                label: pc.label,
-              }))}
+              options={postcodeList
+                .filter((pc) => postalCode.every((p) => p.code !== pc.code))
+                .map((pc) => ({
+                  value: pc.code,
+                  label: pc.label,
+                }))}
               filterOption={filterOptions}
               value={newPostalCode.code}
               onChange={(value) => {
@@ -295,18 +303,13 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                 setNewPostalCode({ code: "", radius: 100 });
               }}
             >
-              <Input placeholder="Select Postal Code" />
+              <div className="d-flex gap-2">
+                <Input placeholder="Select Postal Code" />
+                <Button type="primary" icon={<PlusCircleOutlined />}>
+                  Add Postcode{" "}
+                </Button>
+              </div>
             </AutoComplete>
-            <Button
-              type="primary"
-              icon={<PlusCircleOutlined />}
-              onClick={() => {
-                setPostalCode((prev) => [...prev, newPostalCode]);
-                setNewPostalCode({ code: "", radius: 100 });
-              }}
-            >
-              Add Postcode{" "}
-            </Button>{" "}
           </div>
           <PostcodeMap
             selectedPostcode={postalCode}
