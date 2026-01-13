@@ -1,7 +1,6 @@
 .StateMap {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  max-width: 100%;
+  margin: 20px 0;
   text-align: center;
   .state-controls {
     position: absolute;
@@ -53,28 +52,4 @@
     font-size: 16px;
     color: red;
   }
-}
-
-.app-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  font-family: "Inter", sans-serif;
-  align-items: center;
-}
-
-.custom-map {
-  width: 800px;
-  height: 500px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.controls-section {
-  width: 800px;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  box-sizing: border-box;
 }

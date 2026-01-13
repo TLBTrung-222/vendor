@@ -11,6 +11,7 @@ import "./PostcodeMap.scss";
 import L from "leaflet";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { postcodeList } from "../../utils/PostalcodeList";
+import Helpers from "../../utils/Helpers";
 
 const customIcon = new L.Icon({
   iconRetinaUrl:
@@ -48,12 +49,10 @@ function PostcodeMap({
   const [position, setPosition] = useState<[number, number]>(defaultPosition);
   const [zipCode, setZipCode] = useState<string | null>(null);
 
-
   const [postcodeCoords, setPostcodeCoords] = useState<PostcodeCoords[]>([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
 
   const circlesData = useMemo(() => {
     if (!selectedPostcode || !Array.isArray(selectedPostcode)) return [];
@@ -67,29 +66,32 @@ function PostcodeMap({
             label: coords.label,
             lat: coords.lat,
             lng: coords.lng,
-            radius: p.radius * 1000, 
+            radius: p.radius * 1000,
           };
         }
         return null;
       })
       .filter(Boolean) as {
-        code: string;
-        label: string;
-        lat: number;
-        lng: number;
-        radius: number;
-      }[];
+      code: string;
+      label: string;
+      lat: number;
+      lng: number;
+      radius: number;
+    }[];
   }, [selectedPostcode, postcodeCoords]);
 
-
-  const addCoordinates = (code: string, label: string, lat: number, lng: number) => {
+  const addCoordinates = (
+    code: string,
+    label: string,
+    lat: number,
+    lng: number
+  ) => {
     setPostcodeCoords((prev) => {
       const existing = prev.find((p) => p.code === code);
       if (existing) return prev;
       return [...prev, { code, label, lat, lng }];
     });
   };
-
 
   useEffect(() => {
     if (!selectedPostcode || !Array.isArray(selectedPostcode)) return;
@@ -115,7 +117,9 @@ function PostcodeMap({
           addCoordinates(p.code, match.label, lat, lng);
         }
       } catch (error) {
-        console.error("Failed to fetch coordinates for", p.code, error);
+        Helpers.notification.error(
+          "Error fetching coordinates for postcode " + p.code
+        );
       }
     });
   }, [selectedPostcode, postcodeCoords]);
@@ -149,7 +153,7 @@ function PostcodeMap({
                 // Add to parent state (only code and radius in km)
                 setSelectedPostcode((prev: any) => [
                   ...prev,
-                  { code: match.code, radius: 100 }, 
+                  { code: match.code, radius: 100 },
                 ]);
                 setIsEditing && setIsEditing(true);
               }
@@ -213,7 +217,7 @@ function PostcodeMap({
       // Add to parent state
       setSelectedPostcode((prev: any) => [
         ...prev,
-        { code: item.code, radius: 100 }, 
+        { code: item.code, radius: 100 },
       ]);
       setIsEditing && setIsEditing(true);
 
@@ -230,18 +234,18 @@ function PostcodeMap({
     <div className="PostcodeMap app-container">
       <MapContainer center={defaultPosition} zoom={6} className="custom-map">
         <TileLayer
-          url={`https://maps.geoapify.com/v1/tile/klokantech-basic/{z}/{x}/{y}.png?apiKey=${import.meta.env.VITE_GEOAPIFY}`}
+          url={`https://maps.geoapify.com/v1/tile/klokantech-basic/{z}/{x}/{y}.png?apiKey=${
+            import.meta.env.VITE_GEOAPIFY
+          }`}
         />
         <LocationMarker />
 
-      
         {circlesData.length === 0 && (
           <Marker key="main-marker" position={position} icon={customIcon}>
             {zipCode && <Popup>{zipCode}</Popup>}
           </Marker>
         )}
 
-   
         {circlesData.map((postcode) => (
           <div key={postcode.code}>
             <Circle
@@ -253,7 +257,10 @@ function PostcodeMap({
                 fillOpacity: 0.2,
               }}
             />
-            <Marker position={[postcode.lat, postcode.lng] as [number, number]} icon={customIcon}>
+            <Marker
+              position={[postcode.lat, postcode.lng] as [number, number]}
+              icon={customIcon}
+            >
               <Popup>{postcode.label}</Popup>
             </Marker>
           </div>

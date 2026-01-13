@@ -97,6 +97,19 @@ const Home: React.FC<IHome> = () => {
 
         const response = await vendorAPI.getVendorByContactEmail(userEmail);
         setVendor(response.data.data);
+        localStorage.setItem(
+          "onboardingStep",
+          response.data.data.onboarding_status_id === 1 ||
+            response.data.data.onboarding_status_id === 3
+            ? "1"
+            : response.data.data.onboarding_status_id === 2 ||
+              response.data.data.onboarding_status_id === 4 ||
+              response.data.data.onboarding_status_id === 5 ||
+              response.data.data.onboarding_status_id === 6 ||
+              response.data.data.onboarding_status_id === 7
+            ? "2"
+            : "3"
+        );
         setCompanyDetailForm({
           onboardingStatus:
             response.data.data.onboarding_transaction?.stage_1
@@ -152,7 +165,9 @@ const Home: React.FC<IHome> = () => {
       }
     };
 
-    fetchVendorIdByEmail();
+    if (!vendor) {
+      fetchVendorIdByEmail();
+    }
   }, []);
 
   useEffect(() => {
