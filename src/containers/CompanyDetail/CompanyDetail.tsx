@@ -143,6 +143,14 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             });
           }
         });
+        playNoti();
+        const newMessageItem = {
+          key: Math.random(),
+          label: (
+            <NotiItem message={message?.events ? message.events[0] : message} />
+          ),
+        };
+        setNotiItems((prev: any) => [newMessageItem, ...prev!]);
       }
       if (message?.detail?.description) {
         setCompanyDetailForm((prevForm: any) => ({
@@ -159,17 +167,17 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             message?.detail?.updated_by?.created_at
           ).toLocaleDateString(),
         }));
+        playNoti();
+        const newMessageItem = {
+          key: Math.random(),
+          label: (
+            <NotiItem message={message?.events ? message.events[0] : message} />
+          ),
+        };
+        setNotiItems((prev: any) => [newMessageItem, ...prev!]);
       }
-      playNoti();
-      const newMessageItem = {
-        key: Math.random(),
-        label: (
-          <NotiItem message={message?.events ? message.events[0] : message} />
-        ),
-      };
-      setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
-  }, [message]);
+  }, [message?.changes, message?.detail?.description]);
 
   useEffect(() => {
     const fetchCountries = async () => {
