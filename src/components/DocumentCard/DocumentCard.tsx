@@ -143,16 +143,6 @@ const DocumentCard: React.FC<IDocumentCard> = ({
           ),
         };
         setNotiItems((prev: any) => [newMessageItem, ...prev!]);
-      } else if (message?.detail?.description) {
-        updateStep(1);
-        playNoti();
-        const newMessageItem = {
-          key: Math.random(),
-          label: (
-            <NotiItem message={message.events ? message.events[0] : message} />
-          ),
-        };
-        setNotiItems((prev: any) => [newMessageItem, ...prev!]);
       }
     }
   }, [message?.detail]);
