@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useMemo, useState } from "react";
 import "./CompanyDetail.scss";
 import { useTranslation } from "react-i18next";
 import {
@@ -143,8 +143,20 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
     fetchPositions();
   }, []);
 
-  const filterOptions = (inputValue: string, option: any) =>
-    option!.label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
+  const postcodeOptions = useMemo(() => {
+    const seen = new Set<string>();
+
+    return postcodeList
+      .filter((pc) => {
+        if (seen.has(pc.code)) return false;
+        seen.add(pc.code);
+        return true;
+      })
+      .map((pc) => ({
+        label: pc.label,
+        value: pc.code,
+      }));
+  }, []);
 
   const [newPostalCode, setNewPostalCode] = useState<{
     code: string;
@@ -182,11 +194,11 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           </div>
           <div className="d-flex gap-2">
             <AutoComplete
-              options={postcodeList.map((pc) => ({
-                label: pc.label,
-                value: pc.code,
-              }))}
-              filterOption={filterOptions}
+              options={postcodeOptions}
+              filterOption={(input, option) =>
+                option?.label.toLowerCase().includes(input.toLowerCase()) ||
+                option?.value.includes(input)
+              }
               value={newPostalCode.code}
               onChange={(value) => {
                 setNewPostalCode({ ...newPostalCode, code: value });
