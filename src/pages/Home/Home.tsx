@@ -26,11 +26,57 @@ import { contractAPI } from "../../services/contractAPI";
 import { Cookies } from "react-cookie";
 import Pusher from "pusher-js";
 import ContractSignature from "../../containers/ContractSignature/ContractSignature";
+import NotiItem from "../NotiItem/NotiItem";
+import { documentAPI } from "../../services/documentAPI";
+
+interface DocumentWithType {
+  type_id: number;
+  title: string;
+  country_id: number;
+  document: Document | null;
+  issued_by: string;
+  how_to_obtain: string;
+  appearance: string;
+}
+
+interface DocumentType {
+  type_id: number;
+  title: string;
+  mandatory: boolean;
+  category_id: number;
+  issued_by: string;
+  how_to_obtain: string;
+  appearance: string;
+}
+
+interface DocumentStatus {
+  title: string;
+  status_id: number;
+  description: string;
+}
+
+interface Document {
+  document_id: number;
+  type_id: number;
+  description: string | null;
+  expired_at: string | null;
+  vendor_id: number;
+  status_id: number;
+  name: string;
+  url: string;
+  document_status: DocumentStatus;
+  document_types: DocumentType;
+  updated_by: {
+    first_name: string | null;
+    last_name: string | null;
+    user_id: number | null;
+  };
+  updated_at: string | null;
+}
 
 interface IHome {}
 
 const Home: React.FC<IHome> = () => {
-  const [isOpenModal, setIsOpenModal] = useState(false);
   const [step, setStep] = useState(() => {
     const savedStep = localStorage.getItem("onboardingStep");
     return savedStep ? parseInt(savedStep, 10) : 1;
@@ -64,10 +110,12 @@ const Home: React.FC<IHome> = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   const [notiItems, setNotiItems] = useState<any>([]);
-  const { message } = usePusher();
+  const { message, playNoti } = usePusher();
   const [isOpenNotiDropdown, setIsOpenNotiDropdown] = useState(false);
   const [isLoadingVendorId, setIsLoadingVendorId] = useState<boolean>(false);
   const [vendorIdError, setVendorIdError] = useState<string | null>(null);
+  const [vendorDocuments, setVendorDocuments] = useState<Array<Document>>([]);
+  const [documentTypes, setDocumentTypes] = useState<Array<any>>([]);
 
   const [contracts, setContracts] = useState<any[]>([]);
   const [isStepAvailable, setIsStepAvailable] = useState<boolean>(true);
@@ -77,7 +125,6 @@ const Home: React.FC<IHome> = () => {
     setStep(step);
     localStorage.setItem("onboardingStep", step.toString());
   };
-
   const pusherRef = useRef<Pusher | null>(null);
 
   useEffect(() => {
@@ -171,55 +218,6 @@ const Home: React.FC<IHome> = () => {
   }, []);
 
   useEffect(() => {
-    if (contracts.length === 0) return;
-    if (!pusherRef.current) {
-      pusherRef.current = new Pusher(
-        import.meta.env.VITE_REACT_APP_PUSHER_KEY!,
-        {
-          cluster: import.meta.env.VITE_REACT_APP_PUSHER_CLUSTER!,
-          // authEndpoint: process.env.REACT_APP_HAY2U_ENDPOINT + "/auth/pusher",
-        }
-      );
-    }
-
-    const pusher = pusherRef.current;
-    const userChannel = pusher.subscribe("PRIVATE-MONTAGO");
-
-    userChannel.bind(
-      `vendor-${vendor.vendor_id}-contract-${contracts[0].contract_id}`,
-      (data: any) => {
-        setContracts((prevContracts) =>
-          prevContracts.map((contract) =>
-            contract.contract_id === data.contract_id
-              ? {
-                  ...contract,
-                  events: [
-                    {
-                      ...data,
-                    },
-                    ...contract.events,
-                  ],
-                }
-              : contract
-          )
-        );
-      }
-    );
-
-    if (
-      contracts.every((item: any) => {
-        const events = item.events;
-        return (
-          events && events.length > 0 && events[0]?.event_type === "Completed"
-        );
-      })
-    ) {
-      updateStep(1);
-      handleRedirect();
-    }
-  }, [contracts]);
-
-  useEffect(() => {
     const fetchVendorContracts = async () => {
       if (!vendor?.vendor_id) return;
 
@@ -234,6 +232,25 @@ const Home: React.FC<IHome> = () => {
     };
 
     fetchVendorContracts();
+  }, []);
+
+  useEffect(() => {
+    if (!vendor?.vendor_id) return;
+
+    const fetchVendorDocuments = async () => {
+      try {
+        const response = await documentAPI.getDocuments(vendor.vendor_id);
+        setDocumentTypes(response.data.data);
+        const documents: Document[] = response.data.data
+          .filter((item: DocumentWithType) => item.document !== null)
+          .map((item: DocumentWithType) => item.document as Document);
+        setVendorDocuments(documents);
+      } catch (error) {
+        Helpers.notification.error("Failed to load documents.");
+      }
+    };
+
+    fetchVendorDocuments();
   }, [vendor?.vendor_id]);
 
   const handleRedirect = async () => {
@@ -268,6 +285,55 @@ const Home: React.FC<IHome> = () => {
   };
 
   useEffect(() => {
+    if (contracts.length === 0) return;
+    if (!pusherRef.current) {
+      pusherRef.current = new Pusher(
+        import.meta.env.VITE_REACT_APP_PUSHER_KEY!,
+        {
+          cluster: import.meta.env.VITE_REACT_APP_PUSHER_CLUSTER!,
+          // authEndpoint: process.env.REACT_APP_HAY2U_ENDPOINT + "/auth/pusher",
+        }
+      );
+    }
+
+    const pusher = pusherRef.current;
+    const userChannel = pusher.subscribe("PRIVATE-MONTAGO");
+
+    userChannel.bind(
+      `vendor-${vendor?.vendor_id}-contract-${contracts[0].contract_id}`,
+      (data: any) => {
+        setContracts((prevContracts) =>
+          prevContracts.map((contract) =>
+            contract.contract_id === data.contract_id
+              ? {
+                  ...contract,
+                  events: [
+                    {
+                      ...data,
+                    },
+                    ...contract.events,
+                  ],
+                }
+              : contract
+          )
+        );
+      }
+    );
+
+    if (
+      contracts.every((item: any) => {
+        const events = item.events;
+        return (
+          events && events.length > 0 && events[0]?.event_type === "Completed"
+        );
+      })
+    ) {
+      updateStep(1);
+      handleRedirect();
+    }
+  }, [contracts]);
+
+  useEffect(() => {
     if (message) {
       if (message?.events) {
         setContracts((prevContracts) =>
@@ -290,9 +356,135 @@ const Home: React.FC<IHome> = () => {
           }))
         );
         updateStep(3);
+      } else if (message?.detail?.description) {
+        updateStep(1);
+        // setOnboardingStatus(message?.detail?.description);
+        // setPmName(
+        //   message?.detail?.updated_by?.first_name +
+        //     " " +
+        //     message?.detail?.updated_by?.last_name
+        // );
+        // setUpdateDate(
+        //   new Date(message?.detail?.updated_by?.created_at).toLocaleDateString()
+        // );
+        setCompanyDetailForm((prev: any) => ({
+          ...prev,
+          onboardingStatus: message?.detail?.description,
+          pmName:
+            message?.detail?.updated_by?.first_name +
+            " " +
+            message?.detail?.updated_by?.last_name,
+          updateDate: new Date(
+            message?.detail?.updated_by?.created_at
+          ).toLocaleDateString(),
+        }));
       }
+      if (message.changes) {
+        message.changes.forEach((change: any) => {
+          if (change?.field === "trades") {
+            setCompanyDetailForm((prev: any) => {
+              let updatedTrades = [...prev.trades];
+              const added = change.added || [];
+              const removed = change.removed || [];
+              const updated = change.updated || [];
+              if (removed.length > 0) {
+                updatedTrades = updatedTrades.filter(
+                  (trade: any) =>
+                    !removed.some(
+                      (r: any) => r.gewerk_id === trade.gesys_gewerk_id
+                    )
+                );
+              }
+              if (added.length > 0) {
+                added.forEach((a: any) => {
+                  updatedTrades.push({
+                    trade:
+                      documentTypes.find((t) => t.type_id === a.gewerk_id)
+                        ?.title || "",
+                    count: a.employee_number,
+                    gesys_gewerk_id: a.gewerk_id,
+                  });
+                });
+              }
+              if (updated.length > 0) {
+                updated.forEach((u: any) => {
+                  const index = updatedTrades.findIndex(
+                    (trade: any) => trade.gesys_gewerk_id === u.gewerk_id
+                  );
+                  if (index !== -1) {
+                    updatedTrades[index] = {
+                      ...updatedTrades[index],
+                      count: u.new_employee_number,
+                      gesys_gewerk_id: u.gewerk_id,
+                    };
+                  }
+                });
+              }
+              return {
+                ...prev,
+                trades: updatedTrades,
+              };
+            });
+            // setTrades((prev) => {
+            //   let updatedTrades = [...prev];
+
+            //   const added = change.added || [];
+            //   const removed = change.removed || [];
+            //   const updated = change.updated || [];
+
+            //   if (removed.length > 0) {
+            //     updatedTrades = updatedTrades.filter(
+            //       (trade) =>
+            //         !removed.some(
+            //           (r: any) => r.gewerk_id === trade.gesys_gewerk_id
+            //         )
+            //     );
+            //   }
+
+            //   if (added.length > 0) {
+            //     added.forEach((a: any) => {
+            //       updatedTrades.push({
+            //         trade:
+            //           tradeOptions.find(
+            //             (t) => t.gesys_gewerk_id === a.gewerk_id
+            //           )?.gewerk_name || "",
+            //         count: a.employee_number,
+            //         gesys_gewerk_id: a.gewerk_id,
+            //       });
+            //     });
+            //   }
+
+            //   if (updated.length > 0) {
+            //     updated.forEach((u: any) => {
+            //       const index = updatedTrades.findIndex(
+            //         (trade) => trade.gesys_gewerk_id === u.gewerk_id
+            //       );
+            //       if (index !== -1) {
+            //         updatedTrades[index] = {
+            //           ...updatedTrades[index],
+            //           count: u.new_employee_number,
+            //           gesys_gewerk_id: u.gewerk_id,
+            //         };
+            //       }
+            //     });
+            //   }
+
+            //   return updatedTrades;
+            // });
+          }
+        });
+      }
+
+      playNoti();
+      const newMessageItem = {
+        key: Math.random(),
+        label: (
+          <NotiItem message={message.events ? message.events[0] : message} />
+        ),
+      };
+      setNotiItems((prev: any) => [newMessageItem, ...prev!]);
     }
-  }, [message?.events, message?.embed_links]);
+  }, [message]);
 
   const handleFormSubmit = async () => {
     if (!vendor?.vendor_id) {
@@ -576,18 +768,12 @@ const Home: React.FC<IHome> = () => {
           {
             key: "2",
             label: t("step2"),
-            disabled: localStorage.getItem("onboardingStep")
-              ? Number(localStorage.getItem("onboardingStep")) < 2
-              : step < 2,
+            disabled: vendor?.onboarding_status_id === 1,
           },
           {
             key: "3",
             label: t("step3"),
-            disabled:
-              !isStepAvailable ||
-              (localStorage.getItem("onboardingStep")
-                ? Number(localStorage.getItem("onboardingStep")) < 3
-                : step < 3),
+            disabled: !isStepAvailable || vendor?.onboarding_status_id < 7,
           },
         ]}
         className="onboarding-tabs"
@@ -604,6 +790,10 @@ const Home: React.FC<IHome> = () => {
         )}
         {step === 2 && (
           <DocumentUpload
+            documentTypes={documentTypes}
+            setDocumentTypes={setDocumentTypes}
+            vendorDocuments={vendorDocuments}
+            setVendorDocuments={setVendorDocuments}
             vendor={vendor}
             setNotiItems={setNotiItems}
             updateStep={updateStep}

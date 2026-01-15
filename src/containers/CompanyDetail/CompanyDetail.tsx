@@ -64,18 +64,9 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   const [countries, setCountries] = useState<any[]>([]);
   const [legalForms, setLegalForms] = useState<any[]>([]);
   const [tradeOptions, setTradeOptions] = useState<any[]>([]);
-
-  const [postalCode, setPostalCode] = useState<
-    { code: string; radius: number }[]
-  >(companyDetailForm.postalCode || []);
   const [federalStates, setFederalStates] = useState<IFederalState[]>([]);
-  const [selectedRegions, setSelectedRegions] = useState<any[]>(
-    companyDetailForm.selectedRegions || []
-  );
   const [region, setRegion] = useState(companyDetailForm.region || "1");
   const [positions, setPositions] = useState<RepresentativePosition[]>([]);
-
-  const { message, playNoti } = usePusher();
 
   useEffect(() => {
     const fetchFederalStates = async () => {
@@ -89,95 +80,10 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       }
     };
 
-    fetchFederalStates();
-  }, []);
-
-  useEffect(() => {
-    if (message) {
-      if (message.changes) {
-        message.changes.forEach((change: any) => {
-          if (change?.field === "trades") {
-            setCompanyDetailForm((prevForm: any) => {
-              let updatedTrades = [...prevForm.trades];
-              const added = change.added || [];
-              const removed = change.removed || [];
-              const updated = change.updated || [];
-              if (removed.length > 0) {
-                updatedTrades = updatedTrades.filter(
-                  (trade) =>
-                    !removed.some(
-                      (r: any) => r.gewerk_id === trade.gesys_gewerk_id
-                    )
-                );
-              }
-              if (added.length > 0) {
-                added.forEach((a: any) => {
-                  updatedTrades.push({
-                    trade:
-                      tradeOptions.find(
-                        (t) => t.gesys_gewerk_id === a.gewerk_id
-                      )?.gewerk_name || "",
-                    count: a.employee_number,
-                    gesys_gewerk_id: a.gewerk_id,
-                  });
-                });
-              }
-              if (updated.length > 0) {
-                updated.forEach((u: any) => {
-                  const index = updatedTrades.findIndex(
-                    (trade) => trade.gesys_gewerk_id === u.gewerk_id
-                  );
-                  if (index !== -1) {
-                    updatedTrades[index] = {
-                      ...updatedTrades[index],
-                      count: u.new_employee_number,
-                      gesys_gewerk_id: u.gewerk_id,
-                    };
-                  }
-                });
-              }
-              return {
-                ...prevForm,
-                trades: updatedTrades,
-              };
-            });
-          }
-        });
-        playNoti();
-        const newMessageItem = {
-          key: Math.random(),
-          label: (
-            <NotiItem message={message?.events ? message.events[0] : message} />
-          ),
-        };
-        setNotiItems((prev: any) => [newMessageItem, ...prev!]);
-      }
-      if (message?.detail?.description) {
-        setCompanyDetailForm((prevForm: any) => ({
-          ...prevForm,
-          onboardingStatus: message?.detail?.description,
-        }));
-        setCompanyDetailForm((prevForm: any) => ({
-          ...prevForm,
-          pmName: `${message?.detail?.updated_by?.first_name} ${message?.detail?.updated_by?.last_name}`,
-        }));
-        setCompanyDetailForm((prevForm: any) => ({
-          ...prevForm,
-          updateDate: new Date(
-            message?.detail?.updated_by?.created_at
-          ).toLocaleDateString(),
-        }));
-        playNoti();
-        const newMessageItem = {
-          key: Math.random(),
-          label: (
-            <NotiItem message={message?.events ? message.events[0] : message} />
-          ),
-        };
-        setNotiItems((prev: any) => [newMessageItem, ...prev!]);
-      }
+    if (!federalStates) {
+      fetchFederalStates();
     }
-  }, [message?.changes, message?.detail?.description]);
+  }, [federalStates]);
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -249,21 +155,14 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   });
 
   useEffect(() => {
-    setCompanyDetailForm({
-      ...companyDetailForm,
-      postalCode: postalCode,
-    });
-  }, [postalCode]);
-
-  useEffect(() => {
     if (!federalStates || federalStates.length === 0) return;
     setCompanyDetailForm((prevForm: any) => ({
       ...prevForm,
       selectedRegions: federalStates
-        .filter((state) => selectedRegions.includes(state.id))
+        .filter((state) => companyDetailForm.selectedRegions.includes(state.id))
         .map((state) => state.id),
     }));
-  }, [selectedRegions, federalStates]);
+  }, [companyDetailForm.selectedRegions, federalStates]);
 
   const regions: TabsProps["items"] = [
     {
@@ -283,12 +182,10 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           </div>
           <div className="d-flex gap-2">
             <AutoComplete
-              options={postcodeList
-                .filter((pc) => postalCode.every((p) => p.code !== pc.code))
-                .map((pc) => ({
-                  value: pc.code,
-                  label: pc.label,
-                }))}
+              options={postcodeList.map((pc) => ({
+                label: pc.label,
+                value: pc.code,
+              }))}
               filterOption={filterOptions}
               value={newPostalCode.code}
               onChange={(value) => {
@@ -298,15 +195,20 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                 const selected = postcodeList.find((pc) => pc.code === value);
                 if (!selected) return;
 
-                if (postalCode.some((pc) => pc.code === value)) {
+                if (
+                  companyDetailForm.postalCode.some((pc) => pc.code === value)
+                ) {
                   Helpers.notification.warning("Postcode already added.");
                   return;
                 }
 
-                setPostalCode((prev) => [
+                setCompanyDetailForm((prev) => ({
                   ...prev,
-                  { code: value, radius: 100 },
-                ]);
+                  postalCode: [
+                    ...prev.postalCode,
+                    { code: value, radius: 100 },
+                  ],
+                }));
 
                 setNewPostalCode({ code: "", radius: 100 });
               }}
@@ -320,35 +222,50 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             </AutoComplete>
           </div>
           <PostcodeMap
-            selectedPostcode={postalCode}
-            setSelectedPostcode={setPostalCode}
+            selectedPostcode={companyDetailForm.postalCode}
+            setSelectedPostcode={(value) =>
+              setCompanyDetailForm((prev) => ({
+                ...prev,
+                postalCode:
+                  typeof value === "function" ? value(prev.postalCode) : value,
+              }))
+            }
             setIsEditing={setIsEditing}
           />
-          {postalCode &&
-            postalCode.map((_, index) => (
+          {companyDetailForm.postalCode &&
+            companyDetailForm.postalCode.map((_, index) => (
               <div key={index} className="postal-code-item">
-                {postcodeList.find((pc) => pc.code === postalCode[index].code)
-                  ?.label || postalCode[index].code}
+                {postcodeList.find(
+                  (pc) => pc.code === companyDetailForm.postalCode[index].code
+                )?.label || companyDetailForm.postalCode[index].code}
                 <div className="radius-slider">
                   <Slider
-                    value={postalCode[index].radius}
+                    value={companyDetailForm.postalCode[index].radius}
                     aria-label="Small"
                     onChange={(value) => {
-                      const updatedPostalCode = [...postalCode];
+                      const updatedPostalCode = [
+                        ...companyDetailForm.postalCode,
+                      ];
                       updatedPostalCode[index].radius = value as number;
-                      setPostalCode(updatedPostalCode);
+                      setCompanyDetailForm((prev) => ({
+                        ...prev,
+                        postalCode: updatedPostalCode,
+                      }));
                     }}
                     min={1}
                     max={500}
                   />
-                  Radius: {postalCode[index].radius} km
+                  Radius: {companyDetailForm.postalCode[index].radius} km
                 </div>
                 <Button
                   variant="text"
                   onClick={() => {
-                    setPostalCode((prev) =>
-                      prev.filter((_item, idx) => idx !== index)
-                    );
+                    setCompanyDetailForm((prev) => ({
+                      ...prev,
+                      postalCode: prev.postalCode.filter(
+                        (_item, idx) => idx !== index
+                      ),
+                    }));
                   }}
                   style={{ border: "none", color: "red" }}
                 >
@@ -372,19 +289,29 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           tab.
           <div className="region-checkbox-group">
             <StateMap
-              selectedRegions={selectedRegions}
-              setSelectedRegions={setSelectedRegions}
+              selectedRegions={companyDetailForm.selectedRegions}
+              setSelectedRegions={(newSelectedRegions: any) =>
+                setCompanyDetailForm((prev: any) => ({
+                  ...prev,
+                  selectedRegions: newSelectedRegions,
+                }))
+              }
               setIsEditing={setIsEditing}
             />
             {federalStates.map((state) => (
               <div key={state.id} className="region-checkbox">
                 <Checkbox
-                  checked={selectedRegions.includes(state.id)}
+                  checked={companyDetailForm.selectedRegions.includes(state.id)}
                   onChange={(e) => {
                     const selectedValues = e.target.checked
-                      ? [...selectedRegions, state.id]
-                      : selectedRegions.filter((id) => id !== state.id);
-                    setSelectedRegions(selectedValues);
+                      ? [...companyDetailForm.selectedRegions, state.id]
+                      : companyDetailForm.selectedRegions.filter(
+                          (id) => id !== state.id
+                        );
+                    setCompanyDetailForm((prev: any) => ({
+                      ...prev,
+                      selectedRegions: selectedValues,
+                    }));
                   }}
                 />{" "}
                 {state.german_name} ({state.english_name})
@@ -431,7 +358,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   const addTrade = () => {
     setCompanyDetailForm({
       ...companyDetailForm,
-      trades: [...companyDetailForm.trades, { trade: "", count: "" }],
+      trades: [...companyDetailForm.trades, { gesys_gewerk_id: "", count: 0 }],
     });
   };
 
@@ -449,14 +376,9 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       <div className="info-box">{t("infoBox")}</div>
 
       {companyDetailForm?.onboardingStatus && (
-        <div
-          style={{
-            marginBottom: 24,
-            borderLeft: "5px solid #D74141",
-          }}
-        >
+        <div className="deny-box">
           <div>{companyDetailForm.onboardingStatus} </div>
-          <div style={{ fontSize: "caption", color: "text.secondary" }}>
+          <div>
             {t("RejectedBy")} <b>{companyDetailForm.pmName}</b> {t("on")}{" "}
             <b>{companyDetailForm.updateDate}</b>
           </div>
@@ -667,33 +589,45 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
               <Col span={11} style={{ paddingLeft: 0 }}>
                 <Select
                   size="large"
-                  value={item.trade}
+                  value={item.gesys_gewerk_id}
                   onChange={(e) => {
                     setCompanyDetailForm({
                       ...companyDetailForm,
                       trades: companyDetailForm.trades.map((trade, idx) =>
-                        idx === i ? { ...trade, trade: e } : trade
+                        idx === i ? { ...trade, gesys_gewerk_id: e } : trade
                       ),
                     });
                     setIsEditing(true);
                   }}
                   disabled={!!item.gesys_gewerk_id}
                   style={{ width: "100%" }}
-                  options={tradeOptions.map((trade) => ({
-                    value: trade.gewerk_name,
-                    label: t(trade.gewerk_name.replace(/\s+/g, "")),
-                  }))}
+                  options={tradeOptions
+                    .filter(
+                      (tradeOption) =>
+                        !companyDetailForm.trades.some(
+                          (trade: any) =>
+                            trade.gesys_gewerk_id ===
+                            tradeOption.gesys_gewerk_id
+                        ) ||
+                        tradeOption.gesys_gewerk_id === item.gesys_gewerk_id
+                    )
+                    .map((trade) => ({
+                      value: trade.gesys_gewerk_id,
+                      label: t(trade.gewerk_name.replace(/\s+/g, "")),
+                    }))}
                 />
               </Col>
               <Col span={11}>
                 <Input
                   size="large"
-                  value={companyDetailForm.trades[i].count || ""}
+                  value={companyDetailForm.trades[i].count}
                   onChange={(e) => {
                     setCompanyDetailForm({
                       ...companyDetailForm,
                       trades: companyDetailForm.trades.map((trade, idx) =>
-                        idx === i ? { ...trade, count: e.target.value } : trade
+                        idx === i
+                          ? { ...trade, count: Number(e.target.value) }
+                          : trade
                       ),
                     });
                     setIsEditing(true);
@@ -714,8 +648,8 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                         ...companyDetailForm,
                         trades: [
                           {
-                            trade: "",
-                            count: "",
+                            gesys_gewerk_id: "",
+                            count: 0,
                           },
                         ],
                       });
@@ -756,12 +690,6 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                 setCompanyDetailForm({
                   ...companyDetailForm,
                   region: key,
-                  regionsCovered:
-                    selectedRegion.key === "1"
-                      ? postalCode
-                      : selectedRegion.key === "2"
-                      ? selectedRegions
-                      : "nationwide",
                 });
               }
             }}

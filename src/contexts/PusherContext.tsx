@@ -64,30 +64,33 @@ export const PusherProvider = ({ children }: { children: ReactNode }) => {
         import.meta.env.VITE_REACT_APP_PUSHER_KEY!,
         {
           cluster: import.meta.env.VITE_REACT_APP_PUSHER_CLUSTER!,
-          // authEndpoint: process.env.REACT_APP_HAY2U_ENDPOINT + "/auth/pusher",
         }
       );
     }
 
+    if (!vendorId) return;
+
     const pusher = pusherRef.current;
     const userChannel = pusher.subscribe("PRIVATE-MONTAGO");
 
-    if (vendorId) {
-      const flavor =
-        Helpers.whichInstace() == "alpha"
-          ? 1
-          : Helpers.whichInstace() == "beta"
-          ? 2
-          : 3;
-      userChannel.bind(`vendor-${flavor}${vendorId}`, (data: any) => {
-        setMessage(data);
-      });
-    }
+    const flavor =
+      Helpers.whichInstace() === "alpha"
+        ? 1
+        : Helpers.whichInstace() === "beta"
+        ? 2
+        : 3;
 
-    // return () => {
-    //   userChannel.unbind_all();
-    //   userChannel.unsubscribe();
-    // };
+    const eventName = `vendor-${flavor}${vendorId}`;
+
+    const handler = (data: any) => {
+      setMessage(data); // will fire only once per event
+    };
+
+    userChannel.bind(eventName, handler);
+
+    return () => {
+      userChannel.unbind(eventName, handler);
+    };
   }, [vendorId]);
 
   const playNoti = async () => {
