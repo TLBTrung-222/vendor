@@ -110,42 +110,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
   const showSuccess = uploadSuccess[type_id] || false;
 
   const { t } = useTranslation();
-  const { message, playNoti } = usePusher();
-
-  useEffect(() => {
-    if (message) {
-      if (message?.detail?.document_id) {
-        setVendorDocuments((prev) =>
-          prev.map((doc) =>
-            doc.document_id === message?.detail.document_id
-              ? {
-                  ...doc,
-                  description: message?.detail.description,
-                  updated_by: {
-                    ...doc.updated_by,
-                    first_name: message?.detail.updated_by.first_name,
-                    last_name: message?.detail.updated_by.last_name,
-                  },
-                  updated_at: message?.detail.updated_by.created_at,
-                  document_status: {
-                    ...doc.document_status,
-                    title: message?.detail.is_rejected ? "Denied" : "Approved",
-                  },
-                }
-              : doc
-          )
-        );
-        playNoti();
-        const newMessageItem = {
-          key: Math.random(),
-          label: (
-            <NotiItem message={message.events ? message.events[0] : message} />
-          ),
-        };
-        setNotiItems((prev: any) => [newMessageItem, ...prev!]);
-      }
-    }
-  }, [message?.detail]);
+  const { message } = usePusher();
 
   const getStatusStyles = () => {
     switch (status.toLowerCase()) {
@@ -529,11 +494,11 @@ const DocumentCard: React.FC<IDocumentCard> = ({
             showIcon={false}
             style={{
               background: "transparent",
-              padding: 0,
+              padding: 8,
               marginTop: 8,
             }}
             message={
-              <>
+              <div>
                 <div style={{ fontWeight: 500, color: "#c62828" }}>
                   {document.description}
                 </div>
@@ -549,7 +514,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                     {new Date(document?.updated_at || "").toLocaleDateString()}
                   </b>
                 </div>
-              </>
+              </div>
             }
           />
         )}

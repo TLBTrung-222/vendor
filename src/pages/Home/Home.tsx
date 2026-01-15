@@ -333,6 +333,8 @@ const Home: React.FC<IHome> = () => {
     }
   }, [contracts]);
 
+  console.log(message);
+
   useEffect(() => {
     if (message) {
       if (message?.events) {
@@ -356,26 +358,39 @@ const Home: React.FC<IHome> = () => {
           }))
         );
         updateStep(3);
+      }
+      if (message?.detail?.document_id) {
+        setVendorDocuments((prev) =>
+          prev.map((doc) =>
+            doc.document_id === message.detail.document_id
+              ? {
+                  ...doc,
+                  description: message.detail.description,
+                  updated_by: {
+                    ...doc.updated_by,
+                    first_name: message.detail.updated_by.first_name,
+                    last_name: message.detail.updated_by.last_name,
+                  },
+                  updated_at: message.detail.updated_by.created_at,
+                  document_status: {
+                    ...doc.document_status,
+                    title: message.detail.is_rejected ? "Denied" : "Approved",
+                  },
+                }
+              : doc
+          )
+        );
       } else if (message?.detail?.description) {
-        updateStep(1);
-        // setOnboardingStatus(message?.detail?.description);
-        // setPmName(
-        //   message?.detail?.updated_by?.first_name +
-        //     " " +
-        //     message?.detail?.updated_by?.last_name
-        // );
-        // setUpdateDate(
-        //   new Date(message?.detail?.updated_by?.created_at).toLocaleDateString()
-        // );
+        // 🏢 COMPANY event
         setCompanyDetailForm((prev: any) => ({
           ...prev,
-          onboardingStatus: message?.detail?.description,
+          onboardingStatus: message.detail.description,
           pmName:
-            message?.detail?.updated_by?.first_name +
+            message.detail.updated_by.first_name +
             " " +
-            message?.detail?.updated_by?.last_name,
+            message.detail.updated_by.last_name,
           updateDate: new Date(
-            message?.detail?.updated_by?.created_at
+            message.detail.updated_by.created_at
           ).toLocaleDateString(),
         }));
       }
