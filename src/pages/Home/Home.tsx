@@ -333,8 +333,6 @@ const Home: React.FC<IHome> = () => {
     }
   }, [contracts]);
 
-  console.log(message);
-
   useEffect(() => {
     if (message) {
       if (message?.events) {
@@ -547,6 +545,20 @@ const Home: React.FC<IHome> = () => {
 
     if (!companyDetailForm.trades || companyDetailForm.trades[0].trade === "") {
       Helpers.notification.error("Please add at least one trade");
+      return;
+    }
+
+    if (companyDetailForm.trades.some((trade: any) => !trade.gesys_gewerk_id)) {
+      Helpers.notification.error("Please select a trade for all entries");
+      return;
+    }
+
+    if (
+      companyDetailForm.trades.some(
+        (trade: any) => !trade.count || trade.count === 0
+      )
+    ) {
+      Helpers.notification.error("Please enter employee count for all trades");
       return;
     }
 

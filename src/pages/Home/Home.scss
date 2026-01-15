@@ -63,9 +63,9 @@
     color: #ffffff;
     &:hover,
     &:focus {
-      background-color: #e65c2b;
-      border-color: #e65c2b;
-      color: #ffffff;
+      background-color: #e65c2b !important;
+      border-color: #e65c2b !important;
+      color: #ffffff !important;
     }
   }
 
