@@ -65,7 +65,6 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   const [legalForms, setLegalForms] = useState<any[]>([]);
   const [tradeOptions, setTradeOptions] = useState<any[]>([]);
   const [federalStates, setFederalStates] = useState<IFederalState[]>([]);
-  const [region, setRegion] = useState(companyDetailForm.region || "1");
   const [positions, setPositions] = useState<RepresentativePosition[]>([]);
 
   useEffect(() => {
@@ -80,10 +79,10 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       }
     };
 
-    if (!federalStates) {
-      fetchFederalStates();
-    }
-  }, [federalStates]);
+    fetchFederalStates();
+  }, []);
+
+  console.log(companyDetailForm.selectedRegions);
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -165,16 +164,6 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
     code: "",
     radius: 20,
   });
-
-  useEffect(() => {
-    if (!federalStates || federalStates.length === 0) return;
-    setCompanyDetailForm((prevForm: any) => ({
-      ...prevForm,
-      selectedRegions: federalStates
-        .filter((state) => companyDetailForm.selectedRegions.includes(state.id))
-        .map((state) => state.id),
-    }));
-  }, [companyDetailForm.selectedRegions, federalStates]);
 
   const regions: TabsProps["items"] = [
     {
@@ -302,10 +291,13 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           <div className="region-checkbox-group">
             <StateMap
               selectedRegions={companyDetailForm.selectedRegions}
-              setSelectedRegions={(newSelectedRegions: any) =>
+              setSelectedRegions={(value: any) =>
                 setCompanyDetailForm((prev: any) => ({
                   ...prev,
-                  selectedRegions: newSelectedRegions,
+                  selectedRegions:
+                    typeof value === "function"
+                      ? value(prev.selectedRegions)
+                      : value,
                 }))
               }
               setIsEditing={setIsEditing}
@@ -695,7 +687,6 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             items={regions}
             activeKey={companyDetailForm.region}
             onChange={(key) => {
-              setRegion(key);
               setIsEditing(true);
               const selectedRegion = regions.find((item) => item.key == key);
               if (selectedRegion) {

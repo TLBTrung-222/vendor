@@ -60,7 +60,7 @@ const StateMap: React.FC<IStateMap> = ({
   };
 
   const style = (feature: any) => {
-    const isSelected = selectedRegions.includes(feature.id);
+    const isSelected = selectedRegions?.includes(feature.id);
     const stateColor = getColor(feature.id);
 
     return {
