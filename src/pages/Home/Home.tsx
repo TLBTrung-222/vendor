@@ -251,7 +251,7 @@ const Home: React.FC<IHome> = () => {
     };
 
     fetchVendorDocuments();
-  }, [vendor?.vendor_id]);
+  }, [vendor]);
 
   const handleRedirect = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
@@ -635,7 +635,7 @@ const Home: React.FC<IHome> = () => {
       tax_id: companyDetailForm.taxId || "",
       trades: companyDetailForm.trades.map((trade: any) => ({
         gewerk_id: trade.gesys_gewerk_id,
-        employee_number: trade.count,
+        employee_number: Number(trade.count),
       })),
       legal_form_id: companyDetailForm.legalFormId || "null",
       house_number: companyDetailForm.houseNumber,
