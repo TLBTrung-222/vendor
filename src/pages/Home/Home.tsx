@@ -234,24 +234,18 @@ const Home: React.FC<IHome> = () => {
     fetchVendorContracts();
   }, []);
 
-  useEffect(() => {
-    if (!vendor?.vendor_id) return;
-
-    const fetchVendorDocuments = async () => {
-      try {
-        const response = await documentAPI.getDocuments(vendor.vendor_id);
-        setDocumentTypes(response.data.data);
-        const documents: Document[] = response.data.data
-          .filter((item: DocumentWithType) => item.document !== null)
-          .map((item: DocumentWithType) => item.document as Document);
-        setVendorDocuments(documents);
-      } catch (error) {
-        Helpers.notification.error("Failed to load documents.");
-      }
-    };
-
-    fetchVendorDocuments();
-  }, [vendor]);
+  const fetchVendorDocuments = async () => {
+    try {
+      const response = await documentAPI.getDocuments(vendor.vendor_id);
+      setDocumentTypes(response.data.data);
+      const documents: Document[] = response.data.data
+        .filter((item: DocumentWithType) => item.document !== null)
+        .map((item: DocumentWithType) => item.document as Document);
+      setVendorDocuments(documents);
+    } catch (error) {
+      Helpers.notification.error("Failed to load documents.");
+    }
+  };
 
   const handleRedirect = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
@@ -331,7 +325,7 @@ const Home: React.FC<IHome> = () => {
       updateStep(1);
       handleRedirect();
     }
-  }, [contracts]);
+  }, []);
 
   useEffect(() => {
     if (message) {
@@ -660,6 +654,12 @@ const Home: React.FC<IHome> = () => {
       Helpers.notification.success("Updated successfully");
       setIsEditing(false);
       updateStep(2);
+      setVendor((prev: any) => ({
+        ...prev,
+        onboarding_status_id:
+          prev.onboarding_status_id === 1 ? 2 : prev.onboarding_status_id,
+      }));
+      fetchVendorDocuments();
     } catch (error: any) {
       Helpers.notification.error(
         error.response?.data?.message || t("updateFailed")

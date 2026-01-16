@@ -93,6 +93,21 @@ function PostcodeMap({
     });
   };
 
+  const postcodes = useMemo(() => {
+    const seen = new Set<string>();
+
+    return postcodeList
+      .filter((pc) => {
+        if (seen.has(pc.code)) return false;
+        seen.add(pc.code);
+        return true;
+      })
+      .map((pc) => ({
+        label: pc.label,
+        value: pc.code,
+      }));
+  }, []);
+
   useEffect(() => {
     if (!selectedPostcode || !Array.isArray(selectedPostcode)) return;
 
@@ -101,7 +116,7 @@ function PostcodeMap({
     );
 
     missingCoords.forEach(async (p) => {
-      const match = postcodeList.find((pc) => pc.code === p.code);
+      const match = postcodes.find((pc) => pc.value === p.code);
       if (!match) return;
 
       try {
@@ -139,7 +154,7 @@ function PostcodeMap({
             const fetchedZip = data.data.zipcode;
             setZipCode(fetchedZip);
 
-            const match = postcodeList.find((p) => p.code === fetchedZip);
+            const match = postcodes.find((p) => p.value === fetchedZip);
             if (match) {
               // Check if already exists in parent
               const alreadySelected = selectedPostcode?.some(
@@ -148,12 +163,12 @@ function PostcodeMap({
 
               if (!alreadySelected) {
                 // Add coordinates locally
-                addCoordinates(match.code, match.label, lat, lng);
+                addCoordinates(match.value, match.label, lat, lng);
 
                 // Add to parent state (only code and radius in km)
                 setSelectedPostcode((prev: any) => [
                   ...prev,
-                  { code: match.code, radius: 100 },
+                  { code: match.value, radius: 100 },
                 ]);
                 setIsEditing && setIsEditing(true);
               }
@@ -171,12 +186,12 @@ function PostcodeMap({
   };
 
   const filteredPostcodes = useMemo(() => {
-    if (!searchQuery) return postcodeList.slice(0, 20);
+    if (!searchQuery) return postcodes.slice(0, 20);
     const lower = searchQuery.toLowerCase();
-    return postcodeList
+    return postcodes
       .filter(
         (p) =>
-          p.code.startsWith(searchQuery) ||
+          p.value.startsWith(searchQuery) ||
           p.label.toLowerCase().includes(lower)
       )
       .slice(0, 50);
@@ -292,11 +307,16 @@ function PostcodeMap({
             <div className="search-results">
               {filteredPostcodes.map((item, idx) => (
                 <div
-                  key={item.code + idx}
-                  onClick={() => addPostcodeFromSearch(item)}
+                  key={item.value + idx}
+                  onClick={() =>
+                    addPostcodeFromSearch({
+                      code: item.value,
+                      label: item.label,
+                    })
+                  }
                   className="result-item"
                 >
-                  <span className="result-code">{item.code}</span> -{" "}
+                  <span className="result-code">{item.value}</span> -{" "}
                   {item.label}
                 </div>
               ))}
