@@ -28,10 +28,10 @@ import {
 } from "@ant-design/icons";
 import { postcodeList } from "../../utils/PostalcodeList";
 import { MapOutlined } from "@mui/icons-material";
-import { usePusher } from "../../contexts/PusherContext";
-import NotiItem from "../../pages/NotiItem/NotiItem";
 import PostcodeMap from "../../components/PostcodeMap/PostcodeMap";
 import StateMap from "../../components/StateMap/StateMap";
+import codes from "country-calling-code";
+import "flag-icons/css/flag-icons.min.css";
 
 interface ICompanyDetail {
   vendor: any;
@@ -66,6 +66,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   const [tradeOptions, setTradeOptions] = useState<any[]>([]);
   const [federalStates, setFederalStates] = useState<IFederalState[]>([]);
   const [positions, setPositions] = useState<RepresentativePosition[]>([]);
+  const [countryCode, setCountryCode] = useState<any>("DE_49");
 
   useEffect(() => {
     const fetchFederalStates = async () => {
@@ -81,8 +82,6 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
     fetchFederalStates();
   }, []);
-
-  console.log(companyDetailForm.selectedRegions);
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -629,9 +628,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                     setCompanyDetailForm({
                       ...companyDetailForm,
                       trades: companyDetailForm.trades.map((trade, idx) =>
-                        idx === i
-                          ? { ...trade, count: Number(e.target.value) }
-                          : trade
+                        idx === i ? { ...trade, count: e.target.value } : trade
                       ),
                     });
                     setIsEditing(true);
@@ -761,13 +758,49 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           />
         </Col>
 
-        <Col span={12}>
+        <Col span={4}>
+          <div className="input-container">
+            <div className="title">
+              Code<span className="text-danger">*</span>{" "}
+            </div>
+            <Select
+              size="large"
+              className="w-100"
+              showSearch={true}
+              value={countryCode}
+              filterOption={(input, option) =>
+                (option as any)?.searchLabel
+                  ?.toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              onChange={(val) => {
+                setCountryCode(val);
+              }}
+              optionFilterProp="children"
+              options={codes.map((c: any) => ({
+                value: `${c.isoCode2}_${c.countryCodes[0]}`,
+                label: (
+                  <span>
+                    <span
+                      className={`fi fi-${c.isoCode2.toLowerCase()}`}
+                      style={{ marginRight: 6 }}
+                    ></span>
+                    {c.isoCode2}
+                  </span>
+                ),
+                searchLabel: c.isoCode2,
+              }))}
+            />
+          </div>
+        </Col>
+        <Col span={8}>
           <div className="label">
             {t("phone")}
             <span className="text-danger">*</span>
           </div>
           <Input
             size="large"
+            prefix={`+${countryCode.split("_")[1]}`}
             value={companyDetailForm.phone || ""}
             onChange={(e) => {
               setCompanyDetailForm({
