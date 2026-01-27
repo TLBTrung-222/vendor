@@ -656,6 +656,12 @@ const Home: React.FC<IHome> = () => {
         onboarding_status_id:
           prev.onboarding_status_id === 1 ? 2 : prev.onboarding_status_id,
       }));
+      setCompanyDetailForm((prev: any) => ({
+        ...prev,
+        onboardingStatus: "",
+        pmName: "",
+        updateDate: "",
+      }));
       fetchVendorDocuments();
     } catch (error: any) {
       Helpers.notification.error(
