@@ -150,12 +150,12 @@ const Home: React.FC<IHome> = () => {
             response.data.data.onboarding_status_id === 3
             ? "1"
             : response.data.data.onboarding_status_id === 2 ||
-              response.data.data.onboarding_status_id === 4 ||
-              response.data.data.onboarding_status_id === 5 ||
-              response.data.data.onboarding_status_id === 6 ||
-              response.data.data.onboarding_status_id === 7
-            ? "2"
-            : "3"
+                response.data.data.onboarding_status_id === 4 ||
+                response.data.data.onboarding_status_id === 5 ||
+                response.data.data.onboarding_status_id === 6 ||
+                response.data.data.onboarding_status_id === 7
+              ? "2"
+              : "3",
         );
         setCompanyDetailForm({
           onboardingStatus:
@@ -164,7 +164,8 @@ const Home: React.FC<IHome> = () => {
           pmName:
             response.data.data.onboarding_transaction?.stage_1?.pm_name || "",
           updateDate: new Date(
-            response.data.data.onboarding_transaction?.stage_1?.created_at || ""
+            response.data.data.onboarding_transaction?.stage_1?.created_at ||
+              "",
           ).toLocaleDateString(),
           companyName: response.data.data.company_name || "",
           country: response.data.data.country_id || "",
@@ -186,8 +187,8 @@ const Home: React.FC<IHome> = () => {
             response.data.data.cover_region === "NationalWide"
               ? "3"
               : response.data.data.cover_region === "States"
-              ? "2"
-              : "1",
+                ? "2"
+                : "1",
           postalCode:
             response.data.data.postcodes?.map((item: any) => ({
               code: item.postcode,
@@ -205,7 +206,7 @@ const Home: React.FC<IHome> = () => {
         });
       } catch (error: any) {
         setVendorIdError(
-          error.response?.data?.message || "Failed to fetch vendor data"
+          error.response?.data?.message || "Failed to fetch vendor data",
         );
       } finally {
         setIsLoadingVendorId(false);
@@ -217,22 +218,18 @@ const Home: React.FC<IHome> = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const fetchVendorContracts = async () => {
-      if (!vendor?.vendor_id) return;
+  const fetchVendorContracts = async () => {
+    if (!vendor?.vendor_id) return;
 
-      try {
-        const response = await contractAPI.getContracts(vendor?.vendor_id);
-        if (response.data.data) {
-          setContracts(response.data.data);
-        }
-      } catch (error) {
-        Helpers.notification.error("Failed to load contracts.");
+    try {
+      const response = await contractAPI.getContracts(vendor?.vendor_id);
+      if (response.data.data) {
+        setContracts(response.data.data);
       }
-    };
-
-    fetchVendorContracts();
-  }, []);
+    } catch (error) {
+      Helpers.notification.error("Failed to load contracts.");
+    }
+  };
 
   const fetchVendorDocuments = async () => {
     try {
@@ -286,7 +283,7 @@ const Home: React.FC<IHome> = () => {
         {
           cluster: import.meta.env.VITE_REACT_APP_PUSHER_CLUSTER!,
           // authEndpoint: process.env.REACT_APP_HAY2U_ENDPOINT + "/auth/pusher",
-        }
+        },
       );
     }
 
@@ -308,10 +305,10 @@ const Home: React.FC<IHome> = () => {
                     ...contract.events,
                   ],
                 }
-              : contract
-          )
+              : contract,
+          ),
         );
-      }
+      },
     );
 
     if (
@@ -337,8 +334,8 @@ const Home: React.FC<IHome> = () => {
                   ...contract,
                   events: [...message.events, ...contract.events],
                 }
-              : contract
-          )
+              : contract,
+          ),
         );
       }
       if (message?.embed_links) {
@@ -347,7 +344,7 @@ const Home: React.FC<IHome> = () => {
             ...c,
             events: c.events ?? [],
             created_at: c.created_at ?? new Date().toISOString(),
-          }))
+          })),
         );
         updateStep(3);
       }
@@ -369,8 +366,8 @@ const Home: React.FC<IHome> = () => {
                     title: message.detail.is_rejected ? "Denied" : "Approved",
                   },
                 }
-              : doc
-          )
+              : doc,
+          ),
         );
       } else if (message?.detail?.description) {
         // 🏢 COMPANY event
@@ -382,7 +379,7 @@ const Home: React.FC<IHome> = () => {
             " " +
             message.detail.updated_by.last_name,
           updateDate: new Date(
-            message.detail.updated_by.created_at
+            message.detail.updated_by.created_at,
           ).toLocaleDateString(),
         }));
       }
@@ -398,8 +395,8 @@ const Home: React.FC<IHome> = () => {
                 updatedTrades = updatedTrades.filter(
                   (trade: any) =>
                     !removed.some(
-                      (r: any) => r.gewerk_id === trade.gesys_gewerk_id
-                    )
+                      (r: any) => r.gewerk_id === trade.gesys_gewerk_id,
+                    ),
                 );
               }
               if (added.length > 0) {
@@ -416,7 +413,7 @@ const Home: React.FC<IHome> = () => {
               if (updated.length > 0) {
                 updated.forEach((u: any) => {
                   const index = updatedTrades.findIndex(
-                    (trade: any) => trade.gesys_gewerk_id === u.gewerk_id
+                    (trade: any) => trade.gesys_gewerk_id === u.gewerk_id,
                   );
                   if (index !== -1) {
                     updatedTrades[index] = {
@@ -549,7 +546,7 @@ const Home: React.FC<IHome> = () => {
 
     if (
       companyDetailForm.trades.some(
-        (trade: any) => !trade.count || trade.count === 0
+        (trade: any) => !trade.count || trade.count === 0,
       )
     ) {
       Helpers.notification.error("Please enter employee count for all trades");
@@ -596,7 +593,7 @@ const Home: React.FC<IHome> = () => {
         trade.count === null ||
         trade.count === undefined ||
         trade.count === "" ||
-        trade.count === "0"
+        trade.count === "0",
     );
 
     if (hasEmptyTradeCount) {
@@ -616,7 +613,7 @@ const Home: React.FC<IHome> = () => {
       await vendorAPI.updateUser(userRequestBody);
     } catch (error: any) {
       Helpers.notification.error(
-        error.response?.data?.message || t("updateFailed")
+        error.response?.data?.message || t("updateFailed"),
       );
       return;
     }
@@ -641,8 +638,8 @@ const Home: React.FC<IHome> = () => {
         companyDetailForm.region === "3"
           ? "NationalWide"
           : companyDetailForm.region === "2"
-          ? "States"
-          : "PostCode",
+            ? "States"
+            : "PostCode",
       postcodes: companyDetailForm.postalCode.map((item) => ({
         postcode: item.code,
         radius: item.radius,
@@ -662,10 +659,17 @@ const Home: React.FC<IHome> = () => {
       fetchVendorDocuments();
     } catch (error: any) {
       Helpers.notification.error(
-        error.response?.data?.message || t("updateFailed")
+        error.response?.data?.message || t("updateFailed"),
       );
     }
   };
+
+  useEffect(() => {
+    if (vendor) {
+      fetchVendorDocuments();
+      fetchVendorContracts();
+    }
+  }, [vendor]);
 
   return (
     <div className="Home">
@@ -775,17 +779,19 @@ const Home: React.FC<IHome> = () => {
           setStep(Number(key));
         }}
         tabBarExtraContent={
-          <Button
-            htmlType="button"
-            className="save-btn"
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault();
-              handleFormSubmit();
-            }}
-            disabled={!isEditing}
-          >
-            Save
-          </Button>
+          step === 1 && (
+            <Button
+              htmlType="button"
+              className="save-btn"
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault();
+                handleFormSubmit();
+              }}
+              disabled={!isEditing}
+            >
+              Save
+            </Button>
+          )
         }
         items={[
           {
