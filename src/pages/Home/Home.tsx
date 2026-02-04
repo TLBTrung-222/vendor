@@ -127,6 +127,8 @@ const Home: React.FC<IHome> = () => {
   };
   const pusherRef = useRef<Pusher | null>(null);
 
+  console.log(message);
+
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {
       setIsLoadingVendorId(true);
@@ -245,45 +247,36 @@ const Home: React.FC<IHome> = () => {
   };
 
   const handleRedirect = async () => {
-      const refreshToken = localStorage.getItem("refreshToken");
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/refresh`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${refreshToken}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const result = await response.json();
-        const cookies = new Cookies();
-        cookies.set("atk", result.data.access_token, {
-          path: "/",
-          maxAge: 60 * 60 * 24,
-          //secure: true,
-          sameSite: "strict",
-        });
-        cookies.set("rtk", result.data.refresh_token, {
-          path: "/",
-          maxAge: 60 * 60 * 24,
-          //secure: true,
-          sameSite: "strict",
-        });
-  
-        localStorage.setItem("accessToken", result.data.access_token);
-        localStorage.setItem("refreshToken", result.data.refresh_token);
-        updateStep(1);
-        window.location.href =
-          `${import.meta.env.VITE_REACT_APP_REDIRECT_URL}/redirect?access=` +
-          result.data.access_token +
-          "&refresh=" +
-          result.data.refresh_token;
-      } catch (error) {
-        console.error("Error redirecting", error);
-      }
-    };
+    const refreshToken = localStorage.getItem("refreshToken");
+    try {
+      const response = await contractAPI.refreshToken();
+      const result = response.data;
+      const cookies = new Cookies();
+      cookies.set("atk", result.data.access_token, {
+        path: "/",
+        maxAge: 60 * 60 * 24,
+        //secure: true,
+        sameSite: "strict",
+      });
+      cookies.set("rtk", result.data.refresh_token, {
+        path: "/",
+        maxAge: 60 * 60 * 24,
+        //secure: true,
+        sameSite: "strict",
+      });
+
+      localStorage.setItem("accessToken", result.data.access_token);
+      localStorage.setItem("refreshToken", result.data.refresh_token);
+      updateStep(1);
+      window.location.href =
+        `${import.meta.env.VITE_REACT_APP_REDIRECT_URL}/redirect?access=` +
+        result.data.access_token +
+        "&refresh=" +
+        result.data.refresh_token;
+    } catch (error) {
+      console.error("Error redirecting", error);
+    }
+  };
 
   useEffect(() => {
     if (contracts.length === 0) return;
@@ -296,7 +289,7 @@ const Home: React.FC<IHome> = () => {
         },
       );
     }
-             
+
     const pusher = pusherRef.current;
     const userChannel = pusher.subscribe("PRIVATE-MONTAGO");
 
@@ -329,10 +322,12 @@ const Home: React.FC<IHome> = () => {
         );
       })
     ) {
+      console.log(1);
+
       updateStep(1);
       handleRedirect();
     }
-  }, []);
+  }, [contracts]);
 
   useEffect(() => {
     if (message) {
