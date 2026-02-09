@@ -127,8 +127,6 @@ const Home: React.FC<IHome> = () => {
   };
   const pusherRef = useRef<Pusher | null>(null);
 
-  console.log(message);
-
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {
       setIsLoadingVendorId(true);
@@ -322,8 +320,6 @@ const Home: React.FC<IHome> = () => {
         );
       })
     ) {
-      console.log(1);
-
       updateStep(1);
       handleRedirect();
     }

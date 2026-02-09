@@ -236,7 +236,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             companyDetailForm.postalCode.map((_, index) => (
               <div key={index} className="postal-code-item">
                 {postcodeList.find(
-                  (pc) => pc.code === companyDetailForm.postalCode[index].code
+                  (pc) => pc.code === companyDetailForm.postalCode[index].code,
                 )?.label || companyDetailForm.postalCode[index].code}
                 <div className="radius-slider">
                   <Slider
@@ -263,7 +263,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                     setCompanyDetailForm((prev) => ({
                       ...prev,
                       postalCode: prev.postalCode.filter(
-                        (_item, idx) => idx !== index
+                        (_item, idx) => idx !== index,
                       ),
                     }));
                   }}
@@ -309,7 +309,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                     const selectedValues = e.target.checked
                       ? [...companyDetailForm.selectedRegions, state.id]
                       : companyDetailForm.selectedRegions.filter(
-                          (id) => id !== state.id
+                          (id) => id !== state.id,
                         );
                     setCompanyDetailForm((prev: any) => ({
                       ...prev,
@@ -437,7 +437,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             size="large"
             value={
               legalForms.find(
-                (form) => form.legal_form_id === companyDetailForm.legalFormId
+                (form) => form.legal_form_id === companyDetailForm.legalFormId,
               )?.title || ""
             }
             onChange={(e) => {
@@ -597,7 +597,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                     setCompanyDetailForm({
                       ...companyDetailForm,
                       trades: companyDetailForm.trades.map((trade, idx) =>
-                        idx === i ? { ...trade, gesys_gewerk_id: e } : trade
+                        idx === i ? { ...trade, gesys_gewerk_id: e } : trade,
                       ),
                     });
                     setIsEditing(true);
@@ -610,13 +610,13 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                         !companyDetailForm.trades.some(
                           (trade: any) =>
                             trade.gesys_gewerk_id ===
-                            tradeOption.gesys_gewerk_id
+                            tradeOption.gesys_gewerk_id,
                         ) ||
-                        tradeOption.gesys_gewerk_id === item.gesys_gewerk_id
+                        tradeOption.gesys_gewerk_id === item.gesys_gewerk_id,
                     )
                     .map((trade) => ({
                       value: trade.gesys_gewerk_id,
-                      label: t(trade.gewerk_name.replace(/\s+/g, "")),
+                      label: trade.gewerk_name,
                     }))}
                 />
               </Col>
@@ -628,7 +628,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                     setCompanyDetailForm({
                       ...companyDetailForm,
                       trades: companyDetailForm.trades.map((trade, idx) =>
-                        idx === i ? { ...trade, count: e.target.value } : trade
+                        idx === i ? { ...trade, count: e.target.value } : trade,
                       ),
                     });
                     setIsEditing(true);
