@@ -29,7 +29,7 @@ const OTPModal: React.FC<IOTPModal> = ({ open, onCancel, companyDetail }) => {
         received, enter the code to securely sign your contract.
         <div className="phone-number">{companyDetail?.phone}</div>
       </div>
-      {isOTPSent ? (
+      {!isOTPSent ? (
         <Button
           type="primary"
           className="send-otp-button"
