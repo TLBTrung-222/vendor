@@ -182,6 +182,7 @@ const Home: React.FC<IHome> = () => {
               trade: gewerk.name,
               count: gewerk.employee_number,
               gesys_gewerk_id: gewerk.gewerk_id,
+              scope_id: gewerk.scope_id,
             })) || [],
           region:
             response.data.data.cover_region === "NationalWide"
@@ -680,33 +681,6 @@ const Home: React.FC<IHome> = () => {
 
   return (
     <div className="Home">
-      {/* <Modal
-        open={isOpenModal}
-        onCancel={() => setIsOpenModal(false)}
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-      >
-        <div>
-          <Typography id="modal-modal-title">{t("infoNotSaved")}</Typography>
-          <Typography id="modal-modal-description">
-            {t("warningMessage")}
-          </Typography>
-          <div>
-            <Button variant="outlined" onClick={() => setIsOpenModal(false)}>
-              {t("close")}
-            </Button>
-            <Button
-              onClick={() => {
-                updateStep(2);
-                handleCancel();
-                setIsOpenModal(false);
-              }}
-            >
-              {t("continue")}
-            </Button>
-          </div>
-        </div>
-      </Modal> */}
       <div className="header-container">
         <div className="header">
           <div className="logo">
@@ -840,7 +814,7 @@ const Home: React.FC<IHome> = () => {
             setIsStepAvailable={setIsStepAvailable}
           />
         )}
-        {step === 3 && <ContractSignature contracts={contracts} />}
+        {step === 3 && <ContractSignature contracts={contracts} companyDetail={companyDetailForm} />}
       </div>
     </div>
   );

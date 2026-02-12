@@ -361,7 +361,10 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   const addTrade = () => {
     setCompanyDetailForm({
       ...companyDetailForm,
-      trades: [...companyDetailForm.trades, { gesys_gewerk_id: "", count: 0 }],
+      trades: [
+        ...companyDetailForm.trades,
+        { gesys_gewerk_id: "", count: 0, isNew: true },
+      ],
     });
   };
 
@@ -587,82 +590,87 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             {t("tradeTitle")}
             <span className="text-danger">*</span>
           </div>
-          {companyDetailForm.trades.map((item, i) => (
-            <Row gutter={[16, 16]} key={i} style={{ margin: "12px 0" }}>
-              <Col span={11} style={{ paddingLeft: 0 }}>
-                <Select
-                  size="large"
-                  value={item.gesys_gewerk_id}
-                  onChange={(e) => {
-                    setCompanyDetailForm({
-                      ...companyDetailForm,
-                      trades: companyDetailForm.trades.map((trade, idx) =>
-                        idx === i ? { ...trade, gesys_gewerk_id: e } : trade,
-                      ),
-                    });
-                    setIsEditing(true);
-                  }}
-                  disabled={!!item.gesys_gewerk_id}
-                  style={{ width: "100%" }}
-                  options={tradeOptions
-                    .filter(
-                      (tradeOption) =>
-                        !companyDetailForm.trades.some(
-                          (trade: any) =>
-                            trade.gesys_gewerk_id ===
-                            tradeOption.gesys_gewerk_id,
-                        ) ||
-                        tradeOption.gesys_gewerk_id === item.gesys_gewerk_id,
-                    )
-                    .map((trade) => ({
-                      value: trade.gesys_gewerk_id,
-                      label: trade.gewerk_name,
-                    }))}
-                />
-              </Col>
-              <Col span={11}>
-                <Input
-                  size="large"
-                  value={companyDetailForm.trades[i].count}
-                  onChange={(e) => {
-                    setCompanyDetailForm({
-                      ...companyDetailForm,
-                      trades: companyDetailForm.trades.map((trade, idx) =>
-                        idx === i ? { ...trade, count: e.target.value } : trade,
-                      ),
-                    });
-                    setIsEditing(true);
-                  }}
-                />
-              </Col>
-              <Col span={2}>
-                <Button
-                  size="large"
-                  type="link"
-                  disabled={
-                    companyDetailForm.trades.length === 1 && item.trade === ""
-                  }
-                  onClick={() => {
-                    handleDeleteTrade(i);
-                    if (companyDetailForm.trades.length === 1) {
+          {companyDetailForm.trades.map((item, i) => {
+            if (!item.scope_id && !item.isNew) return null;
+            return (
+              <Row gutter={[16, 16]} key={i} style={{ margin: "12px 0" }}>
+                <Col span={11} style={{ paddingLeft: 0 }}>
+                  <Select
+                    size="large"
+                    value={item.gesys_gewerk_id}
+                    onChange={(e) => {
                       setCompanyDetailForm({
                         ...companyDetailForm,
-                        trades: [
-                          {
-                            gesys_gewerk_id: "",
-                            count: 0,
-                          },
-                        ],
+                        trades: companyDetailForm.trades.map((trade, idx) =>
+                          idx === i ? { ...trade, gesys_gewerk_id: e } : trade,
+                        ),
                       });
+                      setIsEditing(true);
+                    }}
+                    disabled={!!item.gesys_gewerk_id}
+                    style={{ width: "100%" }}
+                    options={tradeOptions
+                      .filter(
+                        (tradeOption) =>
+                          !companyDetailForm.trades.some(
+                            (trade: any) =>
+                              trade.gesys_gewerk_id ===
+                              tradeOption.gesys_gewerk_id,
+                          ) ||
+                          tradeOption.gesys_gewerk_id === item.gesys_gewerk_id,
+                      )
+                      .map((trade) => ({
+                        value: trade.gesys_gewerk_id,
+                        label: trade.gewerk_name,
+                      }))}
+                  />
+                </Col>
+                <Col span={11}>
+                  <Input
+                    size="large"
+                    value={companyDetailForm.trades[i].count}
+                    onChange={(e) => {
+                      setCompanyDetailForm({
+                        ...companyDetailForm,
+                        trades: companyDetailForm.trades.map((trade, idx) =>
+                          idx === i
+                            ? { ...trade, count: e.target.value }
+                            : trade,
+                        ),
+                      });
+                      setIsEditing(true);
+                    }}
+                  />
+                </Col>
+                <Col span={2}>
+                  <Button
+                    size="large"
+                    type="link"
+                    disabled={
+                      companyDetailForm.trades.length === 1 && item.trade === ""
                     }
-                  }}
-                  style={{ color: "red" }}
-                >
-                  <DeleteOutlined />
-                </Button>
-              </Col>
-            </Row>
-          ))}
+                    onClick={() => {
+                      handleDeleteTrade(i);
+                      if (companyDetailForm.trades.length === 1) {
+                        setCompanyDetailForm({
+                          ...companyDetailForm,
+                          trades: [
+                            {
+                              gesys_gewerk_id: "",
+                              count: 0,
+                            },
+                          ],
+                        });
+                      }
+                    }}
+                    style={{ color: "red" }}
+                  >
+                    <DeleteOutlined />
+                  </Button>
+                </Col>
+              </Row>
+            );
+          })}
 
           <Button
             type="link"
