@@ -43,10 +43,10 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get("access");
     const refreshToken = urlParams.get("refresh");
+    const language = urlParams.get("language");
 
     if (accessToken) {
       const decoded = decodeToken(accessToken);
-      
 
       // Clear old data ONCE
       localStorage.removeItem("accessToken");
@@ -58,6 +58,7 @@ function App() {
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken || "");
       localStorage.setItem("userEmail", decoded.user.email);
+      localStorage.setItem("i18nextLng", language);
       // localStorage.setItem(
       //   "onboardingStep",
       //   decoded.user.vendorOnboardingStep || "1"
