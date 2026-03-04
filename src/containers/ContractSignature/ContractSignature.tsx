@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./ContractSignature.scss";
 import { Alert, Col, Row } from "antd";
 import ContractCard from "../../components/ContractCard/ContractCard";
@@ -15,7 +15,7 @@ const ContractSignature: React.FC<IContractSignature> = ({
   companyDetail,
 }) => {
   const { getTranslation: t } = useUser();
-  const [isOTPModalOpen, setIsOTPModalOpen] = React.useState(true);
+  const [isOTPModalOpen, setIsOTPModalOpen] = useState(true);
 
   return (
     <div className="ContractSignature">
@@ -32,6 +32,7 @@ const ContractSignature: React.FC<IContractSignature> = ({
         open={isOTPModalOpen}
         onCancel={() => setIsOTPModalOpen(false)}
         companyDetail={companyDetail}
+        contracts={contracts}
       />
     </div>
   );

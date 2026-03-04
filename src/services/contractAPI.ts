@@ -7,4 +7,10 @@ export const contractAPI = {
   getContracts: (vendorId: number) => {
     return apiClient.get(`/contracts/vendor?vendor_id=${vendorId}`);
   },
+  requestOTP: (body: any) => {
+    return apiClient.post(`/mfa/request-otp`, body);
+  },
+  verifyOTP: (body: any) => {
+    return apiClient.post(`/mfa/verify-otp`, body);
+  },
 };

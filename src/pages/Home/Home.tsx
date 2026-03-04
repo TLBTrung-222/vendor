@@ -131,6 +131,8 @@ const Home: React.FC<IHome> = () => {
   };
   const pusherRef = useRef<Pusher | null>(null);
 
+  console.log(contracts);
+
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {
       setIsLoadingVendorId(true);
@@ -352,6 +354,7 @@ const Home: React.FC<IHome> = () => {
             created_at: c.created_at ?? new Date().toISOString(),
           })),
         );
+
         updateStep(3);
       }
       if (message?.detail?.document_id) {
