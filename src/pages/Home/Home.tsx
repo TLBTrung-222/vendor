@@ -28,6 +28,7 @@ import Pusher from "pusher-js";
 import ContractSignature from "../../containers/ContractSignature/ContractSignature";
 import NotiItem from "../NotiItem/NotiItem";
 import { documentAPI } from "../../services/documentAPI";
+import { useUser } from "../../contexts/UserContext";
 
 interface DocumentWithType {
   type_id: number;
@@ -120,7 +121,10 @@ const Home: React.FC<IHome> = () => {
   const [contracts, setContracts] = useState<any[]>([]);
   const [isStepAvailable, setIsStepAvailable] = useState<boolean>(true);
 
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
+  const { getTranslation: t } = useUser();
+  const { language, setLanguage } = useUser();
+
   const updateStep = (step: number) => {
     setStep(step);
     localStorage.setItem("onboardingStep", step.toString());
@@ -615,7 +619,7 @@ const Home: React.FC<IHome> = () => {
       await vendorAPI.updateUser(userRequestBody);
     } catch (error: any) {
       Helpers.notification.error(
-        error.response?.data?.message || t("updateFailed"),
+        error.response?.data?.message || "Failed to update user data",
       );
       return;
     }
@@ -667,7 +671,7 @@ const Home: React.FC<IHome> = () => {
       fetchVendorDocuments();
     } catch (error: any) {
       Helpers.notification.error(
-        error.response?.data?.message || t("updateFailed"),
+        error.response?.data?.message || "Failed to update user data",
       );
     }
   };
@@ -698,9 +702,10 @@ const Home: React.FC<IHome> = () => {
           <div className="actions">
             <div className="language-box">
               <Select
-                value={i18n.language || "en"}
-                onChange={(e) => i18n.changeLanguage(e)}
+                variant="filled"
+                value={language}
                 className="select-language"
+                onChange={(value) => setLanguage(value)}
                 options={languagesList.map((item) => {
                   return {
                     value: item.value,
@@ -712,7 +717,7 @@ const Home: React.FC<IHome> = () => {
                           src={item.icon}
                           alt="icon"
                         />
-                        {t(item.label)}
+                        {t(item.id)}
                       </div>
                     ),
                   };
@@ -741,7 +746,7 @@ const Home: React.FC<IHome> = () => {
           </div>
         </div>
         <div className="welcome-section">
-          <div className="welcome-message">{t("welcome")}</div>
+          <div className="welcome-message">{t(978)}</div>
           {vendor?.company_name && <div>{vendor?.company_name}</div>}
         </div>
       </div>
@@ -752,7 +757,7 @@ const Home: React.FC<IHome> = () => {
         className="onboarding-progress"
       />
       <div className="step-text">
-        {t("step")} {step}/3: {t("step1")}
+        {t(266)} {step}/3: {t(470)}
       </div>
       <Tabs
         activeKey={step.toString()}
@@ -770,23 +775,23 @@ const Home: React.FC<IHome> = () => {
               }}
               disabled={!isEditing}
             >
-              Save
+              {t(152)}
             </Button>
           )
         }
         items={[
           {
             key: "1",
-            label: t("step1"),
+            label: t(470),
           },
           {
             key: "2",
-            label: t("step2"),
+            label: t(954),
             disabled: vendor?.onboarding_status_id === 1,
           },
           {
             key: "3",
-            label: t("step3"),
+            label: t(955),
             disabled: !isStepAvailable || vendor?.onboarding_status_id < 7,
           },
         ]}
@@ -814,7 +819,12 @@ const Home: React.FC<IHome> = () => {
             setIsStepAvailable={setIsStepAvailable}
           />
         )}
-        {step === 3 && <ContractSignature contracts={contracts} companyDetail={companyDetailForm} />}
+        {step === 3 && (
+          <ContractSignature
+            contracts={contracts}
+            companyDetail={companyDetailForm}
+          />
+        )}
       </div>
     </div>
   );

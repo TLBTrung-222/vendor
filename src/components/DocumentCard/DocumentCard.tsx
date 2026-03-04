@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./DocumentCard.scss";
 import { Alert, Button, Card, Tag, Tooltip, Upload } from "antd";
-import { useTranslation } from "react-i18next";
 import {
   CloudUploadOutlined,
   QuestionCircleOutlined,
@@ -12,6 +11,7 @@ import { InsertDriveFileOutlined } from "@mui/icons-material";
 import { documentAPI } from "../../services/documentAPI";
 import Helpers from "../../utils/Helpers";
 import NotiItem from "../../pages/NotiItem/NotiItem";
+import { useUser } from "../../contexts/UserContext";
 
 interface DocumentStatus {
   title: string;
@@ -98,7 +98,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
   }, []);
 
   const [uploadSuccess, setUploadSuccess] = useState<Record<number, boolean>>(
-    {}
+    {},
   );
   const [selectedFiles, setSelectedFiles] = useState<Record<number, File>>({});
   const { type_id, title, mandatory, issued_by, how_to_obtain, appearance } =
@@ -109,7 +109,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
   const url = document?.url || "";
   const showSuccess = uploadSuccess[type_id] || false;
 
-  const { t } = useTranslation();
+  const { getTranslation: t } = useUser();
   const { message } = usePusher();
 
   const getStatusStyles = () => {
@@ -133,14 +133,14 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                     style={{ display: "flex", gap: 1 }}
                     className="issued-by"
                   >
-                    <div>{t("IssuedBy")}: </div>
+                    <div>{t(356)}: </div>
                     <div>{issued_by}</div>
                   </div>
                   <div
                     style={{ display: "flex", gap: 1 }}
                     className="how-to-obtain"
                   >
-                    <div>{t("HowToObtain")}: </div>
+                    <div>{t(357)}: </div>
                     <div
                       style={{ display: "flex", gap: 1 }}
                       className="how-to-obtain"
@@ -152,7 +152,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                     style={{ display: "flex", gap: 1 }}
                     className="appearance"
                   >
-                    <div>{t("Appearance")}: </div>
+                    <div>{t(358)}: </div>
                     <div>{appearance}</div>
                   </div>
                 </div>
@@ -170,7 +170,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
               />
             </Tooltip>
           ),
-          statusLabel: t("Approved"),
+          statusLabel: t(992),
           statusColor: "#2e7d32",
           buttonDisabled: true,
         };
@@ -194,21 +194,21 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                     style={{ display: "flex", gap: 1 }}
                     className="issued-by"
                   >
-                    <div>{t("IssuedBy")}: </div>
+                    <div>{t(356)}: </div>
                     <div>{issued_by}</div>
                   </div>
                   <div
                     style={{ display: "flex", gap: 1 }}
                     className="how-to-obtain"
                   >
-                    <div>{t("HowToObtain")}: </div>
+                    <div>{t(357)}: </div>
                     <div>{how_to_obtain}</div>
                   </div>
                   <div
                     style={{ display: "flex", gap: 1 }}
                     className="appearance"
                   >
-                    <div>{t("Appearance")}: </div>
+                    <div>{t(358)}: </div>
                     <div>{appearance}</div>
                   </div>
                 </div>
@@ -226,7 +226,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
               />
             </Tooltip>
           ),
-          statusLabel: t("Denied"),
+          statusLabel: t(993),
           statusColor: "#c62828",
           buttonDisabled: false,
         };
@@ -249,21 +249,21 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                     style={{ display: "flex", gap: 1 }}
                     className="issued-by"
                   >
-                    <div>{t("IssuedBy")}: </div>
+                    <div>{t(356)}: </div>
                     <div>{issued_by}</div>
                   </div>
                   <div
                     style={{ display: "flex", gap: 1 }}
                     className="how-to-obtain"
                   >
-                    <div>{t("HowToObtain")}: </div>
+                    <div>{t(357)}: </div>
                     <div>{how_to_obtain}</div>
                   </div>
                   <div
                     style={{ display: "flex", gap: 1 }}
                     className="appearance"
                   >
-                    <div>{t("Appearance")}: </div>
+                    <div>{t(358)}: </div>
                     <div>{appearance}</div>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
               />
             </Tooltip>
           ),
-          statusLabel: t("InReview"),
+          statusLabel: t(994),
           statusColor: "#1565c0",
           buttonDisabled: false,
         };
@@ -304,21 +304,21 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                     style={{ display: "flex", gap: 1 }}
                     className="issued-by"
                   >
-                    <div>{t("IssuedBy")}: </div>
+                    <div>{t(356)}: </div>
                     <div>{issued_by}</div>
                   </div>
                   <div
                     style={{ display: "flex", gap: 1 }}
                     className="how-to-obtain"
                   >
-                    <div>{t("HowToObtain")}: </div>
+                    <div>{t(357)}: </div>
                     <div>{how_to_obtain}</div>
                   </div>
                   <div
                     style={{ display: "flex", gap: 1 }}
                     className="appearance"
                   >
-                    <div>{t("Appearance")}: </div>
+                    <div>{t(358)}: </div>
                     <div>{appearance}</div>
                   </div>
                 </div>
@@ -336,7 +336,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
               />
             </Tooltip>
           ),
-          statusLabel: t("NotUploaded"),
+          statusLabel: t(995),
           statusColor: "#757575",
           buttonDisabled: false,
         };
@@ -347,12 +347,12 @@ const DocumentCard: React.FC<IDocumentCard> = ({
 
   const handleDocumentUpload = async (typeId: number, file: File | null) => {
     if (!vendor?.vendor_id) {
-      alert("Vendor ID not available. Please try again later.");
+      alert(t(1000));
       return;
     }
 
     if (!file) {
-      alert("Please select a file to upload");
+      alert(t(1001));
       return;
     }
 
@@ -381,7 +381,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
             mandatory: item.document?.document_types?.mandatory ?? false,
             category_id: item.document?.document_types?.category_id ?? 0,
           };
-        }
+        },
       );
       setDocumentTypes(types);
 
@@ -392,7 +392,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
       setVendorDocuments(documents);
 
       setUploadSuccess((prev) => ({ ...prev, [typeId]: true }));
-      Helpers.notification.success("Document uploaded successfully.");
+      Helpers.notification.success(t(998));
       setTimeout(() => {
         setUploadSuccess((prev) => ({ ...prev, [typeId]: false }));
       }, 3000);
@@ -401,9 +401,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
         [typeId]: null,
       }));
     } catch (error) {
-      Helpers.notification.error(
-        "Failed to upload document. Please try again."
-      );
+      Helpers.notification.error(t(999));
     }
   };
 
@@ -482,7 +480,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                 e.currentTarget.style.color = "#757575";
               }}
             >
-              {fileName} {url && `(${t("ClickToView")})`}
+              {fileName} {url && `(${t(996)})`}
             </span>
           </div>
         )}
@@ -503,13 +501,13 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                   {document.description}
                 </div>
                 <div style={{ fontSize: 12, color: "#757575", marginTop: 4 }}>
-                  {t("RejectedBy")}{" "}
+                  Rejected by{" "}
                   <b>
                     {document?.updated_by.first_name +
                       " " +
                       document?.updated_by.last_name || "N/A"}
                   </b>{" "}
-                  {t("on")}{" "}
+                  {t(915)}{" "}
                   <b>
                     {new Date(document?.updated_at || "").toLocaleDateString()}
                   </b>
@@ -563,7 +561,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
                     display: "inline-block",
                   }}
                 >
-                  {selectedFiles?.[type_id]?.name || t("selectPDF")}
+                  {selectedFiles?.[type_id]?.name || t(997)}
                 </span>
               </Button>
             </Upload>
@@ -572,11 +570,7 @@ const DocumentCard: React.FC<IDocumentCard> = ({
 
         {/* Success */}
         {showSuccess && (
-          <Alert
-            type="success"
-            style={{ marginTop: 16 }}
-            message={t("successNoti")}
-          />
+          <Alert type="success" style={{ marginTop: 16 }} message={t(998)} />
         )}
       </div>
     </Card>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./OTPModal.scss";
 import { Button, Input, Modal } from "antd";
+import { useUser } from "../../contexts/UserContext";
 
 interface IOTPModal {
   open?: boolean;
@@ -9,6 +10,7 @@ interface IOTPModal {
 }
 
 const OTPModal: React.FC<IOTPModal> = ({ open, onCancel, companyDetail }) => {
+  const { getTranslation: t } = useUser();
   const [isOTPSent, setIsOTPSent] = useState(false);
   const [otp, setOtp] = useState("");
   return (
@@ -23,10 +25,9 @@ const OTPModal: React.FC<IOTPModal> = ({ open, onCancel, companyDetail }) => {
       width="30%"
       centered
     >
-      <div className="title">Mobile Phone Verification</div>
+      <div className="title">{t(1002)}</div>
       <div className="description">
-        Click the button below to receive your 4-digit verification code. Once
-        received, enter the code to securely sign your contract.
+        {t(1003)}
         <div className="phone-number">{companyDetail?.phone}</div>
       </div>
       {!isOTPSent ? (
@@ -35,7 +36,7 @@ const OTPModal: React.FC<IOTPModal> = ({ open, onCancel, companyDetail }) => {
           className="send-otp-button"
           onClick={() => setIsOTPSent(true)}
         >
-          Send SMS
+          {t(1004)}
         </Button>
       ) : (
         <>
@@ -46,9 +47,9 @@ const OTPModal: React.FC<IOTPModal> = ({ open, onCancel, companyDetail }) => {
             value={otp}
           />
           <div className="note">
-            Didn't receive the code?
+            {t(1013)}
             <Button type="link" className="resend-button" onClick={() => {}}>
-              Resend
+              {t(1014)}
             </Button>
           </div>
         </>

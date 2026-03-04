@@ -1,6 +1,7 @@
 import Helpers from "../utils/Helpers";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { vendorAPI } from "../services/vendorAPI";
 
 interface IUserContext {
   language: string;
@@ -17,6 +18,8 @@ interface IUserContext {
 
   pageTitle: string;
   setPageTitle: (value: string) => void;
+
+  getTranslation: (id: number) => string | undefined;
 }
 
 const UserContext = createContext<IUserContext | undefined>(undefined);
@@ -31,10 +34,44 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     newVendorForm: false,
     newTemplateForm: false,
   });
+  const [translation, setTranslation] = useState<any>({});
 
   // SET LANGUAGE
   const setLanguage = (value: any) => {
     i18n.changeLanguage(value);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await vendorAPI.getTranslations(
+          language === "en"
+            ? "1"
+            : language === "de"
+              ? "2"
+              : language === "pl"
+                ? "3"
+                : "4",
+        );
+        const map: Record<
+          number,
+          { de: string; en: string; pl: string; sk: string }
+        > = {};
+        response.data.data.forEach((item: any) => {
+          map[item.id] = item.content;
+        });
+        setTranslation(map);
+        // setIsSplash(false);
+      } catch (error) {
+        Helpers.notification.error("Error fetching translations");
+      }
+    };
+    fetchData();
+  }, [language]);
+
+  const getTranslation = (id: number) => {
+    if (!translation[id]) return undefined;
+    return translation[id];
   };
 
   // HANDLE LOGIN DATA
@@ -67,6 +104,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         setAdminState,
         pageTitle,
         setPageTitle,
+        getTranslation,
       }}
     >
       {children}

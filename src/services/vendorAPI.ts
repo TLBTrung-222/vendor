@@ -3,7 +3,7 @@ import { apiClient } from "./ApiConfig.ts";
 export const vendorAPI = {
   getVendorByContactEmail: (email: string) => {
     return apiClient.get(
-      `/vendors/contact-email?email=${encodeURIComponent(email)}`
+      `/vendors/contact-email?email=${encodeURIComponent(email)}`,
     );
   },
   updateVendor: (vendorId: string, data: any) => {
@@ -26,5 +26,8 @@ export const vendorAPI = {
   },
   getStates: () => {
     return apiClient.get(`/vendors/state`);
+  },
+  getTranslations: (languageId: string) => {
+    return apiClient.get(`/v2/translation?language_id=${languageId}`);
   },
 };

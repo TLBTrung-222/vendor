@@ -3,8 +3,8 @@ import "./DocumentUpload.scss";
 import { documentAPI } from "../../services/documentAPI";
 import Helpers from "../../utils/Helpers";
 import { Col, Row, Spin } from "antd";
-import { useTranslation } from "react-i18next";
 import DocumentCard from "../../components/DocumentCard/DocumentCard";
+import { useUser } from "../../contexts/UserContext";
 
 interface IDocumentUpload {
   documentTypes: any[];
@@ -27,14 +27,14 @@ const DocumentUpload: React.FC<IDocumentUpload> = ({
   setNotiItems,
   setIsStepAvailable,
 }) => {
-  const { t } = useTranslation();
+  const { getTranslation: t } = useUser();
 
   return (
     <div className="DocumentUpload">
       {documentTypes.length === 0 ? (
         <div className="loading-container">
           <Spin />
-          <div className="loading-text">{t("loadingRequiredDocuments")}</div>
+          <div className="loading-text">Loading required documents...</div>
         </div>
       ) : (
         <Row gutter={[16, 16]}>

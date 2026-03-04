@@ -1,7 +1,6 @@
 import React from "react";
 import "./ContractCard.scss";
 import Helpers from "../../utils/Helpers";
-import { useTranslation } from "react-i18next";
 import { Button, Progress } from "antd";
 import {
   CheckCircleOutlined,
@@ -10,13 +9,14 @@ import {
   LinkOutlined,
   MailOutlined,
 } from "@ant-design/icons";
+import { useUser } from "../../contexts/UserContext";
 
 interface IContractCard {
   contract: any;
 }
 
 const ContractCard: React.FC<IContractCard> = ({ contract }) => {
-  const { t } = useTranslation();
+  const { getTranslation: t } = useUser();
 
   // Calculate progress value
   let progressValue = 33;
@@ -40,7 +40,7 @@ const ContractCard: React.FC<IContractCard> = ({ contract }) => {
     progressValue >= 66
       ? Helpers.formatDateTime(
           events.find((event: any) => event.event_type === "Viewed")
-            ?.created_at || ""
+            ?.created_at || "",
         )
       : "";
   const completedDate =
@@ -49,8 +49,8 @@ const ContractCard: React.FC<IContractCard> = ({ contract }) => {
           events.find(
             (event: any) =>
               event.event_type === "Completed" ||
-              event.event_type === "SigningSuccess"
-          ).created_at || ""
+              event.event_type === "SigningSuccess",
+          ).created_at || "",
         )
       : "";
 
@@ -71,10 +71,10 @@ const ContractCard: React.FC<IContractCard> = ({ contract }) => {
             color: isCompleted ? "#F57C00" : "#ffc107",
           }}
         >
-          {isCompleted ? t("completed") : t("waitingForVendorSignature")}
+          {isCompleted ? "completed" : t(187)}
         </div>
       </div>
-      <div style={{ marginBottom: 8 }}>{t("signatureProgress")}</div>
+      <div style={{ marginBottom: 8 }}>{t(1005)}</div>
 
       <Progress
         percent={progressValue}
@@ -93,7 +93,7 @@ const ContractCard: React.FC<IContractCard> = ({ contract }) => {
         <div className="action-info">
           <MailOutlined style={{ color: "#F57C00", fontSize: "1.25rem" }} />
           <div style={{ fontSize: "0.75rem" }}>
-            {t("receivedAt")} {sentDate}
+            {t(1006)} {t(1010)} {sentDate}
           </div>
           <Button
             type="link"
@@ -102,7 +102,7 @@ const ContractCard: React.FC<IContractCard> = ({ contract }) => {
               window.open(contract.url || contract.document_url, "_blank");
             }}
           >
-            {t("clickToSign")}{" "}
+            {t(1015)}{" "}
             <LinkOutlined style={{ color: "#F57C00", fontSize: "0.75rem" }} />
           </Button>
         </div>
@@ -116,8 +116,8 @@ const ContractCard: React.FC<IContractCard> = ({ contract }) => {
           />
           <div style={{ fontSize: "0.75rem" }}>
             {progressValue >= 66
-              ? `${t("viewed")} ${t("at")} ${viewDate}`
-              : `${t("viewed")}`}
+              ? `${t(1008)} ${t(1010)} ${viewDate}`
+              : `${t(1008)}`}
           </div>
         </div>
 
@@ -130,8 +130,8 @@ const ContractCard: React.FC<IContractCard> = ({ contract }) => {
           />
           <div style={{ fontSize: "0.75rem" }}>
             {progressValue == 100
-              ? `${t(`completed`)} ${t(`at`)} ${completedDate}`
-              : t(`completed`)}
+              ? `${t(1009)} ${t(1010)} ${completedDate}`
+              : `${t(1009)}`}
           </div>
         </div>
       </div>

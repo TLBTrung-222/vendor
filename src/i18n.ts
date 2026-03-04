@@ -17,7 +17,7 @@ i18n
     backend: {
       loadPath: "/locales/{{lng}}.json",
     },
-    supportedLngs: ["de", "en"],
+    supportedLngs: ["de", "en", "pl", "sk"],
     detection: {
       order: ["localStorage"],
       caches: ["localStorage"],

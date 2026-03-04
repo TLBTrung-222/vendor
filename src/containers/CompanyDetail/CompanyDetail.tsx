@@ -1,6 +1,5 @@
 import React, { use, useEffect, useMemo, useState } from "react";
 import "./CompanyDetail.scss";
-import { useTranslation } from "react-i18next";
 import {
   Alert,
   AutoComplete,
@@ -32,6 +31,7 @@ import PostcodeMap from "../../components/PostcodeMap/PostcodeMap";
 import StateMap from "../../components/StateMap/StateMap";
 import codes from "country-calling-code";
 import "flag-icons/css/flag-icons.min.css";
+import { useUser } from "../../contexts/UserContext";
 
 interface ICompanyDetail {
   vendor: any;
@@ -60,7 +60,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
   setIsEditing,
   setNotiItems,
 }) => {
-  const { t } = useTranslation();
+  const { getTranslation: t } = useUser();
   const [countries, setCountries] = useState<any[]>([]);
   const [legalForms, setLegalForms] = useState<any[]>([]);
   const [tradeOptions, setTradeOptions] = useState<any[]>([]);
@@ -76,7 +76,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           setFederalStates(response.data.data);
         }
       } catch (error) {
-        Helpers.notification.error(t("failedToLoadStates"));
+        Helpers.notification.error(t(979) || "Failed to load federal states");
       }
     };
 
@@ -89,7 +89,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
         const response = await vendorAPI.getCountries();
         setCountries(response.data.data);
       } catch (error) {
-        Helpers.notification.error(t("failedToLoadCountries"));
+        Helpers.notification.error(t(1012));
       }
     };
 
@@ -108,7 +108,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           legalForms: response.data.data,
         }));
       } catch (error) {
-        Helpers.notification.error(t("failedToLoadLegalForms"));
+        Helpers.notification.error(t(980) || "Failed to load legal forms");
       }
     };
 
@@ -121,7 +121,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
         const response = await vendorAPI.getTrades();
         setTradeOptions(response.data.data);
       } catch (error) {
-        Helpers.notification.error(t("failedToLoadTrades"));
+        Helpers.notification.error(t(981) || "Failed to load trades");
       }
     };
 
@@ -134,7 +134,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
         const response = await vendorAPI.getPositions();
         setPositions(response.data.data);
       } catch (error) {
-        Helpers.notification.error(t("failedToLoadPositions"));
+        Helpers.notification.error(t(982) || "Failed to load positions");
       }
     };
 
@@ -169,16 +169,14 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       key: "1",
       label: (
         <span className="region-label">
-          <EnvironmentOutlined /> Postcode
+          <EnvironmentOutlined /> {t(481)}
         </span>
       ),
       children: (
         <div className="region-content">
-          If you cover entire states, switch to the States tab.
+          {t(983)}
           <div className="info-box mb-1">
-            <BulbFilled color="yellow" /> You can add{" "}
-            <b>multiple postal codes</b> to define your coverage areas. Each
-            gets its own radius!
+            <BulbFilled color="yellow" /> {t(984)} <b>{t(985)}</b> {t(986)}!
           </div>
           <div className="d-flex gap-2">
             <AutoComplete
@@ -198,7 +196,9 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                 if (
                   companyDetailForm.postalCode.some((pc) => pc.code === value)
                 ) {
-                  Helpers.notification.warning("Postcode already added.");
+                  Helpers.notification.warning(
+                    t(987) || "Postcode is already added.",
+                  );
                   return;
                 }
 
@@ -214,9 +214,9 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
               }}
             >
               <div className="d-flex gap-2">
-                <Input placeholder="Select Postal Code" />
+                <Input placeholder={t(1011)} />
                 <Button type="primary" icon={<PlusCircleOutlined />}>
-                  Add Postcode{" "}
+                  {t(988)}{" "}
                 </Button>
               </div>
             </AutoComplete>
@@ -255,7 +255,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                     min={1}
                     max={500}
                   />
-                  Radius: {companyDetailForm.postalCode[index].radius} km
+                  {t(944)}: {companyDetailForm.postalCode[index].radius} km
                 </div>
                 <Button
                   variant="text"
@@ -269,7 +269,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
                   }}
                   style={{ border: "none", color: "red" }}
                 >
-                  Remove
+                  {t(721)}
                 </Button>
               </div>
             ))}
@@ -280,13 +280,12 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       key: "2",
       label: (
         <span className="region-label">
-          <MapOutlined /> States
+          <MapOutlined /> {t(482)}
         </span>
       ),
       children: (
         <div className="region-content">
-          If you operate in specific postal code areas, switch to the Postcode
-          tab.
+          {t(989)}
           <div className="region-checkbox-group">
             <StateMap
               selectedRegions={companyDetailForm.selectedRegions}
@@ -351,10 +350,10 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       key: "3",
       label: (
         <span className="region-label">
-          <GlobalOutlined /> {t("nationwide")}
+          <GlobalOutlined /> {t(483)}
         </span>
       ),
-      children: <div>Your services reach the whole country</div>,
+      children: <div>{t(484)}</div>,
     },
   ];
 
@@ -379,13 +378,13 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
   return (
     <div className="CompanyDetail">
-      <div className="info-box">{t("infoBox")}</div>
+      <div className="info-box">{t(990)}</div>
 
       {companyDetailForm?.onboardingStatus && (
         <div className="deny-box">
           <div>{companyDetailForm.onboardingStatus} </div>
           <div>
-            {t("RejectedBy")} <b>{companyDetailForm.pmName}</b> {t("on")}{" "}
+            {t(991)} <b>{companyDetailForm.pmName}</b> {t(915)}{" "}
             <b>{companyDetailForm.updateDate}</b>
           </div>
         </div>
@@ -394,7 +393,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <div className="label">
-            {t("country")}
+            {t(73)}
             <span className="text-danger">*</span>
           </div>
           <Select
@@ -408,14 +407,14 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             disabled={vendor?.country_name !== null}
             options={countries.map((country) => ({
               value: country.country_id,
-              label: t(country.name),
+              label: country.name,
             }))}
           />
         </Col>
 
         <Col span={24}>
           <div className="label">
-            {t("company")}
+            {t(606)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -433,7 +432,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={24}>
           <div className="label">
-            {t("legalForm")}
+            {t(66)}
             <span className="text-danger">*</span>
           </div>
           <Select
@@ -461,7 +460,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={24}>
           <div className="label">
-            {t("taxId")}
+            {t(170)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -479,7 +478,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={12}>
           <div className="label">
-            {t("street")}
+            {t(168)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -497,7 +496,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={12}>
           <div className="label">
-            {t("houseNr")}
+            {t(432)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -515,7 +514,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={12}>
           <div className="label">
-            {t("apartmentNr")}
+            {t(433)}
             {companyDetailForm.country === "Poland" && (
               <span className="text-danger">*</span>
             )}
@@ -535,7 +534,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={12}>
           <div className="label">
-            {t("zip")}
+            {t(194)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -553,7 +552,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={24}>
           <div className="label">
-            {t("city")}
+            {t(61)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -570,7 +569,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
         </Col>
 
         <Col span={24}>
-          <div className="label">{t("website")}</div>
+          <div className="label">{t(13)}</div>
           <Input
             size="large"
             value={companyDetailForm.website || ""}
@@ -587,7 +586,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
         {/* Employees per Trade section */}
         <Col span={24}>
           <div className="label">
-            {t("tradeTitle")}
+            {t(956)}
             <span className="text-danger">*</span>
           </div>
           {companyDetailForm.trades.map((item, i) => {
@@ -678,14 +677,14 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             onClick={addTrade}
             style={{ borderRadius: 8, padding: 0, color: "#f57c00" }}
           >
-            {t("addTrade")}
+            {t(957)}
           </Button>
         </Col>
 
         {/* Regions Covered field - Multiple Select */}
         <Col span={24}>
           <div className="label">
-            {t("regions")}
+            {t(480)}
             <span className="text-danger">*</span>
           </div>
           <Tabs
@@ -706,14 +705,14 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={24}>
           <div className="label">
-            {t("legalRep")}
+            {t(486)}
             <span className="text-danger">*</span>
           </div>
         </Col>
 
         <Col span={12}>
           <div className="label">
-            {t("firstName")}
+            {t(2)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -731,7 +730,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={12}>
           <div className="label">
-            {t("lastName")}
+            {t(3)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -749,7 +748,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={12}>
           <div className="label">
-            {t("email")}
+            {t(585)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -769,7 +768,8 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
         <Col span={4}>
           <div className="input-container">
             <div className="title">
-              Code<span className="text-danger">*</span>{" "}
+              {t(331)}
+              <span className="text-danger">*</span>{" "}
             </div>
             <Select
               size="large"
@@ -803,7 +803,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
         </Col>
         <Col span={8}>
           <div className="label">
-            {t("phone")}
+            {t(254)}
             <span className="text-danger">*</span>
           </div>
           <Input
@@ -822,7 +822,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
 
         <Col span={24}>
           <div className="label">
-            {t("position")}
+            Position
             <span className="text-danger">*</span>
           </div>
           <Select
@@ -841,7 +841,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
             options={
               positions.map((position) => ({
                 value: position.title,
-                label: t(position.title.replace(/\s+/g, "")),
+                label: position.title,
               })) || []
             }
           />
