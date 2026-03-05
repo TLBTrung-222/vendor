@@ -53,6 +53,8 @@ const OTPModal: React.FC<IOTPModal> = ({
     verifyOTP();
   }, [otp]);
 
+  console.log(companyDetail);
+
   return (
     <Modal
       className="OTPModal"

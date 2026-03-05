@@ -499,6 +499,8 @@ const Home: React.FC<IHome> = () => {
     }
   }, [message]);
 
+  console.log(companyDetailForm);
+
   const handleFormSubmit = async () => {
     if (!vendor?.vendor_id) {
       Helpers.notification.error("Vendor ID is missing");
@@ -554,9 +556,11 @@ const Home: React.FC<IHome> = () => {
     }
 
     if (
-      companyDetailForm.trades.some(
-        (trade: any) => !trade.count || trade.count === 0,
-      )
+      companyDetailForm.trades
+        .filter((trade: any) => trade.scope_id !== null)
+        .some((trade: any) => {
+          !trade.count || trade.count === 0;
+        })
     ) {
       Helpers.notification.error("Please enter employee count for all trades");
       return;
@@ -597,13 +601,15 @@ const Home: React.FC<IHome> = () => {
       return;
     }
 
-    const hasEmptyTradeCount = companyDetailForm.trades.some(
-      (trade) =>
-        trade.count === null ||
-        trade.count === undefined ||
-        trade.count === "" ||
-        trade.count === "0",
-    );
+    const hasEmptyTradeCount = companyDetailForm.trades
+      .filter((trade: any) => trade.scope_id !== null)
+      .some(
+        (trade) =>
+          trade.count === null ||
+          trade.count === undefined ||
+          trade.count === "" ||
+          trade.count === "0",
+      );
 
     if (hasEmptyTradeCount) {
       Helpers.notification.error("Please enter employee count for all trades");
