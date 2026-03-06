@@ -27,14 +27,14 @@ const OTPModal: React.FC<IOTPModal> = ({
 
   const handleSendOTP = async () => {
     try {
-      const vendorId = contracts[0]?.vendor_id || contracts[0]?.id;
+      const vendorId = contracts[0]?.vendor_id;
       if (!vendorId) {
         Helpers.notification.error("Unable to load vendor information");
         return;
       }
       const response = await contractAPI.requestOTP({
         vendor_id: vendorId,
-        country_code: companyDetail?.countryCode,
+        country_code: companyDetail?.phone.split(" ")[0].replace("+", ""),
       });
       setIsOTPSent(true);
       setSessionId(response.data.session_id);
