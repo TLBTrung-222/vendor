@@ -80,7 +80,7 @@ const OTPModal: React.FC<IOTPModal> = ({
       <div className="description">
         {t(1003)}
         <div className="phone-number">
-          +{companyDetail?.countryCode} {companyDetail?.phone}
+          {companyDetail?.countryCode} {companyDetail?.phone}
         </div>
       </div>
       {!isOTPSent ? (
