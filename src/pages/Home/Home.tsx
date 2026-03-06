@@ -107,6 +107,7 @@ const Home: React.FC<IHome> = () => {
     phone: "",
     selectedPositionId: null,
     selectedPosition: "",
+    countryCode: "",
   });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -130,8 +131,6 @@ const Home: React.FC<IHome> = () => {
     localStorage.setItem("onboardingStep", step.toString());
   };
   const pusherRef = useRef<Pusher | null>(null);
-
-  console.log(contracts);
 
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {
@@ -226,21 +225,31 @@ const Home: React.FC<IHome> = () => {
   }, []);
 
   const fetchVendorContracts = async () => {
-    if (!vendor?.vendor_id) return;
+    const vendorId = vendor?.vendor_id || vendor?.id;
+    if (!vendorId) {
+      console.error("vendor_id or id not found in vendor object:", vendor);
+      return;
+    }
 
     try {
-      const response = await contractAPI.getContracts(vendor?.vendor_id);
+      const response = await contractAPI.getContracts(vendorId);
       if (response.data.data) {
         setContracts(response.data.data);
       }
     } catch (error) {
       Helpers.notification.error("Failed to load contracts.");
+      console.error("Error loading contracts:", error);
     }
   };
 
   const fetchVendorDocuments = async () => {
+    const vendorId = vendor?.vendor_id || vendor?.id;
+    if (!vendorId) {
+      console.error("vendor_id or id not found in vendor object:", vendor);
+      return;
+    }
     try {
-      const response = await documentAPI.getDocuments(vendor.vendor_id);
+      const response = await documentAPI.getDocuments(vendorId);
       setDocumentTypes(response.data.data);
       const documents: Document[] = response.data.data
         .filter((item: DocumentWithType) => item.document !== null)
@@ -248,6 +257,7 @@ const Home: React.FC<IHome> = () => {
       setVendorDocuments(documents);
     } catch (error) {
       Helpers.notification.error("Failed to load documents.");
+      console.error("Error loading documents:", error);
     }
   };
 
@@ -499,8 +509,6 @@ const Home: React.FC<IHome> = () => {
     }
   }, [message]);
 
-  console.log(companyDetailForm);
-
   const handleFormSubmit = async () => {
     if (!vendor?.vendor_id) {
       Helpers.notification.error("Vendor ID is missing");
@@ -619,7 +627,7 @@ const Home: React.FC<IHome> = () => {
     const userRequestBody = {
       first_name: companyDetailForm.firstName,
       last_name: companyDetailForm.lastName,
-      phone_number: companyDetailForm.phone,
+      phone_number: `+${companyDetailForm.countryCode} ${companyDetailForm.phone}`,
       email: vendor.contact_user?.email || "",
       representative_position_id: companyDetailForm.selectedPositionId,
     };
@@ -662,7 +670,12 @@ const Home: React.FC<IHome> = () => {
     };
 
     try {
-      await vendorAPI.updateVendor(vendor.vendor_id, vendorRequestBody);
+      const vendorId = vendor?.vendor_id || vendor?.id;
+      if (!vendorId) {
+        Helpers.notification.error("Vendor ID not found");
+        return;
+      }
+      await vendorAPI.updateVendor(vendorId, vendorRequestBody);
       Helpers.notification.success("Updated successfully");
       setIsEditing(false);
       updateStep(2);

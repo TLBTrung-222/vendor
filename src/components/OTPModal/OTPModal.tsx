@@ -4,6 +4,7 @@ import { Button, Input, Modal } from "antd";
 import { useUser } from "../../contexts/UserContext";
 import { contractAPI } from "../../services/contractAPI";
 import Helpers from "../../utils/Helpers";
+import { useNavigate } from "react-router-dom";
 
 interface IOTPModal {
   open?: boolean;
@@ -22,16 +23,25 @@ const OTPModal: React.FC<IOTPModal> = ({
   const [isOTPSent, setIsOTPSent] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [otp, setOtp] = useState("");
+  const navigate = useNavigate();
 
   const handleSendOTP = async () => {
     try {
+      const vendorId = contracts[0]?.vendor_id || contracts[0]?.id;
+      if (!vendorId) {
+        console.error("vendor_id not found in contracts:", contracts[0]);
+        Helpers.notification.error("Unable to load vendor information");
+        return;
+      }
       const response = await contractAPI.requestOTP({
-        vendor_id: contracts[0]?.vendor_id,
+        vendor_id: vendorId,
+        country_code: companyDetail?.countryCode,
       });
       setIsOTPSent(true);
       setSessionId(response.data.session_id);
     } catch (error) {
       console.error("Error requesting OTP:", error);
+      Helpers.notification.error("Failed to request OTP");
     }
   };
 
@@ -69,16 +79,27 @@ const OTPModal: React.FC<IOTPModal> = ({
       <div className="title">{t(1002)}</div>
       <div className="description">
         {t(1003)}
-        <div className="phone-number">{companyDetail?.phone}</div>
+        <div className="phone-number">+{companyDetail?.countryCode} {companyDetail?.phone}</div>
       </div>
       {!isOTPSent ? (
-        <Button
-          type="primary"
-          className="send-otp-button"
-          onClick={() => handleSendOTP()}
-        >
-          {t(1004)}
-        </Button>
+        <>
+          <Button
+            type="primary"
+            className="send-otp-button"
+            onClick={() => handleSendOTP()}
+          >
+            {t(1004)}
+          </Button>
+          <Button
+            type="link"
+            className="send-otp-button"
+            onClick={() => {
+              navigate(-1);
+            }}
+          >
+            {t(58)}
+          </Button>
+        </>
       ) : (
         <>
           <Input.OTP

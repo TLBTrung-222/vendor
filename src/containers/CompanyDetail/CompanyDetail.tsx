@@ -775,14 +775,18 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
               size="large"
               className="w-100"
               showSearch={true}
-              value={countryCode}
+              value={companyDetailForm.countryCode}
               filterOption={(input, option) =>
                 (option as any)?.searchLabel
                   ?.toLowerCase()
                   .includes(input.toLowerCase())
               }
               onChange={(val) => {
-                setCountryCode(val);
+                setCompanyDetailForm({
+                  ...companyDetailForm,
+                  countryCode: val.split("_")[1],
+                });
+                setIsEditing(true);
               }}
               optionFilterProp="children"
               options={codes.map((c: any) => ({
@@ -808,7 +812,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           </div>
           <Input
             size="large"
-            prefix={`+${countryCode.split("_")[1]}`}
+            prefix={`+${companyDetailForm?.countryCode}`}
             value={companyDetailForm.phone || ""}
             onChange={(e) => {
               setCompanyDetailForm({
