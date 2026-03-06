@@ -78,10 +78,7 @@ interface Document {
 interface IHome {}
 
 const Home: React.FC<IHome> = () => {
-  const [step, setStep] = useState(() => {
-    const savedStep = localStorage.getItem("onboardingStep");
-    return savedStep ? parseInt(savedStep, 10) : 1;
-  });
+  const { step, setStep } = useUser();
   const [vendor, setVendor] = useState<any>(null);
 
   const [companyDetailForm, setCompanyDetailForm] = useState<any>({
@@ -126,11 +123,12 @@ const Home: React.FC<IHome> = () => {
   const { getTranslation: t } = useUser();
   const { language, setLanguage } = useUser();
 
-  const updateStep = (step: number) => {
-    setStep(step);
-    localStorage.setItem("onboardingStep", step.toString());
-  };
   const pusherRef = useRef<Pusher | null>(null);
+
+  const updateStep = (newStep: number) => {
+    setStep(newStep);
+    localStorage.setItem("onboardingStep", newStep.toString());
+  };
 
   useEffect(() => {
     const fetchVendorIdByEmail = async () => {

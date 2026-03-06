@@ -23,13 +23,12 @@ const OTPModal: React.FC<IOTPModal> = ({
   const [isOTPSent, setIsOTPSent] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [otp, setOtp] = useState("");
-  const navigate = useNavigate();
+  const { step, setStep } = useUser();
 
   const handleSendOTP = async () => {
     try {
       const vendorId = contracts[0]?.vendor_id || contracts[0]?.id;
       if (!vendorId) {
-        console.error("vendor_id not found in contracts:", contracts[0]);
         Helpers.notification.error("Unable to load vendor information");
         return;
       }
@@ -79,7 +78,9 @@ const OTPModal: React.FC<IOTPModal> = ({
       <div className="title">{t(1002)}</div>
       <div className="description">
         {t(1003)}
-        <div className="phone-number">+{companyDetail?.countryCode} {companyDetail?.phone}</div>
+        <div className="phone-number">
+          {companyDetail?.countryCode} {companyDetail?.phone}
+        </div>
       </div>
       {!isOTPSent ? (
         <>
@@ -94,7 +95,7 @@ const OTPModal: React.FC<IOTPModal> = ({
             type="link"
             className="send-otp-button"
             onClick={() => {
-              navigate(-1);
+              setStep(2);
             }}
           >
             {t(58)}

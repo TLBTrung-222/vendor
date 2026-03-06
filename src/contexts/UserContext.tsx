@@ -16,6 +16,9 @@ interface IUserContext {
   adminState: any;
   setAdminState: (state: any) => void;
 
+  step: number;
+  setStep: (step: number) => void;
+
   pageTitle: string;
   setPageTitle: (value: string) => void;
 
@@ -35,6 +38,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     newTemplateForm: false,
   });
   const [translation, setTranslation] = useState<any>({});
+  const [step, setStep] = useState(
+    localStorage.getItem("onboardingStep")
+      ? parseInt(localStorage.getItem("onboardingStep")!, 10)
+      : 1,
+  );
 
   // SET LANGUAGE
   const setLanguage = (value: any) => {
@@ -102,6 +110,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         isAuthenticated,
         adminState,
         setAdminState,
+        step,
+        setStep,
         pageTitle,
         setPageTitle,
         getTranslation,
