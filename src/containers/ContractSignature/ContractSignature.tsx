@@ -15,7 +15,9 @@ const ContractSignature: React.FC<IContractSignature> = ({
   companyDetail,
 }) => {
   const { getTranslation: t } = useUser();
-  const [isOTPModalOpen, setIsOTPModalOpen] = useState(true);
+  const [isOTPModalOpen, setIsOTPModalOpen] = useState(
+    localStorage.getItem("isOTPVerified") === "true",
+  );
 
   return (
     <div className="ContractSignature">

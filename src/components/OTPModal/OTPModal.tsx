@@ -54,6 +54,7 @@ const OTPModal: React.FC<IOTPModal> = ({
           });
           onCancel?.();
           Helpers.notification.success("OTP verified successfully!");
+          localStorage.setItem("isOTPVerified", "true");
         } catch (error) {
           Helpers.notification.error("Invalid OTP. Please try again.");
         }

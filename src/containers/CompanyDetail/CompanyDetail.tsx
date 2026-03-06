@@ -813,7 +813,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           <Input
             size="large"
             prefix={`+${companyDetailForm?.countryCode}`}
-            value={companyDetailForm.phone || ""}
+            value={companyDetailForm.phone}
             onChange={(e) => {
               setCompanyDetailForm({
                 ...companyDetailForm,
