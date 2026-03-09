@@ -775,7 +775,7 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
               size="large"
               className="w-100"
               showSearch={true}
-              value={companyDetailForm.countryCode}
+              value={companyDetailForm.countryCode || "DE_49"}
               filterOption={(input, option) =>
                 (option as any)?.searchLabel
                   ?.toLowerCase()
@@ -812,8 +812,10 @@ const CompanyDetail: React.FC<ICompanyDetail> = ({
           </div>
           <Input
             size="large"
-            prefix={`+${companyDetailForm?.countryCode}`}
-            value={companyDetailForm.phone}
+            prefix={`+${companyDetailForm?.countryCode || "49"}`}
+            value={
+              companyDetailForm.phone.split(" ")[1] || companyDetailForm.phone
+            }
             onChange={(e) => {
               setCompanyDetailForm({
                 ...companyDetailForm,

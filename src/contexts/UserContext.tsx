@@ -65,7 +65,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           number,
           { de: string; en: string; pl: string; sk: string }
         > = {};
-        response.data.data.forEach((item: any) => {
+        response.data.data.forEach((item: any) => { 
           map[item.id] = item.content;
         });
         setTranslation(map);
